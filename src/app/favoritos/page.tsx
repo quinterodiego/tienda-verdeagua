@@ -1,18 +1,54 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
 import { useFavoritesStore } from '@/lib/store';
-import { products } from '@/data/products';
+import { Product } from '@/types';
 import Link from 'next/link';
 
 export default function FavoritosPage() {
   const { favorites, clearFavorites } = useFavoritesStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Cargar productos desde Google Sheets
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Error al cargar productos');
+        }
+        const productsData = await response.json();
+        setProducts(productsData);
+      } catch (err) {
+        console.error('Error al cargar productos:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const favoriteProducts = useMemo(() => {
     return products.filter(product => favorites.includes(product.id));
-  }, [favorites]);
+  }, [favorites, products]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+            <span className="ml-2 text-gray-600">Cargando favoritos...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (favorites.length === 0) {
     return (

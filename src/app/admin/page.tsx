@@ -26,13 +26,25 @@ import {
   Truck
 } from 'lucide-react';
 import Link from 'next/link';
-import { useAdminStore, AdminProduct, Order } from '@/lib/admin-store';
+import { useAdminStore, Order } from '@/lib/admin-store';
+import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
 import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
 import { useNotifications, NotificationsStore } from '@/lib/store';
+import { ADMIN_EMAILS, isAdminEmail } from '@/lib/admin-config';
 
-// Simulamos que solo los admins pueden acceder
-const ADMIN_EMAILS = ['d86webs@gmail.com']; // Agrega tu email aquí
+// Interfaz para usuarios de admin desde Google Sheets
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  registeredAt: string;
+  lastLogin?: string;
+  isActive: boolean;
+  ordersCount: number;
+  totalSpent: number;
+}
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -40,6 +52,12 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+
+  // Estados para datos de Google Sheets
+  const [sheetsProducts, setSheetsProducts] = useState<AdminProduct[]>([]);
+  const [sheetsUsers, setSheetsUsers] = useState<AdminUser[]>([]);
+  const [sheetsOrders, setSheetsOrders] = useState<Order[]>([]);
+  const [dataLoading, setDataLoading] = useState(false);
 
   // Modal states
   const [productModal, setProductModal] = useState<{
@@ -62,13 +80,77 @@ export default function AdminPage() {
     }
 
     // Verificar si es admin
-    if (!ADMIN_EMAILS.includes(session.user?.email || '')) {
+    if (!isAdminEmail(session.user?.email)) {
       router.push('/');
       return;
     }
 
     setLoading(false);
   }, [session, status, router]);
+
+  // Funciones para cargar datos desde Google Sheets
+  const loadSheetsData = async () => {
+    setDataLoading(true);
+    try {
+      // Cargar productos
+      const productsResponse = await fetch('/api/admin/products');
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json();
+        setSheetsProducts(productsData.products || []);
+      }
+
+      // Cargar usuarios
+      const usersResponse = await fetch('/api/admin/users');
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setSheetsUsers(usersData.users || []);
+      }
+
+      // Cargar pedidos
+      const ordersResponse = await fetch('/api/orders');
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        setSheetsOrders(ordersData.orders || []);
+      }
+
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      addNotification('Error al cargar datos del sistema', 'error');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Configurar Google Sheets para admin
+  const setupAdminSheets = async () => {
+    try {
+      setDataLoading(true);
+      const response = await fetch('/api/admin/setup', {
+        method: 'POST',
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        addNotification('Sistema configurado exitosamente', 'success');
+        await loadSheetsData(); // Recargar datos después de configurar
+      } else {
+        addNotification('Error en la configuración: ' + data.results.errors.join(', '), 'error');
+      }
+    } catch (error) {
+      console.error('Error al configurar sistema:', error);
+      addNotification('Error al configurar el sistema', 'error');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    if (!loading && session) {
+      loadSheetsData();
+    }
+  }, [loading, session]);
 
   if (status === 'loading' || loading) {
     return (        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -77,7 +159,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!session || !ADMIN_EMAILS.includes(session.user?.email || '')) {
+  if (!session || !isAdminEmail(session.user?.email)) {
     return null;
   }
 
@@ -89,28 +171,67 @@ export default function AdminPage() {
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
+  // Verificar si Cloudinary está configurado
+  const isCloudinaryConfigured = process.env.NODE_ENV === 'production' || 
+    (typeof window !== 'undefined' && localStorage.getItem('cloudinary_configured'));
+
+  // Función para abrir setup de Cloudinary
+  const openCloudinarySetup = () => {
+    window.open('/setup', '_blank');
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardContent />;
+        return (
+          <DashboardContent 
+            sheetsProducts={sheetsProducts}
+            sheetsUsers={sheetsUsers}
+            sheetsOrders={sheetsOrders}
+            dataLoading={dataLoading}
+            onSetupSheets={setupAdminSheets}
+            onReloadData={loadSheetsData}
+          />
+        );
       case 'products':
         return (
           <ProductsContent 
+            sheetsProducts={sheetsProducts}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
             onOpenProductModal={(mode, product) => setProductModal({ isOpen: true, mode, product })}
           />
         );
       case 'orders':
         return (
           <OrdersContent 
+            sheetsOrders={sheetsOrders}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
             onOpenOrderModal={(order) => setOrderModal({ isOpen: true, order })}
           />
         );
       case 'users':
-        return <UsersContent />;
+        return (
+          <UsersContent 
+            sheetsUsers={sheetsUsers}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
+          />
+        );
       case 'settings':
         return <SettingsContent />;
       default:
-        return <DashboardContent />;
+        return (
+          <DashboardContent 
+            sheetsProducts={sheetsProducts}
+            sheetsUsers={sheetsUsers}
+            sheetsOrders={sheetsOrders}
+            dataLoading={dataLoading}
+            onSetupSheets={setupAdminSheets}
+            onReloadData={loadSheetsData}
+          />
+        );
     }
   };
 
@@ -178,6 +299,37 @@ export default function AdminPage() {
 
         {/* Main Content */}
         <main className="flex-1 p-8">
+          {/* Banner de configuración de Cloudinary */}
+          {!isCloudinaryConfigured && (
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">
+                      Configurar hosting de imágenes
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Configura Cloudinary para subir y optimizar imágenes de productos automáticamente
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={openCloudinarySetup}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Configurar ahora
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {renderContent()}
         </main>
       </div>
@@ -186,14 +338,29 @@ export default function AdminPage() {
       <ProductModal
         isOpen={productModal.isOpen}
         onClose={() => setProductModal({ isOpen: false, mode: 'create' })}
-        onSave={(productData) => {
-          const { addProduct, updateProduct } = useAdminStore.getState();
-          if (productModal.mode === 'create') {
-            addProduct(productData);
-            addNotification('Producto creado exitosamente', 'success');
-          } else if (productModal.product) {
-            updateProduct(productModal.product.id, productData);
-            addNotification('Producto actualizado exitosamente', 'success');
+        onSave={async (productData) => {
+          try {
+            const response = await fetch('/api/admin/products', {
+              method: productModal.mode === 'create' ? 'POST' : 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(productData),
+            });
+
+            if (!response.ok) {
+              throw new Error(`Error al ${productModal.mode === 'create' ? 'crear' : 'actualizar'} producto`);
+            }
+
+            addNotification(
+              `Producto ${productModal.mode === 'create' ? 'creado' : 'actualizado'} exitosamente`, 
+              'success'
+            );
+            await loadSheetsData(); // Recargar datos
+            setProductModal({ isOpen: false, mode: 'create' });
+          } catch (error) {
+            console.error('Error al guardar producto:', error);
+            addNotification('Error al guardar producto', 'error');
           }
         }}
         product={productModal.product}
@@ -216,14 +383,76 @@ export default function AdminPage() {
 }
 
 // Componente Dashboard
-function DashboardContent() {
-  const getStats = useAdminStore((state) => state.getStats);
-  const stats = useMemo(() => getStats(), [getStats]);
+interface DashboardContentProps {
+  sheetsProducts: AdminProduct[];
+  sheetsUsers: AdminUser[];
+  sheetsOrders: Order[];
+  dataLoading: boolean;
+  onSetupSheets: () => Promise<void>;
+  onReloadData: () => Promise<void>;
+}
+
+function DashboardContent({ 
+  sheetsProducts, 
+  sheetsUsers, 
+  sheetsOrders, 
+  dataLoading, 
+  onSetupSheets, 
+  onReloadData 
+}: DashboardContentProps) {
+  // Calcular estadísticas desde los datos de Google Sheets
+  const stats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayOrders = sheetsOrders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    }).length;
+
+    const totalRevenue = sheetsOrders
+      .filter(order => order.status === 'delivered')
+      .reduce((sum, order) => sum + order.total, 0);
+
+    const lowStockProducts = sheetsProducts.filter(product => product.stock < 10).length;
+
+    // Calcular productos más vendidos
+    const productSales: { [key: string]: { product: AdminProduct; quantity: number } } = {};
+    
+    sheetsOrders.forEach(order => {
+      order.items.forEach(item => {
+        const productId = item.id;
+        if (productSales[productId]) {
+          productSales[productId].quantity += item.quantity;
+        } else {
+          const product = sheetsProducts.find(p => p.id === productId);
+          if (product) {
+            productSales[productId] = { product, quantity: item.quantity };
+          }
+        }
+      });
+    });
+
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+
+    return {
+      totalProducts: sheetsProducts.length,
+      totalOrders: sheetsOrders.length,
+      todayOrders,
+      totalUsers: sheetsUsers.length,
+      totalRevenue,
+      lowStockProducts,
+      topProducts
+    };
+  }, [sheetsProducts, sheetsUsers, sheetsOrders]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'ARS'
     }).format(amount);
   };
 
@@ -254,7 +483,7 @@ function DashboardContent() {
     },
     { 
       label: 'Ingresos del Mes', 
-      value: formatCurrency(stats.monthlyRevenue), 
+      value: formatCurrency(stats.totalRevenue), 
       change: `${formatCurrency(stats.totalRevenue)} total`, 
       icon: DollarSign, 
       color: 'yellow',
@@ -265,8 +494,43 @@ function DashboardContent() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-        <p className="text-gray-600">Resumen general de tu tienda</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
+            <p className="text-gray-600">Resumen general de tu tienda</p>
+          </div>
+          
+          {/* Botones de configuración */}
+          <div className="flex space-x-3">
+            <button
+              onClick={onReloadData}
+              disabled={dataLoading}
+              className="flex items-center px-4 py-2 bg-[#68c3b7] text-white rounded-lg hover:bg-[#64b7ac] disabled:opacity-50 transition-colors"
+            >
+              {dataLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              )}
+              Actualizar Datos
+            </button>
+            
+            <button
+              onClick={onSetupSheets}
+              disabled={dataLoading}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {dataLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Settings className="w-4 h-4 mr-2" />
+              )}
+              Configurar Sistema
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -326,19 +590,19 @@ function DashboardContent() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Productos Más Vendidos</h3>
           <div className="space-y-4">
             {stats.topProducts.length > 0 ? (
-              stats.topProducts.map((product, index) => (
+              stats.topProducts.map((productSale, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                   <div className="flex items-center">
                     <div className="w-8 h-8 bg-[#68c3b7]/10 rounded-full flex items-center justify-center mr-3">
                       <span className="text-[#68c3b7] text-sm font-medium">{index + 1}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{product.name}</p>
-                      <p className="text-sm text-gray-600">{product.sales} ventas</p>
+                      <p className="font-medium text-gray-900">{productSale.product.name}</p>
+                      <p className="text-sm text-gray-600">{productSale.quantity} ventas</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600">{formatCurrency(product.revenue)}</p>
+                    <p className="font-semibold text-green-600">{formatCurrency(productSale.product.price * productSale.quantity)}</p>
                   </div>
                 </div>
               ))
@@ -399,14 +663,25 @@ function OrderStatusSummary() {
 }
 
 // Componente Productos
-function ProductsContent({ onOpenProductModal }: { 
+function ProductsContent({ 
+  sheetsProducts,
+  dataLoading,
+  onReloadData,
+  onOpenProductModal 
+}: { 
+  sheetsProducts: AdminProduct[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
   onOpenProductModal: (mode: 'create' | 'edit', product?: AdminProduct) => void 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const products = useAdminStore((state) => state.products);
-  const deleteProduct = useAdminStore((state) => state.deleteProduct);
+  // Comentado: const products = useAdminStore((state) => state.products); // Ya no usamos el store local
+  // Comentado: const deleteProduct = useAdminStore((state) => state.deleteProduct); // Ya no usamos el store local
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+  
+  // Usar sheetsProducts en lugar del store local
+  const products = sheetsProducts;
   
   const categories = [
     { value: 'all', label: 'Todas las categorías' },
@@ -422,15 +697,32 @@ function ProductsContent({ onOpenProductModal }: {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+                         (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const handleDeleteProduct = (productId: string, productName: string) => {
+  const handleDeleteProduct = async (productId: string, productName: string) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar "${productName}"?`)) {
-      deleteProduct(productId);
-      addNotification('Producto eliminado exitosamente', 'success');
+      try {
+        const response = await fetch(`/api/admin/products`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: productId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al eliminar producto');
+        }
+
+        addNotification('Producto eliminado exitosamente', 'success');
+        await onReloadData(); // Recargar datos después de eliminar
+      } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        addNotification('Error al eliminar producto', 'error');
+      }
     }
   };
 
@@ -535,11 +827,11 @@ function ProductsContent({ onOpenProductModal }: {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img
-                          src={product.images[0] || '/placeholder-image.jpg'}
+                          src={product.images[0] || '/placeholder-image.svg'}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded-lg mr-4"
                           onError={(e) => {
-                            e.currentTarget.src = '/placeholder-image.jpg';
+                            e.currentTarget.src = '/placeholder-image.svg';
                           }}
                         />
                         <div>
@@ -632,16 +924,26 @@ function ProductsContent({ onOpenProductModal }: {
 }
 
 // Componente Pedidos
-function OrdersContent({ onOpenOrderModal }: { 
-  onOpenOrderModal: (order: Order) => void 
-}) {
+interface OrdersContentProps {
+  sheetsOrders: Order[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
+  onOpenOrderModal: (order: Order) => void;
+}
+
+function OrdersContent({ 
+  sheetsOrders,
+  dataLoading,
+  onReloadData,
+  onOpenOrderModal 
+}: OrdersContentProps) {
   const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const orders = useAdminStore((state) => state.orders);
 
   const statusOptions = [
     { value: 'all', label: 'Todos los estados' },
     { value: 'pending', label: 'Pendientes' },
+    { value: 'confirmed', label: 'Confirmados' },
     { value: 'processing', label: 'Procesando' },
     { value: 'shipped', label: 'Enviados' },
     { value: 'delivered', label: 'Entregados' },
@@ -650,13 +952,14 @@ function OrdersContent({ onOpenOrderModal }: {
 
   const statusInfo = {
     pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+    confirmed: { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
     processing: { label: 'Procesando', color: 'bg-teal-100 text-teal-800', icon: Package },
     shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
     delivered: { label: 'Entregado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
     cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle }
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = sheetsOrders.filter((order: Order) => {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -685,8 +988,20 @@ function OrdersContent({ onOpenOrderModal }: {
     <div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Pedidos</h2>
-        <p className="text-gray-600">Administra todos los pedidos de la tienda ({orders.length} pedidos)</p>
+        <p className="text-gray-600">Administra todos los pedidos de la tienda ({sheetsOrders.length} pedidos)</p>
       </div>
+
+      {/* Loading State */}
+      {dataLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+          <span className="ml-2 text-gray-600">Cargando pedidos...</span>
+        </div>
+      )}
+
+      {/* Content Only When Loaded */}
+      {!dataLoading && (
+        <>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -718,9 +1033,9 @@ function OrdersContent({ onOpenOrderModal }: {
           </div>
         </div>
         
-        {filteredOrders.length !== orders.length && (
+        {filteredOrders.length !== sheetsOrders.length && (
           <div className="mt-4 text-sm text-gray-600">
-            Mostrando {filteredOrders.length} de {orders.length} pedidos
+            Mostrando {filteredOrders.length} de {sheetsOrders.length} pedidos
           </div>
         )}
       </div>
@@ -755,7 +1070,7 @@ function OrdersContent({ onOpenOrderModal }: {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => {
+              {filteredOrders.map((order: Order) => {
                 const currentStatusInfo = statusInfo[order.status];
                 const StatusIcon = currentStatusInfo.icon;
                 
@@ -778,7 +1093,7 @@ function OrdersContent({ onOpenOrderModal }: {
                         {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {order.items.reduce((total, item) => total + item.quantity, 0)} unidades
+                        {order.items.reduce((total: number, item: any) => total + item.quantity, 0)} unidades
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -818,10 +1133,10 @@ function OrdersContent({ onOpenOrderModal }: {
       </div>
 
       {/* Quick Stats */}
-      {orders.length > 0 && (
+      {sheetsOrders.length > 0 && (
         <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
           {Object.entries(statusInfo).map(([status, info]) => {
-            const count = orders.filter(order => order.status === status).length;
+            const count = sheetsOrders.filter((order: Order) => order.status === status).length;
             const StatusIcon = info.icon;
             
             return (
@@ -836,31 +1151,61 @@ function OrdersContent({ onOpenOrderModal }: {
           })}
         </div>
       )}
+      </>
+      )}
     </div>
   );
 }
 
 // Componente Usuarios
-function UsersContent() {
+interface UsersContentProps {
+  sheetsUsers: AdminUser[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
+}
+
+function UsersContent({ sheetsUsers, dataLoading, onReloadData }: UsersContentProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
-  const users = useAdminStore((state) => state.users);
-  const updateUser = useAdminStore((state) => state.updateUser);
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = sheetsUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
-  const handleToggleUserStatus = (userId: string, currentStatus: boolean) => {
-    updateUser(userId, { isActive: !currentStatus });
-    addNotification(
-      `Usuario ${!currentStatus ? 'activado' : 'desactivado'} exitosamente`, 
-      'success'
-    );
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userId,
+          isActive: !currentStatus
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar usuario');
+      }
+
+      await onReloadData();
+      addNotification(
+        `Usuario ${!currentStatus ? 'activado' : 'desactivado'} exitosamente`, 
+        'success'
+      );
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      addNotification('Error al actualizar el usuario', 'error');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -878,11 +1223,20 @@ function UsersContent() {
     }).format(amount);
   };
 
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+        <span className="ml-2 text-gray-600">Cargando usuarios...</span>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
-        <p className="text-gray-600">Administra los usuarios registrados ({users.length} usuarios)</p>
+        <p className="text-gray-600">Administra los usuarios registrados ({sheetsUsers.length} usuarios)</p>
       </div>
 
       {/* Filters */}
@@ -913,9 +1267,9 @@ function UsersContent() {
           </div>
         </div>
         
-        {filteredUsers.length !== users.length && (
+        {filteredUsers.length !== sheetsUsers.length && (
           <div className="mt-4 text-sm text-gray-600">
-            Mostrando {filteredUsers.length} de {users.length} usuarios
+            Mostrando {filteredUsers.length} de {sheetsUsers.length} usuarios
           </div>
         )}
       </div>
@@ -1005,13 +1359,14 @@ function UsersContent() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                      disabled={isUpdating}
                       className={`text-sm px-3 py-1 rounded-lg ${
                         user.isActive
                           ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
                           : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                      }`}
+                      } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {user.isActive ? 'Desactivar' : 'Activar'}
+                      {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
                     </button>
                   </td>
                 </tr>
@@ -1033,27 +1388,27 @@ function UsersContent() {
       </div>
 
       {/* User Stats */}
-      {users.length > 0 && (
+      {sheetsUsers.length > 0 && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-[#68c3b7]">{users.length}</div>
+            <div className="text-2xl font-bold text-[#68c3b7]">{sheetsUsers.length}</div>
             <div className="text-sm text-gray-600">Total Usuarios</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4 text-center">
             <div className="text-2xl font-bold text-green-600">
-              {users.filter(u => u.isActive).length}
+              {sheetsUsers.filter(u => u.isActive).length}
             </div>
             <div className="text-sm text-gray-600">Usuarios Activos</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4 text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {users.filter(u => u.role === 'admin').length}
+              {sheetsUsers.filter(u => u.role === 'admin').length}
             </div>
             <div className="text-sm text-gray-600">Administradores</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4 text-center">
             <div className="text-2xl font-bold text-gray-600">
-              {formatCurrency(users.reduce((sum, user) => sum + user.totalSpent, 0))}
+              {formatCurrency(sheetsUsers.reduce((sum, user) => sum + user.totalSpent, 0))}
             </div>
             <div className="text-sm text-gray-600">Ingresos Totales</div>
           </div>

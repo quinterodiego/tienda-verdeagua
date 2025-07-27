@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { verifyCredentials } from './users';
+import { saveUserToSheets } from './users-sheets';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -41,6 +42,29 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log('🔍 SignIn callback ejecutado:', { 
+        user: user?.email, 
+        provider: account?.provider,
+        name: user?.name 
+      });
+      
+      // Si es login con Google, guardar el usuario en Sheets
+      if (account?.provider === 'google' && user.email && user.name) {
+        try {
+          console.log('💾 Intentando guardar usuario en Google Sheets...');
+          const result = await saveUserToSheets({
+            name: user.name,
+            email: user.email,
+          });
+          console.log('✅ Usuario guardado en Google Sheets:', user.email, 'Resultado:', result);
+        } catch (error) {
+          console.error('❌ Error al guardar usuario en Sheets:', error);
+          // No bloquear el login si falla el guardado en Sheets
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

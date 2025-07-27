@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { products } from '@/data/products';
 import { useCartStore } from '@/lib/store';
 import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Heart, Share } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Notification from '@/components/Notification';
+import { Product } from '@/types';
 
 export default function ProductPage() {
   const params = useParams();
@@ -16,8 +16,66 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const product = products.find(p => p.id === params.id);
+  // Cargar producto específico desde Google Sheets
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Error al cargar productos');
+        }
+        const products = await response.json();
+        setAllProducts(products);
+        const foundProduct = products.find((p: Product) => p.id === params.id);
+        setProduct(foundProduct || null);
+      } catch (err) {
+        console.error('Error al cargar producto:', err);
+        setError(err instanceof Error ? err.message : 'Error al cargar producto');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (params.id) {
+      fetchProduct();
+    }
+  }, [params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+          <span className="ml-2 text-gray-600">Cargando producto...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+            <h1 className="text-xl font-bold text-red-800 mb-2">Error</h1>
+            <p className="text-red-700">{error}</p>
+            <Link
+              href="/"
+              className="inline-block mt-4 bg-[#68c3b7] text-white px-6 py-2 rounded-lg hover:bg-[#5aa8a0] transition-colors"
+            >
+              Volver al inicio
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -273,10 +331,10 @@ export default function ProductPage() {
             Productos relacionados
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products
-              .filter(p => p.category === product.category && p.id !== product.id)
+            {allProducts
+              .filter((p: Product) => p.category === product.category && p.id !== product.id)
               .slice(0, 4)
-              .map((relatedProduct) => (
+              .map((relatedProduct: Product) => (
                 <Link
                   key={relatedProduct.id}
                   href={`/producto/${relatedProduct.id}`}

@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn, getProviders } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, Mail, ArrowLeft, Eye, EyeOff, Lock, User } from 'lucide-react';
 import Link from 'next/link';
@@ -15,7 +15,7 @@ interface Provider {
   callbackUrl: string;
 }
 
-export default function SignInPage() {
+function SignInContent() {
   const { showNotification } = useNotification();
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -388,5 +388,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <SignInContent />
+    </Suspense>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Upload, Plus, Trash2 } from 'lucide-react';
 import { AdminProduct } from '@/lib/admin-store';
+import ImageUploader from './ImageUploader';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -263,38 +264,12 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               Imágenes *
             </label>
             {errors.images && <p className="text-red-500 text-xs mb-2">{errors.images}</p>}
-            <div className="space-y-2">
-              {formData.images.map((image, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="flex-1">
-                    <input
-                      type="url"
-                      value={image}
-                      onChange={(e) => handleImageChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-                      placeholder="URL de la imagen"
-                    />
-                  </div>
-                  {formData.images.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeImageField(index)}
-                      className="px-3 py-2 text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addImageField}
-                className="flex items-center text-[#68c3b7] hover:text-[#64b7ac] text-sm"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Agregar imagen
-              </button>
-            </div>
+            
+            <ImageUploader
+              images={formData.images.filter(img => img.trim())}
+              onImagesChange={(newImages) => setFormData({ ...formData, images: newImages })}
+              maxImages={5}
+            />
           </div>
 
           {/* Tags */}

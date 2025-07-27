@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Product } from '@/types';
 
 interface UseSearchProps {
@@ -59,14 +59,14 @@ export function useSearch({ products }: UseSearchProps) {
     });
   }, [products, filters]);
 
-  const updateFilter = (key: keyof SearchFilters, value: string | number | boolean) => {
+  const updateFilter = useCallback((key: keyof SearchFilters, value: string | number | boolean) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
     }));
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       query: '',
       category: 'Todos',
@@ -75,9 +75,9 @@ export function useSearch({ products }: UseSearchProps) {
       rating: 0,
       inStock: false,
     });
-  };
+  }, []);
 
-  const removeFilter = (key: keyof SearchFilters) => {
+  const removeFilter = useCallback((key: keyof SearchFilters) => {
     setFilters(prev => {
       const defaultValues: SearchFilters = {
         query: '',
@@ -93,7 +93,7 @@ export function useSearch({ products }: UseSearchProps) {
         [key]: defaultValues[key]
       };
     });
-  };
+  }, []);
 
   return {
     filters,

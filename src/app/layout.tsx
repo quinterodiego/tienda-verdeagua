@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import GlobalNotifications from "@/components/GlobalNotifications";
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TechStore - Tienda de Tecnología",
-  description: "La mejor tienda de tecnología online",
+  title: "Verde Agua Personalizados - Productos Escolares Únicos",
+  description: "Tienda online de productos escolares personalizados: agendas, tazas, llaveros, stickers, cuadernos y más. Dale tu toque personal a tus estudios con Verde Agua Personalizados.",
 };
 
 export default function RootLayout({
@@ -35,6 +36,7 @@ export default function RootLayout({
           <AuthProvider>
             <Header />
             {children}
+            <Footer />
             <GlobalNotifications />
           </AuthProvider>
         </NotificationProvider>

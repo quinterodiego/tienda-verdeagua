@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Filter, X, Star } from 'lucide-react';
-import { categories } from '@/data/products';
 
 interface SearchFiltersProps {
   filters: {
@@ -15,12 +14,14 @@ interface SearchFiltersProps {
   };
   onFilterChange: (key: keyof SearchFiltersProps['filters'], value: string | number | boolean) => void;
   onClearFilters: () => void;
+  categories?: string[];
 }
 
 export default function SearchFilters({ 
   filters, 
   onFilterChange, 
-  onClearFilters 
+  onClearFilters,
+  categories = []
 }: SearchFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 

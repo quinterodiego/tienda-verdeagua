@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Search, Menu, User, X, Heart, Home, LogOut } from 'lucide-react';
+import { ShoppingCart, Search, Menu, User, X, Heart, Home, LogOut, Users, Mail, Settings } from 'lucide-react';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ClientOnly from './ClientOnly';
 import Image from 'next/image';
+import { isAdminUser } from '@/lib/admin-config';
 
 export default function Header() {
   const { itemCount } = useCartStore();
@@ -15,10 +16,12 @@ export default function Header() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Verificar si el usuario es administrador
+  const isAdmin = isAdminUser(session);
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -36,7 +39,6 @@ export default function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
-      setIsMobileSearchOpen(false);
     }
   };
 
@@ -47,35 +49,35 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-[#68c3b7] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
+              <span className="text-white font-bold text-lg">V</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">TechStore</span>
+            <span className="font-bold text-xl text-gray-900">Verde Agua Personalizados</span>
           </Link>
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
-            <form onSubmit={handleSearch} className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar productos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-              />
-            </form>
-          </div>
+          {/* Navigation Menu - Desktop */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link 
+              href="/" 
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
+            >
+              Productos
+            </Link>
+            <Link 
+              href="/nosotros" 
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
+            >
+              Nosotros
+            </Link>
+            <Link 
+              href="/contacto" 
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
+            >
+              Contacto
+            </Link>
+          </nav>
 
           {/* Right Menu */}
           <div className="flex items-center space-x-4">
-            {/* Search button for mobile */}
-            <button 
-              onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900"
-            >
-              {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-            </button>
-
             {/* User account */}
             <div className="relative" ref={userMenuRef}>
               {status === 'loading' ? (
@@ -114,6 +116,11 @@ export default function Header() {
                         <p className="text-sm text-gray-600 truncate">
                           {session.user?.email}
                         </p>
+                        {isAdmin && (
+                          <span className="inline-flex items-center px-2 py-1 mt-1 text-xs font-medium bg-[#68c3b7] text-white rounded-full">
+                            Administrador
+                          </span>
+                        )}
                       </div>
                       <div className="py-1">
                         <Link
@@ -130,6 +137,17 @@ export default function Header() {
                         >
                           Mis Pedidos
                         </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/admin"
+                            className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            <Settings className="w-4 h-4 mr-2" />
+                            Panel de Admin
+                          </Link>
+                        )}
+                        <hr className="my-1" />
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
@@ -181,23 +199,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        {isMobileSearchOpen && (
-          <div className="md:hidden py-4 border-t">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar productos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-                autoFocus
-              />
-            </form>
-          </div>
-        )}
-
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
@@ -208,7 +209,25 @@ export default function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Home className="w-5 h-5 mr-3" />
-                Inicio
+                Productos
+              </Link>
+
+              <Link 
+                href="/nosotros" 
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Users className="w-5 h-5 mr-3" />
+                Nosotros
+              </Link>
+
+              <Link 
+                href="/contacto" 
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Mail className="w-5 h-5 mr-3" />
+                Contacto
               </Link>
               
               <Link 
@@ -243,17 +262,6 @@ export default function Header() {
                 </ClientOnly>
               </Link>
 
-              <button 
-                onClick={() => {
-                  setIsMobileSearchOpen(!isMobileSearchOpen);
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 text-left"
-              >
-                <Search className="w-5 h-5 mr-3" />
-                Buscar
-              </button>
-
               {/* User Authentication Mobile */}
               {session ? (
                 <>
@@ -285,6 +293,17 @@ export default function Header() {
                     <span>Mis Pedidos</span>
                   </Link>
                   
+                  {isAdmin && (
+                    <Link 
+                      href="/admin" 
+                      className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Settings className="w-5 h-5 mr-3" />
+                      <span>Panel de Admin</span>
+                    </Link>
+                  )}
+                  
                   <button 
                     onClick={() => {
                       setIsMobileMenuOpen(false);
@@ -311,6 +330,28 @@ export default function Header() {
             </nav>
           </div>
         )}
+      </div>
+
+      {/* Search Bar Section - Below Main Header */}
+      <div className="bg-gray-50 border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar agendas, tazas, llaveros, stickers y más..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-lg shadow-sm"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#5ab3a7] transition-colors"
+            >
+              Buscar
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   );

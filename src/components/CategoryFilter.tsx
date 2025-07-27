@@ -1,13 +1,12 @@
 'use client';
 
-import { categories } from '@/data/products';
-
 interface CategoryFilterProps {
+  categories: string[];
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
 }
 
-export default function CategoryFilter({ selectedCategory, onCategoryChange }: CategoryFilterProps) {
+export default function CategoryFilter({ categories, selectedCategory, onCategoryChange }: CategoryFilterProps) {
   return (
     <div className="mb-8">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Categorías</h3>

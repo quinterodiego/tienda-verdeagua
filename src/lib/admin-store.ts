@@ -15,15 +15,23 @@ export interface Order {
     image: string;
   }>;
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   createdAt: string;
-  shippingAddress?: {
-    street: string;
+  updatedAt: string;
+  paymentId?: string;
+  paymentStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    address: string;
     city: string;
     state: string;
     zipCode: string;
-    country: string;
+    phone: string;
   };
+  trackingNumber?: string;
+  estimatedDelivery?: string;
+  notes?: string;
 }
 
 export interface AdminUser {
@@ -85,8 +93,21 @@ interface AdminState {
   
   // Orders
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'createdAt'>) => void;
-  updateOrderStatus: (id: string, status: Order['status']) => void;
+  addOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  updateOrderStatus: (id: string, status: Order['status'], updates?: Partial<Order>) => void;
+  updateOrder: (id: string, updates: Partial<Order>) => void;
+  getOrderById: (id: string) => Order | undefined;
+  getOrdersByStatus: (status: Order['status']) => Order[];
+  getOrderStats: () => {
+    total: number;
+    pending: number;
+    confirmed: number;
+    processing: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    totalRevenue: number;
+  };
   
   // Users
   users: AdminUser[];
@@ -188,12 +209,16 @@ const initialOrders: Order[] = [
     total: 999,
     status: 'pending',
     createdAt: '2025-01-24T10:00:00Z',
+    updatedAt: '2025-01-24T10:00:00Z',
+    paymentStatus: 'pending',
     shippingAddress: {
-      street: 'Calle Principal 123',
+      firstName: 'Juan',
+      lastName: 'Pérez',
+      address: 'Calle Principal 123',
       city: 'Madrid',
       state: 'Madrid',
       zipCode: '28001',
-      country: 'España'
+      phone: '+34 600 123 456'
     }
   },
   {
@@ -205,7 +230,20 @@ const initialOrders: Order[] = [
     ],
     total: 1199,
     status: 'shipped',
-    createdAt: '2025-01-24T09:00:00Z'
+    createdAt: '2025-01-24T09:00:00Z',
+    updatedAt: '2025-01-24T11:00:00Z',
+    paymentStatus: 'approved',
+    trackingNumber: 'ESP123456789',
+    estimatedDelivery: '2025-01-26T18:00:00Z',
+    shippingAddress: {
+      firstName: 'María',
+      lastName: 'García',
+      address: 'Avenida de la Paz 456',
+      city: 'Barcelona',
+      state: 'Cataluña',
+      zipCode: '08001',
+      phone: '+34 600 234 567'
+    }
   },
   {
     id: 'ORD-003',
@@ -217,7 +255,20 @@ const initialOrders: Order[] = [
     ],
     total: 1197,
     status: 'delivered',
-    createdAt: '2025-01-23T15:00:00Z'
+    createdAt: '2025-01-23T15:00:00Z',
+    updatedAt: '2025-01-24T12:00:00Z',
+    paymentStatus: 'approved',
+    trackingNumber: 'ESP987654321',
+    shippingAddress: {
+      firstName: 'Carlos',
+      lastName: 'López',
+      address: 'Plaza Mayor 789',
+      city: 'Valencia',
+      state: 'Valencia',
+      zipCode: '46001',
+      phone: '+34 600 345 678'
+    },
+    notes: 'Entregado en recepción del edificio'
   }
 ];
 
@@ -319,20 +370,74 @@ export const useAdminStore = create<AdminState>()(
       addOrder: (order) => {
         const newOrder: Order = {
           ...order,
-          id: `ORD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-          createdAt: new Date().toISOString()
+          id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
         set((state) => ({
           orders: [...state.orders, newOrder]
         }));
+        return newOrder.id;
       },
 
-      updateOrderStatus: (id, status) => {
+      updateOrderStatus: (id, status, updates = {}) => {
         set((state) => ({
           orders: state.orders.map((order) =>
-            order.id === id ? { ...order, status } : order
+            order.id === id 
+              ? { 
+                  ...order, 
+                  status, 
+                  updatedAt: new Date().toISOString(),
+                  ...updates
+                } 
+              : order
           )
         }));
+      },
+
+      updateOrder: (id, updates) => {
+        set((state) => ({
+          orders: state.orders.map((order) =>
+            order.id === id 
+              ? { 
+                  ...order, 
+                  ...updates,
+                  updatedAt: new Date().toISOString()
+                } 
+              : order
+          )
+        }));
+      },
+
+      getOrderById: (id) => {
+        return get().orders.find(order => order.id === id);
+      },
+
+      getOrdersByStatus: (status) => {
+        return get().orders.filter(order => order.status === status);
+      },
+
+      getOrderStats: () => {
+        const orders = get().orders;
+        const stats = {
+          total: orders.length,
+          pending: 0,
+          confirmed: 0,
+          processing: 0,
+          shipped: 0,
+          delivered: 0,
+          cancelled: 0,
+          totalRevenue: 0
+        };
+
+        orders.forEach(order => {
+          stats[order.status]++;
+          if (order.status === 'delivered') {
+            stats.totalRevenue += order.total;
+          }
+        });
+
+        return stats;
       },
 
       // User actions

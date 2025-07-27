@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -11,7 +12,7 @@ const errorMessages: Record<string, string> = {
   Default: 'Ha ocurrido un error inesperado.',
 };
 
-export default function AuthErrorPage() {
+function ErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error') || 'Default';
   const message = errorMessages[error] || errorMessages.Default;
@@ -48,5 +49,13 @@ export default function AuthErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <ErrorContent />
+    </Suspense>
   );
 }
