@@ -56,6 +56,9 @@ export const authOptions: NextAuthOptions = {
           const result = await saveUserToSheets({
             name: user.name,
             email: user.email,
+            image: user.image || undefined,
+            role: 'user', // Por defecto, se ajustará automáticamente si es admin
+            createdAt: new Date().toISOString(),
           });
           console.log('✅ Usuario guardado en Google Sheets:', user.email, 'Resultado:', result);
         } catch (error) {
