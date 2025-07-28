@@ -73,6 +73,90 @@ export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
 }
 
 /**
+ * Extrae el publicId de una URL de Cloudinary
+ */
+export function extractPublicIdFromUrl(url: string): string | null {
+  try {
+    // URLs de Cloudinary típicas:
+    // https://res.cloudinary.com/[cloud_name]/image/upload/[transformations]/[publicId].[format]
+    // https://res.cloudinary.com/[cloud_name]/image/upload/[publicId].[format]
+    
+    if (!url || !url.includes('cloudinary.com')) {
+      return null;
+    }
+
+    // Dividir la URL por '/'
+    const parts = url.split('/');
+    
+    // Encontrar el índice de 'upload'
+    const uploadIndex = parts.findIndex(part => part === 'upload');
+    
+    if (uploadIndex === -1) {
+      return null;
+    }
+
+    // El publicId puede estar después de transformaciones o directamente después de upload
+    // Tomar todo desde después de upload hasta el final
+    const afterUpload = parts.slice(uploadIndex + 1);
+    
+    // Si hay transformaciones (v1_1, c_fill, etc.), saltarlas
+    let publicIdParts = afterUpload;
+    
+    // Filtrar transformaciones comunes
+    publicIdParts = publicIdParts.filter(part => 
+      !part.startsWith('c_') &&
+      !part.startsWith('w_') &&
+      !part.startsWith('h_') &&
+      !part.startsWith('f_') &&
+      !part.startsWith('q_') &&
+      !part.startsWith('v') &&
+      part !== 'auto'
+    );
+
+    if (publicIdParts.length === 0) {
+      return null;
+    }
+
+    // Unir las partes y remover la extensión
+    const publicIdWithExtension = publicIdParts.join('/');
+    const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, ''); // Remover extensión
+    
+    return publicId;
+  } catch (error) {
+    console.error('Error extracting publicId from URL:', error);
+    return null;
+  }
+}
+
+/**
+ * Elimina una imagen de Cloudinary usando su URL
+ */
+export async function deleteImageByUrl(imageUrl: string): Promise<boolean> {
+  try {
+    const publicId = extractPublicIdFromUrl(imageUrl);
+    
+    if (!publicId) {
+      console.warn('No se pudo extraer publicId de la URL:', imageUrl);
+      return false;
+    }
+
+    console.log('🗑️ Eliminando imagen de Cloudinary con publicId:', publicId);
+    const result = await deleteFromCloudinary(publicId);
+    
+    if (result) {
+      console.log('✅ Imagen eliminada exitosamente de Cloudinary');
+    } else {
+      console.warn('⚠️ No se pudo eliminar la imagen de Cloudinary');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Error al eliminar imagen por URL:', error);
+    return false;
+  }
+}
+
+/**
  * Genera una URL optimizada para una imagen de Cloudinary
  */
 export function getOptimizedImageUrl(

@@ -1,4 +1,5 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
+import { deleteImageByUrl } from './cloudinary';
 
 // Interfaz para productos del admin (más completa)
 export interface AdminProduct {
@@ -200,8 +201,35 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
 }
 
 // Función para eliminar un producto (marcar como inactivo)
-export async function deleteAdminProductFromSheets(productId: string): Promise<boolean> {
+export async function deleteAdminProductFromSheets(productId: string, deleteImages: boolean = false): Promise<boolean> {
   try {
+    // Si se solicita eliminar imágenes, hacerlo antes del soft delete
+    if (deleteImages) {
+      console.log('🖼️ Eliminando imágenes para soft delete del producto:', productId);
+      
+      // Obtener el producto para acceder a sus imágenes
+      const products = await getAdminProductsFromSheets();
+      const product = products.find(p => p.id === productId);
+      
+      if (product && product.images && product.images.length > 0) {
+        const imageDeletePromises = product.images.map(async (imageUrl: string) => {
+          if (imageUrl && imageUrl.includes('cloudinary.com')) {
+            console.log('🗑️ Soft delete - Eliminando imagen:', imageUrl);
+            const success = await deleteImageByUrl(imageUrl);
+            if (success) {
+              console.log('✅ Imagen eliminada de Cloudinary (soft delete):', imageUrl);
+            } else {
+              console.warn('⚠️ No se pudo eliminar imagen de Cloudinary (soft delete):', imageUrl);
+            }
+            return success;
+          }
+          return true;
+        });
+
+        await Promise.all(imageDeletePromises);
+      }
+    }
+
     // En lugar de eliminar, marcamos como inactivo
     return await updateAdminProductInSheets(productId, { 
       isActive: false, 
@@ -255,6 +283,58 @@ export async function permanentlyDeleteAdminProductFromSheets(productId: string)
     if (productRowIndex === -1) {
       console.error('Producto no encontrado para eliminar:', productId);
       return false;
+    }
+
+    // Obtener los datos del producto antes de eliminarlo
+    const productRow = rows[productRowIndex];
+    const productData = {
+      id: productRow[0] || '',
+      name: productRow[1] || '',
+      description: productRow[2] || '',
+      price: parseFloat(productRow[3]) || 0,
+      originalPrice: productRow[4] ? parseFloat(productRow[4]) : null,
+      category: productRow[5] || '',
+      subcategory: productRow[6] || '',
+      images: productRow[7] ? productRow[7].split(',').map((url: string) => url.trim()) : [],
+      features: productRow[8] ? productRow[8].split(',') : [],
+      stock: parseInt(productRow[9]) || 0,
+      rating: parseFloat(productRow[10]) || 0,
+      reviewCount: parseInt(productRow[11]) || 0,
+      isActive: productRow[12] === 'TRUE',
+      isFeatured: productRow[13] === 'TRUE',
+      createdAt: productRow[14] || '',
+      updatedAt: productRow[15] || ''
+    };
+
+    console.log('📦 Datos del producto a eliminar:', {
+      id: productData.id,
+      name: productData.name,
+      images: productData.images
+    });
+
+    // Eliminar imágenes de Cloudinary primero
+    if (productData.images && productData.images.length > 0) {
+      console.log('🖼️ Eliminando imágenes de Cloudinary...');
+      
+      const imageDeletePromises = productData.images.map(async (imageUrl: string) => {
+        if (imageUrl && imageUrl.includes('cloudinary.com')) {
+          console.log('🗑️ Eliminando imagen:', imageUrl);
+          const success = await deleteImageByUrl(imageUrl);
+          if (success) {
+            console.log('✅ Imagen eliminada de Cloudinary:', imageUrl);
+          } else {
+            console.warn('⚠️ No se pudo eliminar imagen de Cloudinary:', imageUrl);
+          }
+          return success;
+        }
+        return true; // No es una imagen de Cloudinary, continúa
+      });
+
+      const imageResults = await Promise.all(imageDeletePromises);
+      const successfulDeletes = imageResults.filter(result => result).length;
+      const cloudinaryImages = productData.images.filter((url: string) => url.includes('cloudinary.com')).length;
+      
+      console.log(`📊 Imágenes eliminadas: ${successfulDeletes}/${cloudinaryImages} de Cloudinary`);
     }
 
     // Obtener el ID real de la hoja
