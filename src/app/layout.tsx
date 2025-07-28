@@ -15,8 +15,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Verde Agua Personalizados - Productos Escolares Únicos",
-  description: "Tienda online de productos escolares personalizados: agendas, tazas, llaveros, stickers, cuadernos y más. Dale tu toque personal a tus estudios con Verde Agua Personalizados.",
+  title: "Verde Agua Personalizados - Productos Únicos",
+  description: "Tienda online de productos personalizados: agendas, tazas, llaveros, stickers, cuadernos y más. Dale tu toque personal a tus estudios con Verde Agua Personalizados.",
   icons: {
     icon: '/favicon.ico',
     apple: '/favicon.ico',

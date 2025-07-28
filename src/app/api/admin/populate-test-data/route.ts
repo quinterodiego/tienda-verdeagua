@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { isAdminEmail } from '@/lib/admin-config';
 import { saveOrderToSheets } from '@/lib/orders-sheets';
+import { products } from '@/data/products';
 
 // POST /api/admin/populate-test-data - Poblar datos de prueba en Google Sheets
 export async function POST(request: NextRequest) {
@@ -15,6 +16,16 @@ export async function POST(request: NextRequest) {
 
     console.log('🧪 Poblando datos de prueba en Google Sheets...');
 
+    // Obtener productos para usar en los pedidos de prueba
+    const product1 = products.find(p => p.id === '1'); // Agenda Escolar
+    const product2 = products.find(p => p.id === '2'); // Taza Personalizada
+    const product3 = products.find(p => p.id === '3'); // Llavero Acrílico
+    const product4 = products.find(p => p.id === '4'); // Pack de Stickers
+
+    if (!product1 || !product2 || !product3 || !product4) {
+      return NextResponse.json({ error: 'No se encontraron productos para datos de prueba' }, { status: 400 });
+    }
+
     // Datos de prueba para pedidos
     const testOrders = [
       {
@@ -25,15 +36,11 @@ export async function POST(request: NextRequest) {
         },
         items: [
           {
-            product: {
-              id: 'agenda-escolar',
-              name: 'Agenda Escolar Personalizada',
-              price: 25.99,
-            },
+            product: product1,
             quantity: 1,
           }
         ],
-        total: 25.99,
+        total: product1.price,
         status: 'delivered' as const,
         paymentId: 'TEST-PAY-001',
         paymentStatus: 'approved' as const,
@@ -57,15 +64,11 @@ export async function POST(request: NextRequest) {
         },
         items: [
           {
-            product: {
-              id: 'taza-personalizada',
-              name: 'Taza Personalizada',
-              price: 15.50,
-            },
+            product: product2,
             quantity: 2,
           }
         ],
-        total: 31.00,
+        total: product2.price * 2,
         status: 'shipped' as const,
         paymentId: 'TEST-PAY-002',
         paymentStatus: 'approved' as const,
@@ -89,23 +92,15 @@ export async function POST(request: NextRequest) {
         },
         items: [
           {
-            product: {
-              id: 'llavero-personalizado',
-              name: 'Llavero Personalizado',
-              price: 8.99,
-            },
+            product: product3,
             quantity: 3,
           },
           {
-            product: {
-              id: 'stickers-pack',
-              name: 'Pack de Stickers',
-              price: 12.50,
-            },
+            product: product4,
             quantity: 1,
           }
         ],
-        total: 39.47,
+        total: (product3.price * 3) + product4.price,
         status: 'pending' as const,
         paymentId: 'TEST-PAY-003',
         paymentStatus: 'pending' as const,
@@ -125,17 +120,18 @@ export async function POST(request: NextRequest) {
 
     // Insertar pedidos de prueba
     let successCount = 0;
-    for (const order of testOrders) {
+    for (let i = 0; i < testOrders.length; i++) {
+      const order = testOrders[i];
       try {
-        const success = await saveOrderToSheets(order);
-        if (success) {
+        const orderId = await saveOrderToSheets(order);
+        if (orderId) {
           successCount++;
-          console.log(`✅ Pedido de prueba ${order.id} guardado`);
+          console.log(`✅ Pedido de prueba ${orderId} guardado`);
         } else {
-          console.warn(`⚠️ No se pudo guardar pedido ${order.id}`);
+          console.warn(`⚠️ No se pudo guardar pedido de prueba ${i + 1}`);
         }
       } catch (error) {
-        console.error(`❌ Error guardando pedido ${order.id}:`, error);
+        console.error(`❌ Error guardando pedido de prueba ${i + 1}:`, error);
       }
     }
 

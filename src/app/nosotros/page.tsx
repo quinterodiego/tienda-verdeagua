@@ -14,7 +14,7 @@ export default function NosotrosPage() {
               Sobre Verde Agua Personalizados
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-90">
-              Tu aliado en productos escolares personalizados desde 2020
+              Tu aliado en productos personalizados desde 2020
             </p>
           </div>
         </div>
@@ -27,15 +27,37 @@ export default function NosotrosPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">
               Nuestra Historia
             </h2>
-            <p className="text-lg text-gray-700 mb-6">
-              Verde Agua Personalizados nació de la pasión por hacer que cada estudiante pueda expresar su personalidad 
-              a través de sus útiles escolares. Comenzamos como un pequeño emprendimiento familiar y hoy 
-              somos una empresa consolidada que atiende a estudiantes de todo el país.
-            </p>
-            <p className="text-lg text-gray-700 mb-6">
-              Creemos que los productos personalizados no solo son más atractivos, sino que también 
-              crean un vínculo emocional que motiva a los estudiantes en su día a día académico.
-            </p>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">El Comienzo</h3>
+                <p className="text-lg text-gray-700">
+                  Con una pequeña inversión y un gran sueño, Julieta comenzó a diseñar anotadores, etiquetas candy bar, 
+                  y tarjetas personales desde la comodidad de su hogar. Su primer cliente fue una amiga cercana que 
+                  deseaba hacer de la fiesta de cumpleaños de su hija un evento inolvidable. La atención al detalle 
+                  y la calidad de los productos hicieron que la voz se corriera rápidamente.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Crecimiento y Diversificación</h3>
+                <p className="text-lg text-gray-700">
+                  A medida que aumentaba la demanda, Verde Agua Personalizados expandió su catálogo para incluir 
+                  vinilos decorativos, souvenirs personalizados, y una línea completa de productos escolares. 
+                  Cada artículo es diseñado con amor y cuidado, asegurando que cada cliente reciba exactamente 
+                  lo que imaginó, o incluso algo mejor.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Nuestro Compromiso</h3>
+                <p className="text-lg text-gray-700">
+                  En Verde Agua Personalizados, creemos que cada ocasión merece un toque especial. Nos dedicamos 
+                  a escuchar a nuestros clientes y trabajar mano a mano con ellos para crear productos que no solo 
+                  cumplan, sino que superen sus expectativas. Nuestra misión es brindar productos únicos que 
+                  reflejen la personalidad y el estilo de cada individuo.
+                </p>
+              </div>
+            </div>
             <div className="flex items-center space-x-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#68c3b7]">5000+</div>
