@@ -7,6 +7,7 @@ import {
   addAdminProductToSheets, 
   updateAdminProductInSheets, 
   deleteAdminProductFromSheets,
+  permanentlyDeleteAdminProductFromSheets,
   AdminProduct 
 } from '@/lib/admin-products-sheets';
 

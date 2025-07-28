@@ -709,7 +709,7 @@ function ProductsContent({
   });
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar "${productName}"?`)) {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar "${productName}"? (Esto solo lo marcará como inactivo)`)) {
       try {
         const response = await fetch(`/api/admin/products`, {
           method: 'DELETE',
@@ -728,6 +728,31 @@ function ProductsContent({
       } catch (error) {
         console.error('Error al eliminar producto:', error);
         addNotification('Error al eliminar producto', 'error');
+      }
+    }
+  };
+
+  const handlePermanentDeleteProduct = async (productId: string, productName: string) => {
+    if (window.confirm(`⚠️ ELIMINACIÓN DEFINITIVA ⚠️\n\n¿Estás COMPLETAMENTE seguro de que quieres eliminar DEFINITIVAMENTE "${productName}"?\n\nEsta acción NO SE PUEDE DESHACER y el producto será eliminado permanentemente de la base de datos.`)) {
+      if (window.confirm(`CONFIRMACIÓN FINAL:\n\nEscribe "ELIMINAR" si realmente quieres eliminar "${productName}" para siempre:`)) {
+        try {
+          const response = await fetch(`/api/admin/products/${productId}/permanent-delete`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al eliminar producto definitivamente');
+          }
+
+          addNotification('Producto eliminado DEFINITIVAMENTE', 'success');
+          await onReloadData(); // Recargar datos después de eliminar
+        } catch (error) {
+          console.error('Error al eliminar producto definitivamente:', error);
+          addNotification('Error al eliminar producto definitivamente', 'error');
+        }
       }
     }
   };
@@ -891,10 +916,17 @@ function ProductsContent({
                         </button>
                         <button 
                           onClick={() => handleDeleteProduct(product.id, product.name)}
-                          className="text-red-600 hover:text-red-900 p-1"
-                          title="Eliminar producto"
+                          className="text-yellow-600 hover:text-yellow-800 p-1"
+                          title="Desactivar producto (eliminar temporalmente)"
                         >
                           <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handlePermanentDeleteProduct(product.id, product.name)}
+                          className="text-red-600 hover:text-red-900 p-1"
+                          title="⚠️ ELIMINAR DEFINITIVAMENTE (no se puede deshacer)"
+                        >
+                          <Trash2 className="w-4 h-4 fill-current" />
                         </button>
                       </div>
                     </td>

@@ -213,6 +213,54 @@ export async function deleteAdminProductFromSheets(productId: string): Promise<b
   }
 }
 
+// Función para eliminar un producto DEFINITIVAMENTE (hard delete)
+export async function permanentlyDeleteAdminProductFromSheets(productId: string): Promise<boolean> {
+  try {
+    console.log('🗑️ Eliminando producto DEFINITIVAMENTE:', productId);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los productos para encontrar la fila
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!A2:P`,
+    });
+
+    const rows = response.data.values || [];
+    const productRowIndex = rows.findIndex(row => row[0] === productId);
+    
+    if (productRowIndex === -1) {
+      console.error('Producto no encontrado para eliminar:', productId);
+      return false;
+    }
+
+    // Eliminar la fila físicamente
+    const deleteRequest = {
+      requests: [{
+        deleteDimension: {
+          range: {
+            sheetId: 0, // ID de la hoja (generalmente 0 para la primera hoja)
+            dimension: 'ROWS',
+            startIndex: productRowIndex + 1, // +1 porque el índice incluye los encabezados
+            endIndex: productRowIndex + 2, // +2 para eliminar solo esta fila
+          },
+        },
+      }],
+    };
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: deleteRequest,
+    });
+
+    console.log('✅ Producto eliminado DEFINITIVAMENTE de Google Sheets:', productId);
+    return true;
+  } catch (error) {
+    console.error('❌ Error al eliminar producto definitivamente:', error);
+    return false;
+  }
+}
+
 // Función para migrar productos del admin-store a Google Sheets
 export async function migrateAdminProductsToSheets(): Promise<boolean> {
   try {
