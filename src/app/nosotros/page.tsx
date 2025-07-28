@@ -7,7 +7,7 @@ export default function NosotrosPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#68c3b7] to-purple-600 text-white">
+      <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -107,7 +107,7 @@ export default function NosotrosPage() {
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Award className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Calidad</h3>
@@ -127,7 +127,7 @@ export default function NosotrosPage() {
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Truck className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Compromiso</h3>
@@ -162,7 +162,7 @@ export default function NosotrosPage() {
           </div>
           
           <div className="text-center">
-            <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-white font-bold text-xl">2</span>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Producción</h3>

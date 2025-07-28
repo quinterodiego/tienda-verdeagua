@@ -60,7 +60,7 @@ export default function SearchFilters({
             <select
               value={filters.category}
               onChange={(e) => onFilterChange('category', e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="text-gray-600 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>
@@ -111,7 +111,7 @@ export default function SearchFilters({
                 type="number"
                 value={filters.minPrice}
                 onChange={(e) => onFilterChange('minPrice', Number(e.target.value))}
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="$0"
               />
             </div>
@@ -121,7 +121,7 @@ export default function SearchFilters({
                 type="number"
                 value={filters.maxPrice}
                 onChange={(e) => onFilterChange('maxPrice', Number(e.target.value))}
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-1 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="$10000"
               />
             </div>

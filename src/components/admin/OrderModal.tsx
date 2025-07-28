@@ -13,6 +13,7 @@ interface OrderModalProps {
 
 const statusInfo = {
   pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  confirmed: { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
   processing: { label: 'Procesando', color: 'bg-teal-100 text-teal-800', icon: Package },
   shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
   delivered: { label: 'Entregado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
@@ -21,6 +22,7 @@ const statusInfo = {
 
 const statusOptions: Array<{ value: Order['status']; label: string }> = [
   { value: 'pending', label: 'Pendiente' },
+  { value: 'confirmed', label: 'Confirmado' },
   { value: 'processing', label: 'Procesando' },
   { value: 'shipped', label: 'Enviado' },
   { value: 'delivered', label: 'Entregado' },
@@ -109,9 +111,10 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-lg font-medium text-gray-900 mb-3">Dirección de Envío</h3>
               <div className="text-sm text-gray-900">
-                <p>{order.shippingAddress.street}</p>
+                <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                <p>{order.shippingAddress.address}</p>
                 <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
-                <p>{order.shippingAddress.country}</p>
+                <p>Teléfono: {order.shippingAddress.phone}</p>
               </div>
             </div>
           )}
@@ -188,7 +191,7 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as Order['status'])}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>

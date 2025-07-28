@@ -347,7 +347,7 @@ export default function Header() {
               placeholder="Buscar agendas, tazas, llaveros, stickers y más..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-lg shadow-sm"
+              className="text-gray-600 w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-lg shadow-sm"
             />
             <button
               type="submit"

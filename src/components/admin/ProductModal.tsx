@@ -118,7 +118,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
+                className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Ej: iPhone 15 Pro"
@@ -134,7 +134,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 type="text"
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
+                className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.sku ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Ej: IPH15P-001"
@@ -150,7 +150,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
             <textarea
               rows={3}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}                className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.description ? 'border-red-500' : 'border-gray-300'
                 }`}
               placeholder="Descripción detallada del producto"
@@ -170,7 +170,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
+                className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.price ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -190,7 +190,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                   ...formData, 
                   originalPrice: e.target.value ? parseFloat(e.target.value) : undefined 
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Para descuentos"
               />
             </div>
@@ -204,7 +204,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 min="0"
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
+                className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.stock ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
@@ -221,7 +221,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -239,7 +239,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 type="text"
                 value={formData.subcategory}
                 onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Ej: Pro Max"
               />
             </div>
@@ -252,7 +252,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 type="text"
                 value={formData.brand}
                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Ej: Apple"
               />
             </div>
@@ -281,7 +281,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               type="text"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               placeholder="nuevo, premium, oferta (separadas por comas)"
             />
             <p className="text-xs text-gray-500 mt-1">Separa las etiquetas con comas</p>

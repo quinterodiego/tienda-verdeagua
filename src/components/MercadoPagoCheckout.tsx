@@ -297,7 +297,7 @@ export default function MercadoPagoCheckoutPage() {
                     name="firstName"
                     value={form.firstName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg border ${
+                    className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                       errors.firstName ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Tu nombre"
@@ -316,7 +316,7 @@ export default function MercadoPagoCheckoutPage() {
                     name="lastName"
                     value={form.lastName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg border ${
+                    className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                       errors.lastName ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Tu apellido"
@@ -335,7 +335,7 @@ export default function MercadoPagoCheckoutPage() {
                     name="email"
                     value={form.email}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg border ${
+                    className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="tu@email.com"
@@ -354,7 +354,7 @@ export default function MercadoPagoCheckoutPage() {
                     name="phone"
                     value={form.phone}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg border ${
+                    className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                       errors.phone ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="1234567890"
@@ -385,7 +385,7 @@ export default function MercadoPagoCheckoutPage() {
                     name="address"
                     value={form.address}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-lg border ${
+                    className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                       errors.address ? 'border-red-300' : 'border-gray-300'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Calle y número"
@@ -405,7 +405,7 @@ export default function MercadoPagoCheckoutPage() {
                       name="city"
                       value={form.city}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${
+                      className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                         errors.city ? 'border-red-300' : 'border-gray-300'
                       } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       placeholder="Tu ciudad"
@@ -424,7 +424,7 @@ export default function MercadoPagoCheckoutPage() {
                       name="state"
                       value={form.state}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${
+                      className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                         errors.state ? 'border-red-300' : 'border-gray-300'
                       } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       placeholder="Provincia"
@@ -443,7 +443,7 @@ export default function MercadoPagoCheckoutPage() {
                       name="zipCode"
                       value={form.zipCode}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${
+                      className={`text-gray-600 w-full px-4 py-3 rounded-lg border ${
                         errors.zipCode ? 'border-red-300' : 'border-gray-300'
                       } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       placeholder="1234"

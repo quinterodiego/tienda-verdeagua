@@ -49,7 +49,7 @@ export default function CloudinarySetup() {
                 type="text"
                 value={credentials.cloudName}
                 onChange={(e) => setCredentials({...credentials, cloudName: e.target.value})}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="tu-cloud-name"
               />
               <button
@@ -70,7 +70,7 @@ export default function CloudinarySetup() {
                 type="text"
                 value={credentials.apiKey}
                 onChange={(e) => setCredentials({...credentials, apiKey: e.target.value})}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="123456789012345"
               />
               <button
@@ -91,7 +91,7 @@ export default function CloudinarySetup() {
                 type={showSecret ? "text" : "password"}
                 value={credentials.apiSecret}
                 onChange={(e) => setCredentials({...credentials, apiSecret: e.target.value})}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="abcd1234567890"
               />
               <button

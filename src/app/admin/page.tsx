@@ -573,10 +573,10 @@ function DashboardContent({
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           const colorClasses = {
-            blue: 'bg-[#68c3b7] text-white',
-            green: 'bg-green-500 text-green-100',
-            purple: 'bg-purple-500 text-purple-100',
-            yellow: 'bg-yellow-500 text-yellow-100'
+            blue: 'bg-blue-400 text-white',
+            green: 'bg-[#68c3b7]  text-white',
+            purple: 'bg-purple-500  text-white',
+            yellow: 'bg-amber-400  text-white'
           };
 
           return (
@@ -842,7 +842,7 @@ function ProductsContent({
                 placeholder="Buscar productos por nombre, descripción o SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
           </div>
@@ -850,7 +850,7 @@ function ProductsContent({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
             >
               {categories.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -1096,7 +1096,7 @@ function OrdersContent({
                 placeholder="Buscar por ID, cliente o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
           </div>
@@ -1104,7 +1104,7 @@ function OrdersContent({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -1344,7 +1344,7 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManage
                 placeholder="Buscar por nombre o email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
           </div>
@@ -1352,7 +1352,7 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManage
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
             >
               <option value="all">Todos los roles</option>
               <option value="admin">Administradores</option>
@@ -1602,7 +1602,7 @@ function SettingsContent() {
                 type="text"
                 value={localSettings.storeName}
                 onChange={(e) => handleInputChange('storeName', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
             <div>
@@ -1613,7 +1613,7 @@ function SettingsContent() {
                 type="email"
                 value={localSettings.contactEmail}
                 onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
             <div>
@@ -1624,7 +1624,7 @@ function SettingsContent() {
                 rows={3}
                 value={localSettings.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
             <div>
@@ -1634,7 +1634,7 @@ function SettingsContent() {
               <select
                 value={localSettings.currency}
                 onChange={(e) => handleInputChange('currency', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               >
                 <option value="EUR">Euro (€)</option>
                 <option value="USD">Dólar ($)</option>
@@ -1704,7 +1704,7 @@ function SettingsContent() {
                 min="0"
                 value={localSettings.shippingCost}
                 onChange={(e) => handleInputChange('shippingCost', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
             <div>
@@ -1717,7 +1717,7 @@ function SettingsContent() {
                 min="0"
                 value={localSettings.freeShippingThreshold}
                 onChange={(e) => handleInputChange('freeShippingThreshold', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
             <div>
@@ -1731,7 +1731,7 @@ function SettingsContent() {
                 max="100"
                 value={localSettings.taxRate}
                 onChange={(e) => handleInputChange('taxRate', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               />
             </div>
           </div>
