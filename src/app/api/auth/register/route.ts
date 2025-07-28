@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerUserWithCredentials, getUserWithCredentialsFromSheets } from '@/lib/users-sheets';
+import { registerUserWithCredentials, getUserFromSheets } from '@/lib/users-sheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = await getUserWithCredentialsFromSheets(email);
+    const existingUser = await getUserFromSheets(email);
     if (existingUser) {
       return NextResponse.json(
         { error: 'Ya existe una cuenta con este email' },
