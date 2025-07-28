@@ -14,7 +14,7 @@ const getUserRole = (email: string): UserRole => {
 };
 
 // Función para guardar/actualizar un usuario en Google Sheets
-export async function saveUserToSheets(user: Omit<User, 'id'>): Promise<boolean> {
+export async function saveUserToSheets(user: Omit<User, 'id'>, providedId?: string): Promise<string | null> {
   try {
     console.log('📝 saveUserToSheets iniciado para:', user.email);
     
@@ -32,30 +32,31 @@ export async function saveUserToSheets(user: Omit<User, 'id'>): Promise<boolean>
         image: user.image,
         updatedAt: new Date().toISOString()
       });
-      return true;
+      return existingUser.id;
     }
 
     console.log('➕ Usuario nuevo, creando en Sheets...');
 
-    // Generar ID único para el usuario
-    const userId = `USER-${Date.now()}`;
+    // Usar ID proporcionado o generar uno nuevo
+    const userId = providedId || `USER-${Date.now()}`;
 
     const values = [[
       userId,                         // A: ID
       user.name,                      // B: Nombre
       user.email,                     // C: Email
-      user.image || '',               // D: Imagen
-      user.role || getUserRole(user.email), // E: Rol
-      user.password || '',            // F: Password (hasheado)
-      user.createdAt || new Date().toISOString(), // G: Fecha Creación
-      user.updatedAt || '',           // H: Fecha Actualización
+      user.role || getUserRole(user.email), // D: Rol
+      user.createdAt || new Date().toISOString(), // E: Fecha Registro
+      '',                             // F: Último Login (vacío inicialmente)
+      'TRUE',                         // G: Activo (por defecto TRUE)
+      '0',                            // H: Cantidad Pedidos (inicial 0)
+      '0',                            // I: Total Gastado (inicial 0)
     ]];
 
-    console.log('📤 Enviando datos a Google Sheets:', values.map(row => [...row.slice(0, 5), '***', ...row.slice(6)])); // Ocultar password en logs
+    console.log('📤 Enviando datos a Google Sheets (Users):', values[0].slice(0, 5)); // Solo mostrar primeros 5 campos
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A:H`,
+      range: `${SHEET_NAMES.USERS}!A:I`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -63,10 +64,10 @@ export async function saveUserToSheets(user: Omit<User, 'id'>): Promise<boolean>
     });
 
     console.log('✅ Usuario guardado exitosamente en Sheets:', user.email);
-    return true;
+    return userId;
   } catch (error) {
     console.error('❌ Error al guardar usuario en Sheets:', error);
-    return false;
+    return null;
   }
 }
 
@@ -77,7 +78,7 @@ export async function getUserFromSheets(email: string): Promise<User | null> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A2:H`, // Desde la fila 2 (sin encabezados)
+      range: `${SHEET_NAMES.USERS}!A2:I`, // Desde la fila 2 (sin encabezados) hasta columna I
     });
 
     const rows = response.data.values || [];
@@ -93,11 +94,12 @@ export async function getUserFromSheets(email: string): Promise<User | null> {
       id: userRow[0] || '',
       name: userRow[1] || '',
       email: userRow[2] || '',
-      image: userRow[3] || undefined,
-      role: (userRow[4] as UserRole) || 'user',
-      password: userRow[5] || undefined,
-      createdAt: userRow[6] || new Date().toISOString(),
-      updatedAt: userRow[7] || undefined,
+      role: (userRow[3] as UserRole) || 'user',
+      createdAt: userRow[4] || new Date().toISOString(),
+      updatedAt: userRow[5] || undefined, // Último Login como updatedAt
+      // Los campos imagen y password no están en la hoja Users ahora
+      image: undefined,
+      password: undefined,
     };
   } catch (error) {
     console.error('Error al obtener usuario:', error);
@@ -113,7 +115,7 @@ export async function updateUserInSheets(userId: string, updates: Partial<User>)
     // Obtener todos los usuarios para encontrar la fila
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A2:H`,
+      range: `${SHEET_NAMES.USERS}!A2:I`,
     });
 
     const rows = response.data.values || [];
@@ -124,22 +126,23 @@ export async function updateUserInSheets(userId: string, updates: Partial<User>)
       return false;
     }
 
-    // Preparar valores actualizados
+    // Preparar valores actualizados (nueva estructura de 9 columnas)
     const currentRow = rows[userRowIndex];
     const updatedRow = [
       currentRow[0] || userId,                    // A: ID
       updates.name || currentRow[1],              // B: Nombre
       currentRow[2],                              // C: Email (no cambiar)
-      updates.image !== undefined ? updates.image : currentRow[3], // D: Imagen
-      updates.role || currentRow[4],              // E: Rol
-      updates.password || currentRow[5],          // F: Password
-      currentRow[6],                              // G: Fecha Creación (no cambiar)
-      updates.updatedAt || new Date().toISOString(), // H: Fecha Actualización
+      updates.role || currentRow[3],              // D: Rol
+      currentRow[4],                              // E: Fecha Registro (no cambiar)
+      updates.updatedAt || new Date().toISOString(), // F: Último Login
+      currentRow[6] || 'TRUE',                    // G: Activo (mantener)
+      currentRow[7] || '0',                       // H: Cantidad Pedidos (mantener)
+      currentRow[8] || '0',                       // I: Total Gastado (mantener)
     ];
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A${userRowIndex + 2}:H${userRowIndex + 2}`, // +2 porque las filas empiezan en 2
+      range: `${SHEET_NAMES.USERS}!A${userRowIndex + 2}:I${userRowIndex + 2}`, // +2 porque las filas empiezan en 2
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [updatedRow],
@@ -264,77 +267,6 @@ export async function getUserByIdFromSheets(userId: string): Promise<User | null
   }
 }
 
-// Función para registrar usuario con credenciales (email/password)
-export async function registerUserWithCredentials(email: string, password: string, name: string): Promise<User | null> {
-  try {
-    console.log('🔐 Registrando usuario con credenciales:', email);
-    
-    // Verificar si el usuario ya existe
-    const existingUser = await getUserFromSheets(email);
-    if (existingUser) {
-      throw new Error('El usuario ya existe');
-    }
-
-    // Hash del password
-    const hashedPassword = await bcrypt.hash(password, 12);
-    
-    // Determinar rol basado en email
-    const role = getUserRole(email);
-    
-    const newUser: Omit<User, 'id'> = {
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      role,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Guardar en Sheets
-    const success = await saveUserToSheets(newUser);
-    
-    if (success) {
-      // Obtener el usuario recién creado
-      const savedUser = await getUserFromSheets(email);
-      console.log('✅ Usuario registrado exitosamente:', email);
-      return savedUser;
-    }
-    
-    throw new Error('Error al guardar usuario');
-  } catch (error) {
-    console.error('❌ Error al registrar usuario:', error);
-    throw error;
-  }
-}
-
-// Función para verificar credenciales desde Sheets
-export async function verifyCredentialsFromSheets(email: string, password: string): Promise<User | null> {
-  try {
-    console.log('🔐 Verificando credenciales para:', email);
-    
-    const user = await getUserFromSheets(email);
-    if (!user || !user.password) {
-      console.log('❌ Usuario no encontrado o sin password:', email);
-      return null;
-    }
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (isValid) {
-      console.log('✅ Credenciales válidas para:', email);
-      // No devolver el password
-      return {
-        ...user,
-        password: undefined
-      };
-    }
-    
-    console.log('❌ Credenciales inválidas para:', email);
-    return null;
-  } catch (error) {
-    console.error('❌ Error al verificar credenciales:', error);
-    return null;
-  }
-}
-
 // Función para obtener o crear un usuario OAuth
 export async function getOrCreateOAuthUser(email: string, name: string, image?: string): Promise<User | null> {
   try {
@@ -368,9 +300,9 @@ export async function getOrCreateOAuthUser(email: string, name: string, image?: 
     };
 
     // Guardar en Sheets
-    const success = await saveUserToSheets(newUser);
+    const savedUserId = await saveUserToSheets(newUser);
     
-    if (success) {
+    if (savedUserId) {
       const savedUser = await getUserFromSheets(email);
       console.log('✅ Usuario OAuth creado exitosamente:', email);
       return savedUser;
@@ -379,6 +311,154 @@ export async function getOrCreateOAuthUser(email: string, name: string, image?: 
     throw new Error('Error al guardar usuario OAuth');
   } catch (error) {
     console.error('❌ Error al obtener/crear usuario OAuth:', error);
+    return null;
+  }
+}
+
+// Función para guardar credenciales en hoja separada
+export async function saveCredentialsToSheets(userId: string, email: string, hashedPassword: string): Promise<boolean> {
+  try {
+    console.log('🔐 Guardando credenciales para:', email);
+    console.log('📋 UserId:', userId);
+    console.log('📋 Hoja destino:', SHEET_NAMES.CREDENTIALS);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    const values = [[
+      userId,               // A: ID del usuario
+      email,                // B: Email
+      hashedPassword,       // C: Password hasheado
+      new Date().toISOString(), // D: Fecha de creación
+    ]];
+
+    console.log('📤 Enviando credenciales a Google Sheets...');
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.CREDENTIALS}!A:D`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values,
+      },
+    });
+
+    console.log('✅ Credenciales guardadas exitosamente en hoja:', SHEET_NAMES.CREDENTIALS);
+    return true;
+  } catch (error) {
+    console.error('❌ Error al guardar credenciales:', error);
+    return false;
+  }
+}
+
+// Función para obtener credenciales por email
+export async function getCredentialsFromSheets(email: string): Promise<{userId: string, password: string} | null> {
+  try {
+    console.log('🔍 Buscando credenciales para:', email);
+    console.log('📋 Buscando en hoja:', SHEET_NAMES.CREDENTIALS);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.CREDENTIALS}!A2:D`,
+    });
+
+    const rows = response.data.values || [];
+    console.log('📋 Filas encontradas en credentials:', rows.length);
+    
+    const credentialRow = rows.find(row => row[1] === email);
+    
+    if (!credentialRow) {
+      console.log('❌ No se encontraron credenciales para:', email);
+      return null;
+    }
+
+    console.log('✅ Credenciales encontradas para:', email);
+    return {
+      userId: credentialRow[0] || '',
+      password: credentialRow[2] || '',
+    };
+  } catch (error) {
+    console.error('❌ Error al obtener credenciales:', error);
+    return null;
+  }
+}
+
+// Función para registrar usuario con credenciales (email/password)
+export async function registerUserWithCredentials(email: string, password: string, name: string): Promise<User | null> {
+  try {
+    console.log('🔐 Registrando usuario con credenciales:', email);
+    
+    // Verificar si el usuario ya existe
+    const existingUser = await getUserFromSheets(email);
+    if (existingUser) {
+      throw new Error('El usuario ya existe');
+    }
+
+    // Hash del password
+    const hashedPassword = await bcrypt.hash(password, 12);
+    
+    // Determinar rol basado en email
+    const role = getUserRole(email);
+    
+    // Generar ID único para el usuario
+    const userId = `USER-${Date.now()}`;
+    
+    const newUser: Omit<User, 'id'> = {
+      name,
+      email: email.toLowerCase(),
+      role,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Guardar datos del usuario en la hoja principal usando el mismo ID
+    const savedUserId = await saveUserToSheets(newUser, userId);
+    
+    // Guardar credenciales en hoja separada usando el mismo ID
+    const credentialsSaved = await saveCredentialsToSheets(userId, email.toLowerCase(), hashedPassword);
+    
+    if (savedUserId && credentialsSaved) {
+      // Obtener el usuario recién creado
+      const savedUser = await getUserFromSheets(email);
+      console.log('✅ Usuario registrado exitosamente:', email);
+      return savedUser;
+    }
+    
+    throw new Error('Error al guardar usuario o credenciales');
+  } catch (error) {
+    console.error('❌ Error al registrar usuario:', error);
+    throw error;
+  }
+}
+
+// Función para verificar credenciales desde Sheets
+export async function verifyCredentialsFromSheets(email: string, password: string): Promise<User | null> {
+  try {
+    console.log('🔐 Verificando credenciales para:', email);
+    
+    // Obtener credenciales
+    const credentials = await getCredentialsFromSheets(email);
+    if (!credentials || !credentials.password) {
+      console.log('❌ Credenciales no encontradas:', email);
+      return null;
+    }
+
+    // Verificar password
+    const isValid = await bcrypt.compare(password, credentials.password);
+    
+    if (isValid) {
+      // Obtener datos del usuario
+      const user = await getUserFromSheets(email);
+      if (user) {
+        console.log('✅ Credenciales válidas para:', email);
+        return user;
+      }
+    }
+    
+    console.log('❌ Credenciales inválidas para:', email);
+    return null;
+  } catch (error) {
+    console.error('❌ Error al verificar credenciales:', error);
     return null;
   }
 }

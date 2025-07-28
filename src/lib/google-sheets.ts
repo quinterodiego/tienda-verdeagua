@@ -41,6 +41,7 @@ export const SHEET_NAMES = {
   PRODUCTS: 'Productos',
   ORDERS: 'Pedidos',
   USERS: 'Usuarios',
+  CREDENTIALS: 'Credenciales',
 } as const;
 
 // Función para crear las pestañas necesarias si no existen
