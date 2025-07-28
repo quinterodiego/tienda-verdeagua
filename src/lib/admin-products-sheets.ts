@@ -213,6 +213,29 @@ export async function deleteAdminProductFromSheets(productId: string): Promise<b
   }
 }
 
+// Función para obtener el ID de la hoja de productos
+async function getProductsSheetId(): Promise<number> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const sheet = spreadsheet.data.sheets?.find(
+      sheet => sheet.properties?.title === SHEET_NAMES.PRODUCTS
+    );
+
+    if (!sheet || sheet.properties?.sheetId === undefined || sheet.properties.sheetId === null) {
+      throw new Error('No se pudo encontrar la hoja de Productos');
+    }
+
+    return sheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error al obtener ID de la hoja:', error);
+    throw error;
+  }
+}
+
 // Función para eliminar un producto DEFINITIVAMENTE (hard delete)
 export async function permanentlyDeleteAdminProductFromSheets(productId: string): Promise<boolean> {
   try {
@@ -234,19 +257,26 @@ export async function permanentlyDeleteAdminProductFromSheets(productId: string)
       return false;
     }
 
+    // Obtener el ID real de la hoja
+    const sheetId = await getProductsSheetId();
+    console.log('📋 ID de la hoja de productos:', sheetId);
+    console.log('📍 Índice de la fila a eliminar:', productRowIndex + 2); // +2 porque empezamos desde A2
+
     // Eliminar la fila físicamente
     const deleteRequest = {
       requests: [{
         deleteDimension: {
           range: {
-            sheetId: 0, // ID de la hoja (generalmente 0 para la primera hoja)
+            sheetId: sheetId,
             dimension: 'ROWS',
-            startIndex: productRowIndex + 1, // +1 porque el índice incluye los encabezados
+            startIndex: productRowIndex + 1, // +1 porque A2 es índice 1 (A1 son headers)
             endIndex: productRowIndex + 2, // +2 para eliminar solo esta fila
           },
         },
       }],
     };
+
+    console.log('🔄 Ejecutando eliminación con request:', JSON.stringify(deleteRequest, null, 2));
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
@@ -257,6 +287,7 @@ export async function permanentlyDeleteAdminProductFromSheets(productId: string)
     return true;
   } catch (error) {
     console.error('❌ Error al eliminar producto definitivamente:', error);
+    console.error('❌ Detalles del error:', JSON.stringify(error, null, 2));
     return false;
   }
 }

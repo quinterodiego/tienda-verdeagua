@@ -736,6 +736,8 @@ function ProductsContent({
     if (window.confirm(`⚠️ ELIMINACIÓN DEFINITIVA ⚠️\n\n¿Estás COMPLETAMENTE seguro de que quieres eliminar DEFINITIVAMENTE "${productName}"?\n\nEsta acción NO SE PUEDE DESHACER y el producto será eliminado permanentemente de la base de datos.`)) {
       if (window.confirm(`CONFIRMACIÓN FINAL:\n\nEscribe "ELIMINAR" si realmente quieres eliminar "${productName}" para siempre:`)) {
         try {
+          console.log('🗑️ Frontend: Iniciando eliminación definitiva de:', productId);
+          
           const response = await fetch(`/api/admin/products/${productId}/permanent-delete`, {
             method: 'DELETE',
             headers: {
@@ -743,15 +745,23 @@ function ProductsContent({
             },
           });
 
+          console.log('📡 Frontend: Respuesta del servidor:', response.status, response.statusText);
+
           if (!response.ok) {
-            throw new Error('Error al eliminar producto definitivamente');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Frontend: Error del servidor:', errorData);
+            throw new Error(errorData.details || errorData.error || 'Error al eliminar producto definitivamente');
           }
+
+          const result = await response.json();
+          console.log('✅ Frontend: Eliminación exitosa:', result);
 
           addNotification('Producto eliminado DEFINITIVAMENTE', 'success');
           await onReloadData(); // Recargar datos después de eliminar
         } catch (error) {
-          console.error('Error al eliminar producto definitivamente:', error);
-          addNotification('Error al eliminar producto definitivamente', 'error');
+          console.error('❌ Frontend: Error al eliminar producto definitivamente:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+          addNotification(`Error al eliminar producto definitivamente: ${errorMessage}`, 'error');
         }
       }
     }
