@@ -1,5 +1,4 @@
 import { User, UserRole } from '@/types';
-import { getUserFromSheets, hasRole, isAdmin as checkIsAdmin } from './users-sheets';
 
 // Lista de emails de administradores predeterminados (fallback)
 export const ADMIN_EMAILS = [
@@ -15,31 +14,60 @@ export const isAdminEmail = (email: string | null | undefined): boolean => {
   return ADMIN_EMAILS.includes(email);
 };
 
-// Función para verificar si una sesión tiene permisos de admin usando el sistema de roles
+// Función sincrónica para verificar admin (para compatibilidad con componentes existentes)
+export const isAdminUserSync = (session: any): boolean => {
+  return isAdminEmail(session?.user?.email);
+};
+
+// Función para obtener información de rol del usuario usando la API
+export const getUserRoleInfo = async (): Promise<{
+  role: UserRole;
+  isAdmin: boolean;
+  hasModeratorRole: boolean;
+  email: string | null;
+}> => {
+  try {
+    const response = await fetch('/api/auth/user-role', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
+
+    // Fallback en caso de error
+    return {
+      role: 'user',
+      isAdmin: false,
+      hasModeratorRole: false,
+      email: null
+    };
+  } catch (error) {
+    console.error('Error al obtener información de rol:', error);
+    return {
+      role: 'user',
+      isAdmin: false,
+      hasModeratorRole: false,
+      email: null
+    };
+  }
+};
+
+// Función para verificar si una sesión tiene permisos de admin (ahora async usando API)
 export const isAdminUser = async (session: any): Promise<boolean> => {
   if (!session?.user?.email) return false;
   
   try {
-    // Intentar obtener el usuario desde Google Sheets con su rol
-    const user = await getUserFromSheets(session.user.email);
-    
-    if (user) {
-      // Usar el sistema de roles de la base de datos
-      return checkIsAdmin(user);
-    }
-    
-    // Fallback: usar la lista de emails de admin
-    return isAdminEmail(session.user.email);
+    const roleInfo = await getUserRoleInfo();
+    return roleInfo.isAdmin;
   } catch (error) {
-    console.error('Error al verificar admin desde Sheets, usando fallback:', error);
+    console.error('Error al verificar admin, usando fallback:', error);
     // Fallback: usar la lista de emails de admin
     return isAdminEmail(session.user.email);
   }
-};
-
-// Función sincrónica para verificar admin (para compatibilidad con componentes existentes)
-export const isAdminUserSync = (session: any): boolean => {
-  return isAdminEmail(session?.user?.email);
 };
 
 // Función para verificar si un usuario tiene un rol específico
@@ -47,10 +75,10 @@ export const userHasRole = async (session: any, role: UserRole): Promise<boolean
   if (!session?.user?.email) return false;
   
   try {
-    const user = await getUserFromSheets(session.user.email);
-    return user ? hasRole(user, role) : false;
+    const roleInfo = await getUserRoleInfo();
+    return roleInfo.role === role || (role === 'admin' && roleInfo.isAdmin) || (role === 'moderator' && roleInfo.hasModeratorRole);
   } catch (error) {
-    console.error('Error al verificar rol desde Sheets:', error);
+    console.error('Error al verificar rol:', error);
     return false;
   }
 };
@@ -60,10 +88,10 @@ export const getUserRole = async (session: any): Promise<UserRole> => {
   if (!session?.user?.email) return 'user';
   
   try {
-    const user = await getUserFromSheets(session.user.email);
-    return user?.role || 'user';
+    const roleInfo = await getUserRoleInfo();
+    return roleInfo.role;
   } catch (error) {
-    console.error('Error al obtener rol desde Sheets:', error);
+    console.error('Error al obtener rol:', error);
     return isAdminEmail(session.user.email) ? 'admin' : 'user';
   }
 };

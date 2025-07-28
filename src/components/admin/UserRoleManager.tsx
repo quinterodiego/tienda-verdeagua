@@ -2,12 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { User, UserRole } from '@/types';
-import { 
-  getAllUsersFromSheets, 
-  updateUserRoleInSheets,
-  isAdmin,
-  isModerator
-} from '@/lib/users-sheets';
 import { Shield, Users, Crown, Edit, Save, X } from 'lucide-react';
 
 interface UserRoleManagerProps {
@@ -28,8 +22,13 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const allUsers = await getAllUsersFromSheets();
-      setUsers(allUsers);
+      const response = await fetch('/api/admin/user-roles');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users);
+      } else {
+        console.error('Error al cargar usuarios:', response.statusText);
+      }
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
     } finally {
@@ -42,15 +41,24 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
     setEditingRole(user.role);
   };
 
-  const handleSaveRole = async (userId: string) => {
+  const handleSaveRole = async (userEmail: string) => {
     try {
       setUpdating(true);
-      const success = await updateUserRoleInSheets(userId, editingRole);
-      
-      if (success) {
+      const response = await fetch('/api/admin/user-roles', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          role: editingRole,
+        }),
+      });
+
+      if (response.ok) {
         // Actualizar la lista local
         setUsers(users.map(user => 
-          user.id === userId 
+          user.email === userEmail 
             ? { ...user, role: editingRole, updatedAt: new Date().toISOString() }
             : user
         ));
@@ -103,6 +111,10 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
         return 'Usuario';
     }
   };
+
+  // Funciones auxiliares para verificar roles
+  const isAdmin = (user: User): boolean => user.role === 'admin';
+  const isModerator = (user: User): boolean => user.role === 'moderator';
 
   if (loading) {
     return (
@@ -210,7 +222,7 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
                     {editingUserId === user.id ? (
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => handleSaveRole(user.id)}
+                          onClick={() => handleSaveRole(user.email)}
                           disabled={updating}
                           className="p-1 text-green-600 hover:bg-green-100 rounded disabled:opacity-50"
                         >
