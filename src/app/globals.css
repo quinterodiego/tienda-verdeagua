@@ -17,6 +17,25 @@ body {
   font-weight: 400;
 }
 
+/* Cursor pointer para elementos interactivos */
+button, 
+a, 
+[role="button"], 
+[onClick],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Asegurar que los elementos deshabilitados no tengan cursor pointer */
+button:disabled,
+input:disabled,
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
