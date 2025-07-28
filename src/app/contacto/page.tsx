@@ -131,7 +131,7 @@ export default function ContactoPage() {
                     required
                     value={formData.nombre}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                    className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                     placeholder="Tu nombre"
                   />
                 </div>
@@ -146,7 +146,7 @@ export default function ContactoPage() {
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                    className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                     placeholder="Tu teléfono"
                   />
                 </div>
@@ -163,7 +163,7 @@ export default function ContactoPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                   placeholder="tu@email.com"
                 />
               </div>
@@ -178,7 +178,7 @@ export default function ContactoPage() {
                   required
                   value={formData.asunto}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 >
                   <option value="">Selecciona un asunto</option>
                   <option value="consulta-producto">Consulta sobre producto</option>
@@ -200,7 +200,7 @@ export default function ContactoPage() {
                   rows={5}
                   value={formData.mensaje}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                   placeholder="Cuéntanos en qué podemos ayudarte..."
                 />
               </div>

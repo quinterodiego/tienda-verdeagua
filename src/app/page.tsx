@@ -141,60 +141,60 @@ function HomeContent() {
 
             {/* Search Filters */}
             <div className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
-            <div className="flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Buscar productos..."
-                value={filters.query}
-                onChange={(e) => updateFilter('query', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
+                <div className="flex-1 max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Buscar productos..."
+                    value={filters.query}
+                    onChange={(e) => updateFilter('query', e.target.value)}
+                    className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                >
+                  {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
+                </button>
+              </div>
+
+              {showAdvancedFilters && (
+                <SearchFilters
+                  filters={filters}
+                  onFilterChange={updateFilter}
+                  onClearFilters={clearFilters}
+                />
+              )}
+
+              {/* Active Filters */}
+              <ActiveFilters
+                filters={filters}
+                onRemoveFilter={removeFilter}
+                onClearAll={clearFilters}
               />
+
+              {(filters.query || filters.minPrice > 0 || filters.maxPrice < 10000 || filters.rating > 0 || filters.inStock) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                  <span>Mostrando {finalFilteredProducts.length} de {products.length} productos</span>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-            >
-              {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
-            </button>
-          </div>
 
-          {showAdvancedFilters && (
-            <SearchFilters
-              filters={filters}
-              onFilterChange={updateFilter}
-              onClearFilters={clearFilters}
-            />
-          )}
-
-          {/* Active Filters */}
-          <ActiveFilters
-            filters={filters}
-            onRemoveFilter={removeFilter}
-            onClearAll={clearFilters}
-          />
-
-          {(filters.query || filters.minPrice > 0 || filters.maxPrice < 10000 || filters.rating > 0 || filters.inStock) && (
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-              <span>Mostrando {finalFilteredProducts.length} de {products.length} productos</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {finalFilteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
-          )}
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {finalFilteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {finalFilteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              No se encontraron productos con los filtros aplicados.
-            </p>
-          </div>
-        )}
-        </>
+            {finalFilteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">
+                  No se encontraron productos con los filtros aplicados.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>

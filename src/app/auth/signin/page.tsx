@@ -271,7 +271,7 @@ function SignInContent() {
                       onChange={handleInputChange}
                       placeholder="Tu nombre completo"
                       required={!isLogin}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                      className="text-gray-600 w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -290,7 +290,7 @@ function SignInContent() {
                     onChange={handleInputChange}
                     placeholder="tu@email.com"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                    className="text-gray-600 w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                   />
                 </div>
               </div>
@@ -309,7 +309,7 @@ function SignInContent() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                    className="text-gray-600 w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                   />
                   <button
                     type="button"
@@ -336,7 +336,7 @@ function SignInContent() {
                       placeholder="••••••••"
                       required={!isLogin}
                       minLength={6}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                      className="text-gray-600 w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                     />
                   </div>
                 </div>
