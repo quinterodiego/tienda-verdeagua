@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { migrateProductsToSheets } from '@/lib/products-sheets';
-import { migrateUsersToSheets } from '@/lib/users-sheets';
 import { createOrdersSheet } from '@/lib/setup-sheets';
 import { products } from '@/data/products';
 
@@ -9,16 +8,13 @@ export async function POST() {
     // Migrar productos
     const productsSuccess = await migrateProductsToSheets(products);
     
-    // Migrar estructura de usuarios
-    const usersSuccess = await migrateUsersToSheets();
-    
     // Crear estructura de pedidos
     const ordersSuccess = await createOrdersSheet();
     
-    if (productsSuccess && usersSuccess && ordersSuccess) {
+    if (productsSuccess && ordersSuccess) {
       return NextResponse.json({
         success: true,
-        message: 'Migración completada exitosamente. Se crearon las pestañas: Productos, Usuarios y Pedidos con sus respectivos encabezados.'
+        message: 'Migración completada exitosamente. Se crearon las pestañas: Productos y Pedidos con sus respectivos encabezados.'
       });
     } else {
       return NextResponse.json({

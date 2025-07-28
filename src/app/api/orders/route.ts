@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     await saveUserToSheets({
       name: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
       email: session.user?.email || '',
+      role: 'user',
+      createdAt: new Date().toISOString()
     });
 
     // Crear objeto de pedido

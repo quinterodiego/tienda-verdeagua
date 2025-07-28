@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerUserWithCredentials } from '@/lib/users-sheets';
+import { registerUserWithCredentials } from '../../../../lib/users-sheets';
 
 export async function POST(request: NextRequest) {
   try {

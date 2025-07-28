@@ -7,7 +7,12 @@ export async function POST(request: NextRequest) {
     
     console.log('🧪 Test: Guardando usuario:', { name, email });
     
-    const result = await saveUserToSheets({ name, email });
+    const result = await saveUserToSheets({ 
+      name, 
+      email,
+      role: 'user',
+      createdAt: new Date().toISOString()
+    });
     
     return NextResponse.json({
       success: result,
