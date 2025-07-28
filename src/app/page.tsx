@@ -72,12 +72,12 @@ function HomeContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Bienvenido a Verde Agua Personalizados
+              Bienvenidos a Verde Agua Personalizados
             </h1>
-            <p className="text-xl md:text-2xl mb-8 opacity-90">
-              Productos escolares personalizados para hacer únicos tus estudios
+            <p className="text-xl md:text-2xl mb-8 opacity-90 font-medium">
+              Productos personalizados para hacer únicas tus ideas
             </p>
-            <p className="text-lg mb-8 opacity-80">
+            <p className="text-lg mb-8 opacity-80 font-light">
               Agendas, tazas, llaveros, stickers y más con tu toque personal
             </p>
             <button 
@@ -100,7 +100,7 @@ function HomeContent() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Nuestros Productos
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 font-light">
             Descubre la mejor selección de productos personalizados
           </p>
         </div>

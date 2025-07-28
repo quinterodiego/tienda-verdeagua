@@ -110,7 +110,6 @@ export default function AdminPage() {
       const ordersResponse = await fetch('/api/orders');
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
-        console.log('📊 Datos de pedidos cargados:', ordersData.orders?.length || 0, 'pedidos');
         setSheetsOrders(ordersData.orders || []);
       } else {
         console.warn('⚠️ Error al cargar pedidos desde Google Sheets');
@@ -651,7 +650,7 @@ function DashboardContent({
         {/* Resumen de pedidos */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estado de Pedidos</h3>
-          <OrderStatusSummary />
+          <OrderStatusSummary orders={sheetsOrders} />
         </div>
       </div>
     </div>
@@ -659,8 +658,7 @@ function DashboardContent({
 }
 
 // Componente para resumen de estados de pedidos
-function OrderStatusSummary() {
-  const orders = useAdminStore((state) => state.orders);
+function OrderStatusSummary({ orders }: { orders: Order[] }) {
   
   const statusCounts = useMemo(() => {
     return orders.reduce((acc, order) => {
@@ -679,6 +677,12 @@ function OrderStatusSummary() {
 
   return (
     <div className="space-y-3">
+      {orders.length === 0 && (
+        <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+          <p className="text-sm">No hay pedidos registrados aún</p>
+          <p className="text-xs text-gray-400 mt-1">Todos los contadores mostrarán 0</p>
+        </div>
+      )}
       {statusInfo.map((info) => {
         const Icon = info.icon;
         const count = statusCounts[info.status] || 0;
