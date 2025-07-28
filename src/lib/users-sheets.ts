@@ -197,6 +197,25 @@ export async function updateUserRoleInSheets(userId: string, newRole: UserRole):
   }
 }
 
+// Función para actualizar rol de usuario por email
+export async function updateUserRoleByEmailInSheets(email: string, newRole: UserRole): Promise<boolean> {
+  try {
+    const user = await getUserFromSheets(email);
+    if (!user) {
+      console.error('Usuario no encontrado con email:', email);
+      return false;
+    }
+    
+    return await updateUserInSheets(user.id, { 
+      role: newRole,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error al actualizar rol de usuario por email:', error);
+    return false;
+  }
+}
+
 // Verificar si un usuario tiene un rol específico
 export const hasRole = (user: User | null, role: UserRole): boolean => {
   return user?.role === role;
