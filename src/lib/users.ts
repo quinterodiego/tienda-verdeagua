@@ -1,17 +1,15 @@
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
-
-export interface User {
-  id: string;
-  email: string;
-  password: string; // hashed
-  name: string;
-  image?: string;
-  createdAt: string;
-}
+import { User, UserRole } from '@/types';
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+
+// Lista de emails de administradores predeterminados
+const DEFAULT_ADMIN_EMAILS = [
+  'd86webs@gmail.com',
+  // Agrega más emails de administradores aquí
+];
 
 // Asegurarse de que el directorio existe
 const ensureDataDir = () => {
@@ -46,6 +44,11 @@ const saveUsers = (users: User[]) => {
   }
 };
 
+// Determinar el rol de un usuario basado en su email
+const getUserRole = (email: string): UserRole => {
+  return DEFAULT_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+};
+
 // Encontrar usuario por email
 export const findUserByEmail = (email: string): User | null => {
   const users = getUsers();
@@ -65,12 +68,16 @@ export const createUser = async (email: string, password: string, name: string):
     // Hash del password
     const hashedPassword = await bcrypt.hash(password, 12);
     
+    // Determinar rol basado en email
+    const role = getUserRole(email);
+    
     // Crear nuevo usuario
     const newUser: User = {
       id: Date.now().toString(),
       email: email.toLowerCase(),
       password: hashedPassword,
       name,
+      role,
       createdAt: new Date().toISOString(),
     };
 
@@ -91,12 +98,86 @@ export const createUser = async (email: string, password: string, name: string):
 // Verificar credenciales
 export const verifyCredentials = async (email: string, password: string): Promise<User | null> => {
   const user = findUserByEmail(email);
-  if (!user) {
+  if (!user || !user.password) {
     return null;
   }
 
   const isValid = await bcrypt.compare(password, user.password);
   return isValid ? user : null;
+};
+
+// Crear usuario OAuth (sin password)
+export const createOAuthUser = async (email: string, name: string, image?: string): Promise<User> => {
+  const users = getUsers();
+  
+  // Verificar si el usuario ya existe
+  const existingUser = findUserByEmail(email);
+  if (existingUser) {
+    // Actualizar información si es necesario
+    existingUser.name = name;
+    existingUser.image = image;
+    existingUser.updatedAt = new Date().toISOString();
+    saveUsers(users);
+    return existingUser;
+  }
+
+  // Determinar rol basado en email
+  const role = getUserRole(email);
+  
+  // Crear nuevo usuario OAuth
+  const newUser: User = {
+    id: Date.now().toString(),
+    email: email.toLowerCase(),
+    name,
+    image,
+    role,
+    createdAt: new Date().toISOString(),
+  };
+
+  // Guardar usuario
+  users.push(newUser);
+  saveUsers(users);
+
+  return newUser;
+};
+
+// Actualizar rol de usuario
+export const updateUserRole = (userId: string, newRole: UserRole): User | null => {
+  const users = getUsers();
+  const userIndex = users.findIndex(user => user.id === userId);
+  
+  if (userIndex === -1) {
+    return null;
+  }
+
+  users[userIndex].role = newRole;
+  users[userIndex].updatedAt = new Date().toISOString();
+  saveUsers(users);
+  
+  return users[userIndex];
+};
+
+// Obtener todos los usuarios (solo para admins)
+export const getAllUsers = (): User[] => {
+  return getUsers().map(user => ({
+    ...user,
+    password: undefined // No exponer passwords
+  }));
+};
+
+// Verificar si un usuario tiene un rol específico
+export const hasRole = (user: User | null, role: UserRole): boolean => {
+  return user?.role === role;
+};
+
+// Verificar si un usuario es admin
+export const isAdmin = (user: User | null): boolean => {
+  return hasRole(user, 'admin');
+};
+
+// Verificar si un usuario es moderator o admin
+export const isModerator = (user: User | null): boolean => {
+  return user?.role === 'moderator' || isAdmin(user);
 };
 
 // Actualizar usuario

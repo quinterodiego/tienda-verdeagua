@@ -21,6 +21,20 @@ export interface Cart {
   itemCount: number;
 }
 
+// Tipos de roles de usuario
+export type UserRole = 'user' | 'admin' | 'moderator';
+
+export interface User {
+  id: string;
+  email: string;
+  password?: string; // opcional para usuarios OAuth
+  name: string;
+  image?: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Customer {
   id: string;
   name: string;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, findUserByEmail } from '@/lib/users';
+import { registerUserWithCredentials, getUserWithCredentialsFromSheets } from '@/lib/users-sheets';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el usuario ya existe
-    const existingUser = findUserByEmail(email);
+    const existingUser = await getUserWithCredentialsFromSheets(email);
     if (existingUser) {
       return NextResponse.json(
         { error: 'Ya existe una cuenta con este email' },
@@ -48,7 +48,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear usuario
-    const user = await createUser(email.trim().toLowerCase(), password, name.trim());
+    const user = await registerUserWithCredentials(email.trim().toLowerCase(), password, name.trim());
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Error al crear el usuario' },
+        { status: 500 }
+      );
+    }
 
     // Retornar usuario sin password
     const { password: _, ...userWithoutPassword } = user;

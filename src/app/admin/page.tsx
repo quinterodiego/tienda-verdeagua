@@ -23,23 +23,21 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Truck
+  Truck,
+  Shield
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
 import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
+import UserRoleManager from '@/components/admin/UserRoleManager';
 import { useNotifications, NotificationsStore } from '@/lib/store';
-import { ADMIN_EMAILS, isAdminEmail } from '@/lib/admin-config';
+import { isAdminUserSync } from '@/lib/admin-config';
+import { User } from '@/types';
 
-// Interfaz para usuarios de admin desde Google Sheets
-interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  registeredAt: string;
+// Interfaz para usuarios de admin desde Google Sheets (extendida de User)
+interface AdminUser extends User {
   lastLogin?: string;
   isActive: boolean;
   ordersCount: number;
@@ -71,6 +69,8 @@ export default function AdminPage() {
     order?: Order;
   }>({ isOpen: false });
 
+  const [showUserRoleManager, setShowUserRoleManager] = useState(false);
+
   useEffect(() => {
     if (status === 'loading') return;
     
@@ -80,7 +80,7 @@ export default function AdminPage() {
     }
 
     // Verificar si es admin
-    if (!isAdminEmail(session.user?.email)) {
+    if (!isAdminUserSync(session)) {
       router.push('/');
       return;
     }
@@ -159,7 +159,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!session || !isAdminEmail(session.user?.email)) {
+  if (!session || !isAdminUserSync(session)) {
     return null;
   }
 
@@ -217,6 +217,7 @@ export default function AdminPage() {
             sheetsUsers={sheetsUsers}
             dataLoading={dataLoading}
             onReloadData={loadSheetsData}
+            onOpenRoleManager={() => setShowUserRoleManager(true)}
           />
         );
       case 'settings':
@@ -378,6 +379,11 @@ export default function AdminPage() {
           setOrderModal({ isOpen: false });
         }}
       />
+
+      {/* User Role Manager Modal */}
+      {showUserRoleManager && (
+        <UserRoleManager onClose={() => setShowUserRoleManager(false)} />
+      )}
     </div>
   );
 }
@@ -1162,9 +1168,10 @@ interface UsersContentProps {
   sheetsUsers: AdminUser[];
   dataLoading: boolean;
   onReloadData: () => Promise<void>;
+  onOpenRoleManager: () => void;
 }
 
-function UsersContent({ sheetsUsers, dataLoading, onReloadData }: UsersContentProps) {
+function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManager }: UsersContentProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
@@ -1235,8 +1242,19 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData }: UsersContentPr
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
-        <p className="text-gray-600">Administra los usuarios registrados ({sheetsUsers.length} usuarios)</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
+            <p className="text-gray-600">Administra los usuarios registrados ({sheetsUsers.length} usuarios)</p>
+          </div>
+          <button
+            onClick={onOpenRoleManager}
+            className="flex items-center space-x-2 px-4 py-2 bg-[#68c3b7] text-white rounded-lg hover:bg-[#5ab3a7] transition-colors"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Gestionar Roles</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -1332,7 +1350,7 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData }: UsersContentPr
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(user.registeredAt)}
+                    {formatDate(user.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">

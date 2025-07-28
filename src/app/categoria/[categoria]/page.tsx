@@ -1,0 +1,145 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import ProductCard from '@/components/ProductCard';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Product } from '@/types';
+
+export default function CategoriaPage() {
+  const params = useParams();
+  const categoria = params.categoria as string;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Normalizar nombre de categoría para mostrar
+  const getCategoryDisplayName = (cat: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'smartphones': 'Smartphones',
+      'agendas': 'Agendas',
+      'tazas': 'Tazas',
+      'llaveros': 'Llaveros',
+      'stickers': 'Stickers',
+      'laptops': 'Laptops',
+      'tablets': 'Tablets'
+    };
+    return categoryMap[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+  };
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Error al cargar productos');
+        }
+        const allProducts = await response.json();
+        
+        // Filtrar productos por categoría
+        const filteredProducts = allProducts.filter((product: Product) => 
+          product.category.toLowerCase() === categoria.toLowerCase()
+        );
+        
+        setProducts(filteredProducts);
+      } catch (err) {
+        console.error('Error al cargar productos:', err);
+        setError(err instanceof Error ? err.message : 'Error al cargar productos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (categoria) {
+      fetchProducts();
+    }
+  }, [categoria]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+            <span className="ml-2 text-gray-600">Cargando productos...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-red-800">Error</h3>
+            <p className="text-red-700 mt-1">{error}</p>
+            <Link 
+              href="/"
+              className="inline-flex items-center mt-4 text-[#68c3b7] hover:text-[#5ab3a7]"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Link 
+            href="/"
+            className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver a todos los productos
+          </Link>
+          
+          <h1 className="text-3xl font-bold text-gray-900">
+            {getCategoryDisplayName(categoria)}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {products.length} {products.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+          </p>
+        </div>
+
+        {/* Products Grid */}
+        {products.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4m-12 0H4m8 0V9m0 4v4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No hay productos en esta categoría
+            </h3>
+            <p className="text-gray-600 mb-6">
+              No se encontraron productos para la categoría "{getCategoryDisplayName(categoria)}"
+            </p>
+            <Link 
+              href="/"
+              className="inline-flex items-center px-4 py-2 bg-[#68c3b7] text-white rounded-lg hover:bg-[#5ab3a7] transition-colors"
+            >
+              Ver todos los productos
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

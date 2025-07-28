@@ -14,6 +14,24 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
+  // Validar y limpiar la URL de la imagen
+  const getValidImageUrl = (imageUrl: string) => {
+    if (!imageUrl || imageUrl.trim() === '') {
+      return '/placeholder-image.jpg'; // Fallback image
+    }
+    
+    // Si es una URL completa válida, usarla tal como está
+    try {
+      new URL(imageUrl);
+      return imageUrl;
+    } catch {
+      // Si no es una URL válida, asumir que es una ruta relativa
+      return imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    }
+  };
+
+  const imageUrl = getValidImageUrl(product.image);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Evitar navegación cuando se hace clic en el botón
     e.stopPropagation();
@@ -33,11 +51,17 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       <div className="relative aspect-square">
         <Image
-          src={product.image}
+          src={imageUrl}
           alt={product.name}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          unoptimized
+          onError={(e) => {
+            // Fallback si la imagen falla al cargar
+            const target = e.target as HTMLImageElement;
+            target.src = '/placeholder-image.jpg';
+          }}
         />
         {/* Botón de favoritos */}
         <button

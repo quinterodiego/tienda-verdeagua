@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ClientOnly from './ClientOnly';
 import Image from 'next/image';
-import { isAdminUser } from '@/lib/admin-config';
+import { isAdminUserSync } from '@/lib/admin-config';
 
 export default function Header() {
   const { itemCount } = useCartStore();
@@ -20,8 +20,8 @@ export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Verificar si el usuario es administrador
-  const isAdmin = isAdminUser(session);
+  // Verificar si el usuario es administrador (versión sincrónica para componentes)
+  const isAdmin = isAdminUserSync(session);
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -45,13 +45,18 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-[#68c3b7] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
-            </div>
-            <span className="font-bold text-xl text-gray-900">Verde Agua Personalizados</span>
+            <Image
+              src="/logo-horizontal.png" 
+              alt="Verde Agua Personalizados" 
+              width={150}
+              height={40}
+              className="object-contain"
+              priority
+              unoptimized
+            />
           </Link>
 
           {/* Navigation Menu - Desktop */}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Mail, Phone, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -13,8 +14,15 @@ export default function Footer() {
           {/* Company Info */}
           <div className="col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-[#68c3b7] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">V</span>
+              <div className="w-14 h-12 bg-white rounded-full flex items-center justify-center">
+                <Image
+                  src="/logo-solo-img.png" 
+                  alt="Verde Agua Personalizados" 
+                  width={30}
+                  height={30}
+                  priority
+                  unoptimized
+                />
               </div>
               <span className="font-bold text-xl">Verde Agua Personalizados</span>
             </div>

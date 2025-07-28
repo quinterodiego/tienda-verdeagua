@@ -1,7 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { verifyCredentials } from './users';
+import { verifyCredentialsFromSheets } from './users-sheets';
 import { saveUserToSheets } from './users-sheets';
 
 export const authOptions: NextAuthOptions = {
@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await verifyCredentials(credentials.email, credentials.password);
+          const user = await verifyCredentialsFromSheets(credentials.email, credentials.password);
           
           if (user) {
             return {
