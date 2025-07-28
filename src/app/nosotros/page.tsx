@@ -58,7 +58,7 @@ export default function NosotrosPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            {/* <div className="flex items-center space-x-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#68c3b7]">5000+</div>
                 <div className="text-sm text-gray-600">Productos vendidos</div>
@@ -71,7 +71,7 @@ export default function NosotrosPage() {
                 <div className="text-2xl font-bold text-[#68c3b7]">4.8</div>
                 <div className="text-sm text-gray-600">Rating promedio</div>
               </div>
-            </div>
+            </div> */}
           </div>
           <div className="relative">
             <img
