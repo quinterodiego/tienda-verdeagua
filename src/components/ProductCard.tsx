@@ -15,7 +15,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { toggleFavorite, isFavorite } = useFavoritesStore();
 
   // Validar y limpiar la URL de la imagen
-  const getValidImageUrl = (imageUrl: string) => {
+  const getValidImageUrl = (imageOrImages: string | string[]) => {
+    let imageUrl: string;
+    
+    // Si es un array, tomar la primera imagen
+    if (Array.isArray(imageOrImages)) {
+      imageUrl = imageOrImages.length > 0 ? imageOrImages[0] : '';
+    } else {
+      imageUrl = imageOrImages || '';
+    }
+    
     if (!imageUrl || imageUrl.trim() === '') {
       return '/placeholder-image.jpg'; // Fallback image
     }
@@ -30,7 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const imageUrl = getValidImageUrl(product.image);
+  const imageUrl = getValidImageUrl((product as any).images || product.image);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Evitar navegación cuando se hace clic en el botón

@@ -24,17 +24,19 @@ import {
   CheckCircle,
   XCircle,
   Truck,
-  Shield
+  Shield,
+  Tag
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
 import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
+import CategoryModal from '@/components/admin/CategoryModal';
 import UserRoleManager from '@/components/admin/UserRoleManager';
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-config';
-import { User } from '@/types';
+import { User, Category } from '@/types';
 
 // Interfaz para usuarios de admin desde Google Sheets (extendida de User)
 interface AdminUser extends User {
@@ -168,6 +170,7 @@ export default function AdminPage() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'products', label: 'Productos', icon: Package },
+    { id: 'categories', label: 'Categorías', icon: Tag },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'users', label: 'Usuarios', icon: Users },
     { id: 'settings', label: 'Configuración', icon: Settings },
@@ -203,6 +206,10 @@ export default function AdminPage() {
             onReloadData={loadSheetsData}
             onOpenProductModal={(mode, product) => setProductModal({ isOpen: true, mode, product })}
           />
+        );
+      case 'categories':
+        return (
+          <CategoriesContent />
         );
       case 'orders':
         return (
@@ -413,15 +420,40 @@ function DashboardContent({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Calcular pedidos de hoy
     const todayOrders = sheetsOrders.filter(order => {
       const orderDate = new Date(order.createdAt);
       orderDate.setHours(0, 0, 0, 0);
       return orderDate.getTime() === today.getTime();
     }).length;
 
+    // Calcular ingresos del mes actual
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyRevenue = sheetsOrders
+      .filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return order.status === 'delivered' && 
+               orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear;
+      })
+      .reduce((sum, order) => sum + order.total, 0);
+
+    // Calcular ingresos totales (para comparación)
     const totalRevenue = sheetsOrders
       .filter(order => order.status === 'delivered')
       .reduce((sum, order) => sum + order.total, 0);
+
+    // Calcular usuarios nuevos esta semana
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    oneWeekAgo.setHours(0, 0, 0, 0);
+    
+    const newUsersThisWeek = sheetsUsers.filter(user => {
+      const userDate = new Date(user.createdAt);
+      return userDate >= oneWeekAgo;
+    }).length;
 
     const lowStockProducts = sheetsProducts.filter(product => product.stock < 10).length;
 
@@ -451,7 +483,9 @@ function DashboardContent({
       totalOrders: sheetsOrders.length,
       todayOrders,
       totalUsers: sheetsUsers.length,
+      monthlyRevenue,
       totalRevenue,
+      newUsersThisWeek,
       lowStockProducts,
       topProducts
     };
@@ -484,18 +518,18 @@ function DashboardContent({
     { 
       label: 'Usuarios Registrados', 
       value: stats.totalUsers.toString(), 
-      change: '+2 esta semana', 
+      change: `+${stats.newUsersThisWeek} esta semana`, 
       icon: Users, 
       color: 'purple',
-      trend: 'up'
+      trend: stats.newUsersThisWeek > 0 ? 'up' : 'neutral'
     },
     { 
       label: 'Ingresos del Mes', 
-      value: formatCurrency(stats.totalRevenue), 
-      change: `${formatCurrency(stats.totalRevenue)} total`, 
+      value: formatCurrency(stats.monthlyRevenue), 
+      change: `${formatCurrency(stats.totalRevenue)} total histórico`, 
       icon: DollarSign, 
       color: 'yellow',
-      trend: 'up'
+      trend: stats.monthlyRevenue > 0 ? 'up' : 'neutral'
     },
   ];
 
@@ -1809,6 +1843,274 @@ function SettingsContent() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Componente para gestionar categorías
+function CategoriesContent() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categoryModal, setCategoryModal] = useState<{
+    isOpen: boolean;
+    category?: Category | null;
+  }>({ isOpen: false });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterActive, setFilterActive] = useState<boolean | null>(null);
+  const { addNotification } = useNotifications();
+
+  // Cargar categorías
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      } else {
+        addNotification('Error al cargar categorías', 'error');
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+      addNotification('Error al cargar categorías', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Filtrar categorías
+  const filteredCategories = categories.filter(category => {
+    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterActive === null || category.isActive === filterActive;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Crear categoría
+  const handleCreateCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const response = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData),
+      });
+
+      if (response.ok) {
+        addNotification('Categoría creada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al crear categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al crear categoría:', error);
+      addNotification('Error al crear categoría', 'error');
+    }
+  };
+
+  // Actualizar categoría
+  const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
+    try {
+      const response = await fetch('/api/admin/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+
+      if (response.ok) {
+        addNotification('Categoría actualizada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al actualizar categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error);
+      addNotification('Error al actualizar categoría', 'error');
+    }
+  };
+
+  // Eliminar categoría
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin/categories?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        addNotification('Categoría eliminada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al eliminar categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al eliminar categoría:', error);
+      addNotification('Error al eliminar categoría', 'error');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">Gestión de Categorías</h2>
+        <button
+          onClick={() => setCategoryModal({ isOpen: true, category: null })}
+          className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] flex items-center gap-2 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Nueva Categoría
+        </button>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar categorías..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          />
+        </div>
+        <select
+          value={filterActive === null ? 'all' : filterActive.toString()}
+          onChange={(e) => {
+            const value = e.target.value;
+            setFilterActive(value === 'all' ? null : value === 'true');
+          }}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+        >
+          <option value="all">Todas</option>
+          <option value="true">Activas</option>
+          <option value="false">Inactivas</option>
+        </select>
+      </div>
+
+      {/* Lista de categorías */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Slug
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Descripción
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Creada
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCategories.map((category) => (
+                <tr key={category.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <Tag className="w-5 h-5 text-gray-400 mr-3" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {category.name}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
+                      {category.slug}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-600 max-w-xs truncate">
+                      {category.description || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 text-xs font-semibold rounded-full ${
+                      category.isActive
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {category.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {new Date(category.createdAt).toLocaleDateString('es-ES')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setCategoryModal({ isOpen: true, category })}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="text-red-600 hover:text-red-900 p-1 rounded"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {filteredCategories.length === 0 && (
+          <div className="text-center py-12">
+            <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">No hay categorías</p>
+            <p className="text-gray-400">
+              {searchTerm || filterActive !== null 
+                ? 'No se encontraron categorías con los filtros aplicados'
+                : 'Crea tu primera categoría para organizar los productos'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de categoría */}
+      <CategoryModal
+        isOpen={categoryModal.isOpen}
+        onClose={() => setCategoryModal({ isOpen: false })}
+        category={categoryModal.category}
+        onSave={handleCreateCategory}
+        onUpdate={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+      />
     </div>
   );
 }

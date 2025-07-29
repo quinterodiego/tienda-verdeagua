@@ -1,7 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { verifyCredentialsFromSheets } from './users-sheets';
+import { verifyCredentialsFromSheets, getUserFromSheets } from './users-sheets';
 import { saveUserToSheets } from './users-sheets';
 
 export const authOptions: NextAuthOptions = {
@@ -77,6 +77,16 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
+        
+        // Cargar el rol del usuario desde Google Sheets
+        try {
+          const userFromSheets = await getUserFromSheets(session.user.email!);
+          if (userFromSheets) {
+            (session.user as any).role = userFromSheets.role;
+          }
+        } catch (error) {
+          console.error('Error al cargar rol del usuario:', error);
+        }
       }
       return session;
     },

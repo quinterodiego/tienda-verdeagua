@@ -10,6 +10,16 @@ export interface Product {
   reviews?: number;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  slug: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;

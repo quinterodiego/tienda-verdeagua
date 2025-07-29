@@ -55,7 +55,7 @@ export default function CartPage() {
                   <div key={item.product.id} className="flex items-center space-x-4 border-b pb-4">
                     <div className="relative w-20 h-20">
                       <Image
-                        src={item.product.image}
+                        src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
                         alt={item.product.name}
                         fill
                         className="object-cover rounded-md"

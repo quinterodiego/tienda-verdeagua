@@ -47,7 +47,17 @@ export async function getAdminProductsFromSheets(): Promise<AdminProduct[]> {
           originalPrice: row[4] ? parseFloat(row[4]) : undefined,
           category: row[5] || '',
           subcategory: row[6] || '',
-          images: row[7] ? row[7].split(',').map((img: string) => img.trim()) : [row[5] || ''], // Usar imagen básica si no hay imágenes avanzadas
+          images: row[7] ? (() => {
+            const imageField = row[7];
+            // Intentar con el nuevo separador '|' primero, luego con comas como fallback
+            if (imageField.includes('|')) {
+              return imageField.split('|').map((img: string) => img.trim());
+            } else if (imageField.includes(',')) {
+              return imageField.split(',').map((img: string) => img.trim());
+            } else {
+              return [imageField.trim()];
+            }
+          })() : [row[5] || ''], // Usar imagen básica si no hay imágenes avanzadas
           stock: parseInt(row[8]) || 0,
           isActive: row[9] ? (row[9] === 'true' || row[9] === 'TRUE') : true, // Por defecto activo si no se especifica
           sku: row[10] || `SKU-${row[0]}`, // Generar SKU si no existe
@@ -88,7 +98,7 @@ export async function addAdminProductToSheets(product: Omit<AdminProduct, 'id' |
       product.originalPrice || '',
       product.category,
       product.subcategory || '',
-      product.images.join(', '),
+      product.images.join(' | '),
       product.stock,
       product.isActive,
       product.sku,
@@ -148,7 +158,17 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       originalPrice: currentRow[4] ? parseFloat(currentRow[4]) : undefined,
       category: currentRow[5] || '',
       subcategory: currentRow[6] || '',
-      images: currentRow[7] ? currentRow[7].split(',').map((img: string) => img.trim()) : [],
+      images: currentRow[7] ? (() => {
+        const imageField = currentRow[7];
+        // Intentar con el nuevo separador '|' primero, luego con comas como fallback
+        if (imageField.includes('|')) {
+          return imageField.split('|').map((img: string) => img.trim());
+        } else if (imageField.includes(',')) {
+          return imageField.split(',').map((img: string) => img.trim());
+        } else {
+          return [imageField.trim()];
+        }
+      })() : [],
       stock: parseInt(currentRow[8]) || 0,
       isActive: currentRow[9] === 'true' || currentRow[9] === 'TRUE',
       sku: currentRow[10] || '',
@@ -170,7 +190,7 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       updatedProduct.originalPrice || '',
       updatedProduct.category,
       updatedProduct.subcategory || '',
-      updatedProduct.images.join(', '),
+      updatedProduct.images.join(' | '),
       updatedProduct.stock,
       updatedProduct.isActive,
       updatedProduct.sku,

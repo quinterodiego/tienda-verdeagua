@@ -5,6 +5,7 @@ import { isAdminEmail } from '@/lib/admin-config';
 import { migrateAdminProductsToSheets } from '@/lib/admin-products-sheets';
 import { setupAdminUsersHeaders } from '@/lib/admin-users-sheets';
 import { ensureSheetsExist } from '@/lib/google-sheets';
+import { setupCategoriesHeaders } from '@/lib/categories-sheets';
 
 // POST /api/admin/setup - Configurar hojas de Google Sheets para admin
 export async function POST(request: NextRequest) {
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
       sheetsCreated: false,
       productsSetup: false,
       usersSetup: false,
+      categoriesSetup: false,
       errors: [] as string[]
     };
 
@@ -55,7 +57,18 @@ export async function POST(request: NextRequest) {
       results.errors.push(errorMsg);
     }
 
-    const allSuccess = results.sheetsCreated && results.productsSetup && results.usersSetup;
+    try {
+      // 4. Configurar categorías
+      await setupCategoriesHeaders();
+      results.categoriesSetup = true;
+      console.log('✅ Configuración de categorías completada');
+    } catch (error) {
+      const errorMsg = 'Error al configurar categorías';
+      console.error(errorMsg, error);
+      results.errors.push(errorMsg);
+    }
+
+    const allSuccess = results.sheetsCreated && results.productsSetup && results.usersSetup && results.categoriesSetup;
 
     return NextResponse.json({
       success: allSuccess,

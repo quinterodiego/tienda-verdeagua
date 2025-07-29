@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, Plus, Trash2 } from 'lucide-react';
 import { AdminProduct } from '@/lib/admin-store';
+import { Category } from '@/types';
 import ImageUploader from './ImageUploader';
 
 interface ProductModalProps {
@@ -13,33 +14,90 @@ interface ProductModalProps {
   mode: 'create' | 'edit';
 }
 
-const categories = [
-  { value: 'smartphones', label: 'Smartphones' },
-  { value: 'laptops', label: 'Laptops' },
-  { value: 'tablets', label: 'Tablets' },
-  { value: 'audio', label: 'Audio' },
-  { value: 'gaming', label: 'Gaming' },
-  { value: 'wearables', label: 'Wearables' },
-  { value: 'accessories', label: 'Accesorios' }
-];
-
 export default function ProductModal({ isOpen, onClose, onSave, product, mode }: ProductModalProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [formData, setFormData] = useState({
-    name: product?.name || '',
-    description: product?.description || '',
-    price: product?.price || 0,
-    originalPrice: product?.originalPrice || undefined,
-    category: product?.category || 'smartphones',
-    subcategory: product?.subcategory || '',
-    images: product?.images || [''],
-    stock: product?.stock || 0,
-    isActive: product?.isActive ?? true,
-    sku: product?.sku || '',
-    brand: product?.brand || '',
-    tags: product?.tags?.join(', ') || ''
+    name: '',
+    description: '',
+    price: 0,
+    originalPrice: undefined as number | undefined,
+    category: '',
+    subcategory: '',
+    images: [''] as string[],
+    stock: 0,
+    isActive: true,
+    sku: '',
+    brand: '',
+    tags: ''
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Actualizar el formulario cuando cambie el producto o el modo
+  useEffect(() => {
+    if (isOpen) {
+      if (mode === 'edit' && product) {
+        console.log('🔧 ProductModal: Editando producto:', product);
+        setFormData({
+          name: product.name || '',
+          description: product.description || '',
+          price: product.price || 0,
+          originalPrice: product.originalPrice || undefined,
+          category: product.category || 'smartphones',
+          subcategory: product.subcategory || '',
+          images: product.images && product.images.length > 0 ? product.images.filter(img => img.trim()) : [''],
+          stock: product.stock || 0,
+          isActive: product.isActive ?? true,
+          sku: product.sku || '',
+          brand: product.brand || '',
+          tags: product.tags?.join(', ') || ''
+        });
+      } else {
+        console.log('🆕 ProductModal: Creando producto nuevo');
+        // Modo crear - resetear formulario
+        setFormData({
+          name: '',
+          description: '',
+          price: 0,
+          originalPrice: undefined,
+          category: 'smartphones',
+          subcategory: '',
+          images: [''],
+          stock: 0,
+          isActive: true,
+          sku: '',
+          brand: '',
+          tags: ''
+        });
+      }
+      setErrors({});
+    }
+  }, [isOpen, mode, product]);
+
+  // Cargar categorías cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && categories.length === 0) {
+      loadCategories();
+    }
+  }, [isOpen]);
+
+  const loadCategories = async () => {
+    setLoadingCategories(true);
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } else {
+        console.error('Error al cargar categorías');
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -51,6 +109,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
     if (formData.price <= 0) newErrors.price = 'El precio debe ser mayor a 0';
     if (formData.stock < 0) newErrors.stock = 'El stock no puede ser negativo';
     if (!formData.sku.trim()) newErrors.sku = 'El SKU es requerido';
+    if (!formData.category.trim()) newErrors.category = 'Debe seleccionar una categoría';
     if (formData.images.filter(img => img.trim()).length === 0) {
       newErrors.images = 'Debe agregar al menos una imagen';
     }
@@ -222,13 +281,22 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                disabled={loadingCategories}
               >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
+                <option value="">
+                  {loadingCategories ? 'Cargando categorías...' : 'Selecciona una categoría'}
+                </option>
+                {categories
+                  .filter(cat => cat.isActive)
+                  .map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))}
               </select>
+              {errors.category && (
+                <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+              )}
             </div>
 
             <div>

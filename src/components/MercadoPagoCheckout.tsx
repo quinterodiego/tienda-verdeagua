@@ -468,7 +468,7 @@ export default function MercadoPagoCheckoutPage() {
                   <div key={item.product.id} className="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
                       <Image
-                        src={item.product.image}
+                        src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
                         alt={item.product.name}
                         fill
                         className="object-cover"

@@ -8,21 +8,35 @@ export async function getProductsFromSheets(): Promise<Product[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:I`, // Desde la fila 2 (sin encabezados)
+      range: `${SHEET_NAMES.PRODUCTS}!A2:P`, // Usar el mismo rango que admin (16 columnas)
     });
 
     const rows = response.data.values || [];
     
-    const products: Product[] = rows.map((row) => ({
-      id: row[0] || '',
-      name: row[1] || '',
-      description: row[2] || '',
-      price: parseFloat(row[3]) || 0,
-      category: row[4] || '',
-      image: row[5] ? row[5].split(',')[0].trim() : '', // Tomar la primera imagen
-      stock: parseInt(row[6]) || 0,
-      rating: parseFloat(row[7]) || undefined,
-    }));
+    const products: Product[] = rows.map((row) => {
+      // Estructura actualizada para coincidir con admin-products-sheets:
+      // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, etc.
+      
+      return {
+        id: row[0] || '',
+        name: row[1] || '',
+        description: row[2] || '',
+        price: parseFloat(row[3]) || 0,
+        category: row[5] || '', // Columna F (índice 5)
+        image: row[7] ? (() => {
+          const imageField = row[7]; // Columna H (índice 7) - imágenes
+          // Intentar con el nuevo separador '|' primero, luego con comas como fallback
+          if (imageField.includes('|')) {
+            return imageField.split('|')[0].trim();
+          } else if (imageField.includes(',')) {
+            return imageField.split(',')[0].trim();
+          } else {
+            return imageField.trim();
+          }
+        })() : '', // Tomar la primera imagen de la columna H
+        stock: parseInt(row[8]) || 0, // Columna I (índice 8)
+      };
+    }).filter(product => product.id && product.name); // Filtrar productos vacíos
 
     return products;
   } catch (error) {

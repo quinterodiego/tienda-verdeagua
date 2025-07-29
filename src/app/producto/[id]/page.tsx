@@ -112,13 +112,16 @@ export default function ProductPage() {
     }
   };
 
-  // Simular múltiples imágenes para el producto
-  const productImages = [
-    product.image,
-    product.image + '&random=a',
-    product.image + '&random=b',
-    product.image + '&random=c'
-  ];
+  // Usar las imágenes reales del producto si están disponibles
+  const productImages = (() => {
+    const productWithImages = product as any;
+    if (productWithImages.images && Array.isArray(productWithImages.images) && productWithImages.images.length > 0) {
+      return productWithImages.images;
+    }
+    // Fallback: usar solo la imagen individual
+    const mainImage = product.image || '/placeholder-image.jpg';
+    return [mainImage];
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,7 +168,7 @@ export default function ProductPage() {
             
             {/* Thumbnails */}
             <div className="grid grid-cols-4 gap-4">
-              {productImages.map((image, index) => (
+              {productImages.map((image: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -342,7 +345,7 @@ export default function ProductPage() {
                 >
                   <div className="relative aspect-square">
                     <Image
-                      src={relatedProduct.image}
+                      src={(relatedProduct as any).images?.[0] || relatedProduct.image || '/placeholder-image.jpg'}
                       alt={relatedProduct.name}
                       fill
                       className="object-cover"
