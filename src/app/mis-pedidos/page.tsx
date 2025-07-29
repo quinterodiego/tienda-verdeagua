@@ -4,86 +4,15 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-
-// Tipos para los pedidos
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  total: number;
-  items: OrderItem[];
-  shippingAddress: string;
-  paymentMethod: string;
-}
-
-// Datos mock de pedidos (en una aplicación real vendría de una API)
-const mockOrders: Order[] = [
-  {
-    id: 'ORD-001',
-    date: '2024-01-15',
-    status: 'delivered',
-    total: 1299.99,
-    items: [
-      {
-        id: '1',
-        name: 'iPhone 15 Pro',
-        price: 1299.99,
-        quantity: 1,
-        image: '/placeholder-product.jpg'
-      }
-    ],
-    shippingAddress: 'Av. Principal 123, Ciudad',
-    paymentMethod: 'Tarjeta de Crédito **** 1234'
-  },
-  {
-    id: 'ORD-002',
-    date: '2024-01-10',
-    status: 'shipped',
-    total: 899.98,
-    items: [
-      {
-        id: '2',
-        name: 'MacBook Air M2',
-        price: 899.98,
-        quantity: 1,
-        image: '/placeholder-product.jpg'
-      }
-    ],
-    shippingAddress: 'Av. Principal 123, Ciudad',
-    paymentMethod: 'Tarjeta de Débito **** 5678'
-  },
-  {
-    id: 'ORD-003',
-    date: '2024-01-05',
-    status: 'processing',
-    total: 199.99,
-    items: [
-      {
-        id: '3',
-        name: 'AirPods Pro',
-        price: 199.99,
-        quantity: 1,
-        image: '/placeholder-product.jpg'
-      }
-    ],
-    shippingAddress: 'Av. Principal 123, Ciudad',
-    paymentMethod: 'PayPal'
-  }
-];
+import { Order } from '@/types';
 
 // Función para obtener el color del estado
 const getStatusColor = (status: Order['status']) => {
   switch (status) {
     case 'pending':
       return 'text-yellow-600 bg-yellow-50';
+    case 'confirmed':
+      return 'text-blue-600 bg-blue-50';
     case 'processing':
       return 'text-blue-600 bg-blue-50';
     case 'shipped':
@@ -102,6 +31,8 @@ const getStatusIcon = (status: Order['status']) => {
   switch (status) {
     case 'pending':
       return <Clock className="w-4 h-4" />;
+    case 'confirmed':
+      return <CheckCircle2 className="w-4 h-4" />;
     case 'processing':
       return <Package className="w-4 h-4" />;
     case 'shipped':
@@ -120,6 +51,8 @@ const getStatusText = (status: Order['status']) => {
   switch (status) {
     case 'pending':
       return 'Pendiente';
+    case 'confirmed':
+      return 'Confirmado';
     case 'processing':
       return 'Procesando';
     case 'shipped':
@@ -147,12 +80,71 @@ export default function MisPedidosPage() {
       return;
     }
 
-    // Simular carga de pedidos
-    setTimeout(() => {
-      setOrders(mockOrders);
-      setLoading(false);
-    }, 1000);
+    // Cargar pedidos del usuario desde la API
+    loadUserOrders();
   }, [session, status, router]);
+
+  const loadUserOrders = async () => {
+    try {
+      const response = await fetch(`/api/orders?userEmail=${session?.user?.email}`);
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders || []);
+      } else {
+        console.error('Error al cargar pedidos');
+      }
+    } catch (error) {
+      console.error('Error al cargar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    // Confirmar cancelación
+    const confirmed = window.confirm(
+      '¿Estás seguro de que quieres cancelar este pedido?\n\nEsta acción no se puede deshacer.'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'cancelled',
+          notes: 'Pedido cancelado por el usuario'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Actualizar la lista de pedidos localmente
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === orderId 
+              ? { ...order, status: 'cancelled' as const, updatedAt: new Date() }
+              : order
+          )
+        );
+        alert('✅ Pedido cancelado exitosamente');
+      } else {
+        alert(`❌ Error: ${data.error || 'No se pudo cancelar el pedido'}`);
+      }
+    } catch (error) {
+      console.error('Error al cancelar pedido:', error);
+      alert('❌ Error de conexión. Verifica tu internet e inténtalo de nuevo.');
+    }
+  };
+
+  const reorderItems = async (order: Order) => {
+    // Esta función podría agregar los productos del pedido al carrito actual
+    alert('Funcionalidad de "Volver a comprar" en desarrollo');
+  };
 
   if (loading) {
     return (
@@ -244,7 +236,7 @@ export default function MisPedidosPage() {
                         </h3>
                         <div className="flex items-center text-sm text-gray-600 mt-1">
                           <Calendar className="w-4 h-4 mr-1" />
-                          {new Date(order.date).toLocaleDateString('es-ES', {
+                          {new Date(order.createdAt).toLocaleDateString('es-ES', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
@@ -268,17 +260,17 @@ export default function MisPedidosPage() {
                 {/* Productos del pedido */}
                 <div className="p-6">
                   <div className="space-y-4">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-4">
+                    {order.items.map((item, index) => (
+                      <div key={`${order.id}-${index}`} className="flex items-center space-x-4">
                         <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
                           <Package className="w-8 h-8 text-gray-400" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                          <h4 className="font-semibold text-gray-900">{item.product.name}</h4>
                           <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">${item.price.toFixed(2)}</p>
+                          <p className="font-semibold text-gray-900">${item.product.price.toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -289,27 +281,45 @@ export default function MisPedidosPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-gray-600 mb-1">Dirección de envío:</p>
-                        <p className="text-gray-900">{order.shippingAddress}</p>
+                        <p className="text-gray-900">
+                          {order.shippingAddress.firstName} {order.shippingAddress.lastName}<br />
+                          {order.shippingAddress.address}<br />
+                          {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-gray-600 mb-1">Método de pago:</p>
-                        <p className="text-gray-900">{order.paymentMethod}</p>
+                        <p className="text-gray-600 mb-1">Estado del pago:</p>
+                        <p className="text-gray-900">
+                          {order.paymentStatus ? 
+                            order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : 
+                            'No especificado'
+                          }
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Acciones */}
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                    <button className="flex-1 sm:flex-none bg-[#68c3b7] text-white px-6 py-2 rounded-lg hover:bg-[#5bb3a7] transition-colors">
+                    <button 
+                      className="flex-1 sm:flex-none bg-[#68c3b7] text-white px-6 py-2 rounded-lg hover:bg-[#5bb3a7] transition-colors"
+                      onClick={() => alert('Vista de detalles en desarrollo')}
+                    >
                       Ver detalles
                     </button>
                     {order.status === 'delivered' && (
-                      <button className="flex-1 sm:flex-none border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <button 
+                        className="flex-1 sm:flex-none border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        onClick={() => reorderItems(order)}
+                      >
                         Volver a comprar
                       </button>
                     )}
-                    {(order.status === 'pending' || order.status === 'processing') && (
-                      <button className="flex-1 sm:flex-none border border-red-300 text-red-700 px-6 py-2 rounded-lg hover:bg-red-50 transition-colors">
+                    {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing') && (
+                      <button 
+                        className="flex-1 sm:flex-none border border-red-300 text-red-700 px-6 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                        onClick={() => cancelOrder(order.id)}
+                      >
                         Cancelar pedido
                       </button>
                     )}

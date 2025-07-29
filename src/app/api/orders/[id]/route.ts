@@ -81,7 +81,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Estado inválido' }, { status: 400 });
     }
 
-    // En una aplicación real, actualizarías en la base de datos
+    // Importar y usar la función de actualización de Google Sheets
+    const { updateOrderStatus } = await import('@/lib/orders-sheets');
+    
+    // Actualizar en Google Sheets
+    const success = await updateOrderStatus(id, status);
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Error al actualizar el pedido en la base de datos' }, { status: 500 });
+    }
+
     const updatedOrder = {
       id,
       status,
@@ -91,11 +100,12 @@ export async function PATCH(
       updatedAt: new Date().toISOString()
     };
 
-    console.log('Pedido actualizado:', updatedOrder);
+    console.log('Pedido actualizado exitosamente:', updatedOrder);
 
     return NextResponse.json({
       success: true,
-      order: updatedOrder
+      order: updatedOrder,
+      message: 'Pedido actualizado exitosamente'
     });
 
   } catch (error) {
