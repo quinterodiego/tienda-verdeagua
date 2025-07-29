@@ -1937,6 +1937,19 @@ function CategoriesContent() {
 
   // Eliminar categoría
   const handleDeleteCategory = async (id: string) => {
+    // Buscar el nombre de la categoría para mostrarlo en la confirmación
+    const category = categories.find(cat => cat.id === id);
+    const categoryName = category?.name || 'esta categoría';
+    
+    // Mostrar confirmación
+    const confirmed = window.confirm(
+      `¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?\n\nEsta acción no se puede deshacer.`
+    );
+    
+    if (!confirmed) {
+      return; // Si el usuario cancela, no hacer nada
+    }
+
     try {
       const response = await fetch(`/api/admin/categories?id=${id}`, {
         method: 'DELETE',

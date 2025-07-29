@@ -166,6 +166,33 @@ export async function updateCategoryInSheets(id: string, updates: Partial<Omit<C
   }
 }
 
+// Función auxiliar para obtener el sheetId
+async function getSheetId(sheetName: string): Promise<number> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    const response = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const sheet = response.data.sheets?.find(
+      (sheet) => sheet.properties?.title === sheetName
+    );
+
+    const sheetId = sheet?.properties?.sheetId;
+    console.log(`🔍 SheetId para "${sheetName}": ${sheetId}`);
+    
+    if (sheetId === undefined || sheetId === null) {
+      console.error(`❌ No se encontró sheetId para la hoja: ${sheetName}`);
+      throw new Error(`No se encontró sheetId para la hoja: ${sheetName}`);
+    }
+    
+    return sheetId;
+  } catch (error) {
+    console.error('Error al obtener sheetId:', error);
+    throw error;
+  }
+}
+
 // Función para eliminar una categoría
 export async function deleteCategoryFromSheets(id: string): Promise<boolean> {
   try {
@@ -186,17 +213,20 @@ export async function deleteCategoryFromSheets(id: string): Promise<boolean> {
       return false;
     }
 
-    // Eliminar la fila (rowIndex + 2 porque empezamos en A2)
+    // Obtener el sheetId correcto
+    const sheetId = await getSheetId(sheetName);
+
+    // Eliminar la fila (rowIndex + 2 porque empezamos en A2, pero batchUpdate es 0-indexed)
     const deleteRequest = {
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
         requests: [{
           deleteDimension: {
             range: {
-              sheetId: 0, // Asumiendo que es la primera hoja, ajustar si es necesario
+              sheetId: sheetId,
               dimension: 'ROWS',
-              startIndex: rowIndex + 1, // +1 porque las filas son 0-indexed pero empezamos en fila 2
-              endIndex: rowIndex + 2,
+              startIndex: rowIndex + 1, // +1 porque hay encabezados en fila 1
+              endIndex: rowIndex + 2,   // +2 para eliminar solo esa fila
             },
           },
         }],
