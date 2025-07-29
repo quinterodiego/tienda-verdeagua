@@ -750,23 +750,42 @@ function ProductsContent({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categoriesForFilter, setCategoriesForFilter] = useState<{value: string, label: string}[]>([
+    { value: 'all', label: 'Todas las categorías' }
+  ]);
   // Comentado: const products = useAdminStore((state) => state.products); // Ya no usamos el store local
   // Comentado: const deleteProduct = useAdminStore((state) => state.deleteProduct); // Ya no usamos el store local
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
   
   // Usar sheetsProducts en lugar del store local
   const products = sheetsProducts;
-  
-  const categories = [
-    { value: 'all', label: 'Todas las categorías' },
-    { value: 'smartphones', label: 'Smartphones' },
-    { value: 'laptops', label: 'Laptops' },
-    { value: 'tablets', label: 'Tablets' },
-    { value: 'audio', label: 'Audio' },
-    { value: 'gaming', label: 'Gaming' },
-    { value: 'wearables', label: 'Wearables' },
-    { value: 'accessories', label: 'Accesorios' }
-  ];
+
+  // Cargar categorías para el filtro
+  useEffect(() => {
+    const loadCategoriesForFilter = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          const categories = data.categories || [];
+          const categoryOptions = [
+            { value: 'all', label: 'Todas las categorías' },
+            ...categories
+              .filter((cat: any) => cat.isActive)
+              .map((cat: any) => ({
+                value: cat.slug,
+                label: cat.name
+              }))
+          ];
+          setCategoriesForFilter(categoryOptions);
+        }
+      } catch (error) {
+        console.error('Error al cargar categorías para filtro:', error);
+      }
+    };
+
+    loadCategoriesForFilter();
+  }, []);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -886,7 +905,7 @@ function ProductsContent({
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
             >
-              {categories.map((cat) => (
+              {categoriesForFilter.map((cat: {value: string, label: string}) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}
                 </option>
@@ -1866,7 +1885,7 @@ function CategoriesContent() {
       const response = await fetch('/api/categories');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        setCategories(data.categories || []);
       } else {
         addNotification('Error al cargar categorías', 'error');
       }
