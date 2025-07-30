@@ -25,7 +25,8 @@ import {
   XCircle,
   Truck,
   Shield,
-  Tag
+  Tag,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
@@ -34,6 +35,7 @@ import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
 import CategoryModal from '@/components/admin/CategoryModal';
 import UserRoleManager from '@/components/admin/UserRoleManager';
+import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel';
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-config';
 import { User, Category } from '@/types';
@@ -173,6 +175,7 @@ export default function AdminPage() {
     { id: 'categories', label: 'Categorías', icon: Tag },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'users', label: 'Usuarios', icon: Users },
+    { id: 'test-payments', label: 'Pagos de Prueba', icon: CreditCard },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -229,6 +232,8 @@ export default function AdminPage() {
             onOpenRoleManager={() => setShowUserRoleManager(true)}
           />
         );
+      case 'test-payments':
+        return <MercadoPagoTestPanel />;
       case 'settings':
         return <SettingsContent />;
       default:
@@ -350,17 +355,32 @@ export default function AdminPage() {
         onClose={() => setProductModal({ isOpen: false, mode: 'create' })}
         onSave={async (productData) => {
           try {
+            // Para el modo de edición, agregar el ID del producto
+            const requestData = productModal.mode === 'edit' && productModal.product
+              ? { ...productData, id: productModal.product.id }
+              : productData;
+
+            console.log('📤 Enviando datos del producto:', {
+              mode: productModal.mode,
+              data: requestData
+            });
+
             const response = await fetch('/api/admin/products', {
               method: productModal.mode === 'create' ? 'POST' : 'PUT',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify(productData),
+              body: JSON.stringify(requestData),
             });
 
             if (!response.ok) {
-              throw new Error(`Error al ${productModal.mode === 'create' ? 'crear' : 'actualizar'} producto`);
+              const errorData = await response.text();
+              console.error('❌ Error response:', errorData);
+              throw new Error(`Error al ${productModal.mode === 'create' ? 'crear' : 'actualizar'} producto: ${errorData}`);
             }
+
+            const result = await response.json();
+            console.log('✅ Producto guardado exitosamente:', result);
 
             addNotification(
               `Producto ${productModal.mode === 'create' ? 'creado' : 'actualizado'} exitosamente`, 
@@ -370,7 +390,7 @@ export default function AdminPage() {
             setProductModal({ isOpen: false, mode: 'create' });
           } catch (error) {
             console.error('Error al guardar producto:', error);
-            addNotification('Error al guardar producto', 'error');
+            addNotification(`Error al guardar producto: ${error instanceof Error ? error.message : 'Error desconocido'}`, 'error');
           }
         }}
         product={productModal.product}

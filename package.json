@@ -5,9 +5,17 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:check": "node check-env.js && next build",
+    "build:production": "node scripts/check-production.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:production": "NODE_ENV=production next start",
+    "dev:production": "NODE_ENV=production next dev --turbopack",
+    "lint": "next lint",
+    "setup-mercadopago": "node scripts/setup-mercadopago.js",
+    "setup-production": "node scripts/setup-production-env.js",
+    "verify-production": "node scripts/pre-deploy-check.js",
+    "deploy-production": "node scripts/deploy-production.js",
+    "health-check": "node scripts/health-check.js",
+    "deploy:check": "node scripts/pre-deploy-check.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

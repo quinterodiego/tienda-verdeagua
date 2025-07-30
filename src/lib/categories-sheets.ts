@@ -1,5 +1,7 @@
 import { google } from 'googleapis';
 import { Category } from '../types';
+import { sheetsCache, generateCacheKey } from './sheets-cache';
+import { withRateLimit } from './rate-limiter';
 
 // Configuración de autenticación con Google Sheets
 async function getGoogleSheetsAuth() {
@@ -48,13 +50,28 @@ const CATEGORIES_RANGE = 'A2:G'; // Range sin el nombre de la hoja, se añadirá
 // Función para obtener todas las categorías
 export async function getCategoriesFromSheets(): Promise<Category[]> {
   try {
+    // Intentar obtener del caché primero
+    const cacheKey = generateCacheKey('categories', 'getAll', '');
+    const cachedCategories = sheetsCache.get<Category[]>(cacheKey);
+    
+    if (cachedCategories) {
+      console.log('🎯 Cache HIT para categorías');
+      return cachedCategories;
+    }
+
+    console.log('📡 Cache MISS para categorías - consultando API');
+    
     const sheets = await getGoogleSheetsAuth();
     const sheetName = await getCategoriesSheetName();
 
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!${CATEGORIES_RANGE}`,
-    });    const rows = response.data.values || [];
+    const response = await withRateLimit(async () => {
+      return sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetName}!${CATEGORIES_RANGE}`,
+      });
+    });
+
+    const rows = response.data.values || [];
     
     const categories: Category[] = rows.map((row) => {
       return {
@@ -68,6 +85,9 @@ export async function getCategoriesFromSheets(): Promise<Category[]> {
       };
     }).filter(category => category.id && category.name); // Filtrar categorías vacías
 
+    // Cachear categorías por 15 minutos
+    sheetsCache.set(cacheKey, categories, 15);
+    
     return categories;
   } catch (error) {
     console.error('Error al obtener categorías:', error);
@@ -96,12 +116,17 @@ export async function addCategoryToSheets(category: Omit<Category, 'id' | 'creat
       timestamp,
     ]];
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A2:G`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: { values },
+    await withRateLimit(async () => {
+      return sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetName}!A2:G`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values },
+      });
     });
+
+    // Invalidar caché de categorías
+    sheetsCache.invalidateByPattern('categories');
 
     console.log(`Categoría agregada exitosamente: ${newId}`);
     return newId;
@@ -149,14 +174,19 @@ export async function updateCategoryInSheets(id: string, updates: Partial<Omit<C
     // Actualizar la fila específica (rowIndex + 2 porque empezamos en A2)
     const range = `${sheetName}!A${rowIndex + 2}:G${rowIndex + 2}`;
     
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [updatedRow],
-      },
+    await withRateLimit(async () => {
+      return sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [updatedRow],
+        },
+      });
     });
+
+    // Invalidar caché de categorías
+    sheetsCache.invalidateByPattern('categories');
 
     console.log(`Categoría actualizada exitosamente: ${id}`);
     return true;
@@ -233,7 +263,13 @@ export async function deleteCategoryFromSheets(id: string): Promise<boolean> {
       },
     };
 
-    await sheets.spreadsheets.batchUpdate(deleteRequest);
+    await withRateLimit(async () => {
+      return sheets.spreadsheets.batchUpdate(deleteRequest);
+    });
+
+    // Invalidar caché de categorías
+    sheetsCache.invalidateByPattern('categories');
+
     console.log(`Categoría eliminada exitosamente: ${id}`);
     return true;
   } catch (error) {

@@ -128,6 +128,8 @@ export async function addAdminProductToSheets(product: Omit<AdminProduct, 'id' |
 // Función para actualizar un producto desde el admin
 export async function updateAdminProductInSheets(productId: string, updates: Partial<AdminProduct>): Promise<boolean> {
   try {
+    console.log('🔄 Iniciando actualización de producto:', { productId, updates });
+    
     const sheets = await getGoogleSheetsAuth();
     
     // Primero obtener todos los productos para encontrar la fila
@@ -140,16 +142,23 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
     const headerRow = rows[0];
     const dataRows = rows.slice(1);
     
+    console.log(`📊 Total de filas de productos: ${dataRows.length}`);
+    
     // Encontrar la fila del producto
     const productRowIndex = dataRows.findIndex(row => row[0] === productId);
     
     if (productRowIndex === -1) {
-      console.error('Producto no encontrado:', productId);
+      console.error(`❌ Producto con ID ${productId} no encontrado en ${dataRows.length} filas`);
+      console.log('🔍 IDs disponibles:', dataRows.slice(0, 5).map(row => row[0])); // Mostrar primeros 5 IDs
       return false;
     }
 
+    console.log(`✅ Producto encontrado en la fila ${productRowIndex + 2} (Google Sheets)`);
+
     // Obtener datos actuales del producto
     const currentRow = dataRows[productRowIndex];
+    console.log('📋 Datos actuales del producto:', currentRow.slice(0, 5)); // Mostrar primeros 5 campos
+    
     const currentProduct: AdminProduct = {
       id: currentRow[0] || '',
       name: currentRow[1] || '',
@@ -180,6 +189,11 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
 
     // Aplicar actualizaciones
     const updatedProduct = { ...currentProduct, ...updates, updatedAt: new Date().toISOString() };
+    console.log('📝 Datos después de aplicar updates:', {
+      name: updatedProduct.name,
+      price: updatedProduct.price,
+      category: updatedProduct.category
+    });
     
     // Preparar fila actualizada
     const updatedRow = [
@@ -202,8 +216,10 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
 
     // Actualizar la fila (rowIndex + 2 porque Google Sheets es 1-indexed y saltamos headers)
     const range = `${SHEET_NAMES.PRODUCTS}!A${productRowIndex + 2}:P${productRowIndex + 2}`;
+    console.log(`🎯 Actualizando en rango: ${range}`);
+    console.log('📊 Fila actualizada:', updatedRow.slice(0, 5)); // Mostrar primeros 5 campos
     
-    await sheets.spreadsheets.values.update({
+    const updateResponse = await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: range,
       valueInputOption: 'USER_ENTERED',
@@ -212,10 +228,14 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       },
     });
 
-    console.log('Producto actualizado exitosamente:', productId);
+    console.log('✅ Producto actualizado exitosamente en Google Sheets:', productId);
+    console.log('📊 Respuesta de Google Sheets:', updateResponse.data);
     return true;
   } catch (error) {
-    console.error('Error al actualizar producto:', error);
+    console.error('❌ Error al actualizar producto:', error);
+    if (error instanceof Error) {
+      console.error('❌ Detalles del error:', error.message);
+    }
     return false;
   }
 }

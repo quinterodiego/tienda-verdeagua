@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck } from 'lucide-react';
+import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import TestCardsHelper from '@/components/TestCardsHelper';
 
 interface CheckoutForm {
   // Información personal
@@ -153,8 +154,10 @@ export default function MercadoPagoCheckoutPage() {
         unit_price: item.product.price,
       }));
 
-      // Crear preferencia de pago
-      const response = await fetch('/api/mercadopago/preference', {
+      // Crear preferencia de pago con detección automática de modo
+      console.log('🔄 Enviando datos a MercadoPago...');
+      
+      const response = await fetch('/api/mercadopago/preference-production', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,6 +174,18 @@ export default function MercadoPagoCheckoutPage() {
       if (!response.ok) {
         console.error('Error response from API:', data);
         throw new Error(data.error || 'Error al crear la preferencia de pago');
+      }
+      
+      // Mostrar notificación según el modo
+      if (data.demo) {
+        const modeMessages = {
+          'test': '🧪 Modo de prueba activado - Los pagos son simulados',
+          'fallback': '⚠️ Error en producción - Usando modo demo como respaldo',
+          'demo': '🧪 Modo demo - Configura credenciales reales para producción'
+        };
+        addNotification(modeMessages[data.mode as keyof typeof modeMessages] || data.message, 'warning');
+      } else {
+        addNotification('✅ Procesando pago real con MercadoPago', 'success');
       }
       
       // Crear el pedido en Google Sheets antes de redirigir
@@ -232,8 +247,58 @@ export default function MercadoPagoCheckoutPage() {
       
     } catch (error) {
       console.error('Error completo al procesar el pago:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al procesar el pago';
-      addNotification(`Error: ${errorMessage}`, 'error');
+      
+      // Guardar datos del carrito y formulario en localStorage para recuperación
+      const failureRecoveryData = {
+        items: items,
+        formData: form,
+        timestamp: new Date().toISOString(),
+        total: total
+      };
+      
+      try {
+        localStorage.setItem('checkout_failure_recovery', JSON.stringify(failureRecoveryData));
+        console.log('📦 Datos del carrito guardados para recuperación');
+      } catch (storageError) {
+        console.error('No se pudieron guardar los datos para recuperación:', storageError);
+      }
+      
+      let errorMessage = 'Error desconocido al procesar el pago';
+      let shouldRedirectToFailure = false;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Identificar tipos específicos de errores
+        if (errorMessage.includes('preferencia de pago')) {
+          errorMessage = 'No se pudo crear la preferencia de pago. Verifica tu conexión e inténtalo de nuevo.';
+        } else if (errorMessage.includes('guardar el pedido')) {
+          errorMessage = 'No se pudo guardar el pedido. Inténtalo de nuevo.';
+        } else if (errorMessage.includes('autenticado')) {
+          errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+          // Redirigir al login
+          window.location.href = '/auth/signin?callbackUrl=/checkout';
+          return;
+        } else if (errorMessage.includes('Items requeridos')) {
+          errorMessage = 'El carrito está vacío. Agrega productos antes de continuar.';
+          window.location.href = '/';
+          return;
+        }
+      }
+      
+      // Para errores críticos, redirigir a la página de error
+      if (errorMessage.includes('servidor') || errorMessage.includes('conexión')) {
+        shouldRedirectToFailure = true;
+      }
+      
+      addNotification(`❌ ${errorMessage}`, 'error');
+      
+      // Si es un error crítico, redirigir a failure page
+      if (shouldRedirectToFailure) {
+        setTimeout(() => {
+          window.location.href = `/checkout/failure?error=payment_creation_failed&details=${encodeURIComponent(errorMessage)}&has_recovery=true`;
+        }, 3000);
+      }
     } finally {
       setIsCreatingPreference(false);
     }
@@ -260,6 +325,24 @@ export default function MercadoPagoCheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Indicador de Modo de Prueba */}
+        {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_MERCADOPAGO_MODE === 'test' ? (
+          <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
+              <div>
+                <h3 className="text-orange-800 font-semibold">🧪 Modo de Prueba Activado</h3>
+                <p className="text-orange-700 text-sm mt-1">
+                  Los pagos no son reales. Para producción, configura MERCADOPAGO_MODE=production y credenciales reales.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Helper de Tarjetas de Prueba */}
+        <TestCardsHelper />
+        
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

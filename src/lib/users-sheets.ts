@@ -1,6 +1,9 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES, ensureSheetsExist } from './google-sheets';
 import { User, UserRole } from '@/types';
 import bcrypt from 'bcryptjs';
+import { sheetsCache, generateCacheKey } from './sheets-cache';
+import { withRateLimit } from './rate-limiter';
+import { withQuotaHandling } from './quota-handler';
 
 // Lista de emails de administradores predeterminados
 const DEFAULT_ADMIN_EMAILS = [
@@ -54,14 +57,20 @@ export async function saveUserToSheets(user: Omit<User, 'id'>, providedId?: stri
 
     console.log('📤 Enviando datos a Google Sheets (Users):', values[0].slice(0, 5)); // Solo mostrar primeros 5 campos
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A:I`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values,
-      },
+    await withRateLimit(async () => {
+      return sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAMES.USERS}!A:I`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values,
+        },
+      });
     });
+
+    // Invalidar caché del usuario
+    const cacheKey = generateCacheKey('users', 'getUser', user.email);
+    sheetsCache.delete(cacheKey);
 
     console.log('✅ Usuario guardado exitosamente en Sheets:', user.email);
     return userId;
@@ -74,11 +83,26 @@ export async function saveUserToSheets(user: Omit<User, 'id'>, providedId?: stri
 // Función para obtener un usuario por email
 export async function getUserFromSheets(email: string): Promise<User | null> {
   try {
+    // Intentar obtener del caché primero
+    const cacheKey = generateCacheKey('users', 'getUser', email);
+    const cachedUser = sheetsCache.get<User | null>(cacheKey);
+    
+    if (cachedUser) {
+      console.log(`🎯 Cache HIT para usuario: ${email}`);
+      return cachedUser;
+    }
+
+    console.log(`📡 Cache MISS para usuario: ${email} - consultando API`);
+    
     const sheets = await getGoogleSheetsAuth();
     
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A2:I`, // Desde la fila 2 (sin encabezados) hasta columna I
+    const response = await withQuotaHandling(async () => {
+      return withRateLimit(async () => {
+        return sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEET_NAMES.USERS}!A2:I`, // Desde la fila 2 (sin encabezados) hasta columna I
+        });
+      });
     });
 
     const rows = response.data.values || [];
@@ -87,10 +111,12 @@ export async function getUserFromSheets(email: string): Promise<User | null> {
     const userRow = rows.find(row => row[2] === email);
     
     if (!userRow) {
+      // Cachear resultado negativo por menos tiempo
+      sheetsCache.set(cacheKey, null, 2);
       return null;
     }
 
-    return {
+    const user: User = {
       id: userRow[0] || '',
       name: userRow[1] || '',
       email: userRow[2] || '',
@@ -101,6 +127,10 @@ export async function getUserFromSheets(email: string): Promise<User | null> {
       image: undefined,
       password: undefined,
     };
+
+    // Cachear usuario por 10 minutos
+    sheetsCache.set(cacheKey, user, 10);
+    return user;
   } catch (error) {
     console.error('Error al obtener usuario:', error);
     return null;

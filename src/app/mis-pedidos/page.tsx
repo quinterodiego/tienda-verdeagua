@@ -249,12 +249,60 @@ export default function MisPedidosPage() {
                         {getStatusIcon(order.status)}
                         <span className="ml-1">{getStatusText(order.status)}</span>
                       </div>
+                      
+                      {/* Mostrar mensaje específico para pedidos cancelados por error de pago */}
+                      {order.status === 'cancelled' && order.paymentStatus === 'rejected' && (
+                        <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                          Pago rechazado
+                        </div>
+                      )}
+                      
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900">${order.total.toFixed(2)}</p>
                         <p className="text-sm text-gray-600">{order.items.length} producto(s)</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Información adicional para pedidos cancelados */}
+                  {order.status === 'cancelled' && (
+                    <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                      <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 text-red-600 mr-2 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-red-800 font-medium text-sm">
+                            {order.paymentStatus === 'rejected' 
+                              ? 'Este pedido fue cancelado debido a un problema con el pago'
+                              : 'Este pedido fue cancelado'
+                            }
+                          </p>
+                          <p className="text-red-700 text-xs mt-1">
+                            {order.paymentStatus === 'rejected' 
+                              ? 'Puedes volver a intentar el pago creando un nuevo pedido con los mismos productos'
+                              : 'Si tienes dudas, contáctanos'
+                            }
+                          </p>
+                          
+                          {/* Botón para recomprar si fue rechazado por pago */}
+                          {order.paymentStatus === 'rejected' && (
+                            <button
+                              onClick={() => {
+                                // Agregar productos al carrito y redirigir
+                                order.items.forEach(item => {
+                                  // Aquí deberías llamar a tu función addToCart
+                                  console.log('Agregando al carrito:', item);
+                                });
+                                router.push('/cart');
+                              }}
+                              className="mt-2 text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                            >
+                              Volver a comprar estos productos
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Productos del pedido */}

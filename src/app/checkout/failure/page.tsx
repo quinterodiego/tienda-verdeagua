@@ -4,16 +4,123 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { XCircle, RefreshCw, ArrowLeft, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import { useCartStore } from '@/lib/store';
 
 function FailureContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [hasRecoveryData, setHasRecoveryData] = useState(false);
+  const [recoveryData, setRecoveryData] = useState<any>(null);
+  const { addItem, clearCart } = useCartStore();
 
   const orderId = searchParams.get('order_id');
   const status = searchParams.get('status');
   const statusDetail = searchParams.get('status_detail');
+  const error = searchParams.get('error'); // Para errores durante la creación
+  const details = searchParams.get('details'); // Detalles del error
+  const hasRecovery = searchParams.get('has_recovery'); // Si hay datos para recuperar
 
-  const getErrorMessage = (detail: string | null) => {
+  // Verificar si hay datos de recuperación en localStorage
+  useEffect(() => {
+    try {
+      const recoveryDataStr = localStorage.getItem('checkout_failure_recovery');
+      if (recoveryDataStr) {
+        const data = JSON.parse(recoveryDataStr);
+        setRecoveryData(data);
+        setHasRecoveryData(true);
+        console.log('📦 Datos de recuperación encontrados:', data);
+      } else {
+        console.log('📭 No hay datos de recuperación en localStorage');
+      }
+    } catch (error) {
+      console.error('Error al recuperar datos del localStorage:', error);
+    }
+  }, []);
+
+  // Función para recuperar el carrito
+  const handleRecoverCart = async () => {
+    if (recoveryData && recoveryData.items) {
+      try {
+        console.log('🔄 Restaurando carrito con', recoveryData.items.length, 'productos');
+        
+        // Limpiar carrito actual
+        clearCart();
+        
+        // Agregar cada producto al carrito
+        recoveryData.items.forEach((item: any) => {
+          addItem(item.product, item.quantity);
+        });
+        
+        console.log('✅ Carrito restaurado exitosamente');
+        
+        // Limpiar datos de recuperación
+        localStorage.removeItem('checkout_failure_recovery');
+        
+        // Redirigir al checkout con un pequeño delay para que se vea la acción
+        setTimeout(() => {
+          router.push('/checkout');
+        }, 500);
+        
+      } catch (error) {
+        console.error('❌ Error al restaurar carrito:', error);
+        // Fallback: ir al checkout normal
+        router.push('/checkout');
+      }
+    }
+  };
+
+  // Función temporal para testing - crear datos de prueba
+  const createTestRecoveryData = () => {
+    const testData = {
+      items: [
+        {
+          product: {
+            id: 'test-1',
+            name: 'Producto de Prueba',
+            price: 29.99,
+            category: 'Test',
+            images: ['https://via.placeholder.com/300']
+          },
+          quantity: 2
+        }
+      ],
+      formData: {
+        name: 'Usuario Test',
+        email: 'test@test.com',
+        phone: '1234567890'
+      },
+      timestamp: new Date().toISOString(),
+      total: 59.98
+    };
+    
+    localStorage.setItem('checkout_failure_recovery', JSON.stringify(testData));
+    setRecoveryData(testData);
+    setHasRecoveryData(true);
+    console.log('🧪 Datos de prueba creados');
+  };
+
+  // Mostrar notificación automática cuando se carga la página
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Pequeño delay para que se vea la notificación después de la carga
+      setTimeout(() => {
+        const message = error === 'payment_creation_failed' 
+          ? 'No se pudo procesar el pago. Por favor, intenta de nuevo.'
+          : 'El pago fue rechazado. Revisa los datos de tu tarjeta e intenta de nuevo.';
+        
+        // Aquí podrías usar tu sistema de notificaciones
+        console.log('Notificación:', message);
+      }, 500);
+    }
+  }, [error, statusDetail]);
+
+  const getErrorMessage = (detail: string | null, errorType?: string | null) => {
+    // Si hay un error durante la creación del pago
+    if (errorType === 'payment_creation_failed') {
+      return details || 'Hubo un problema al crear el pago. Inténtalo de nuevo.';
+    }
+    
+    // Errores específicos de MercadoPago
     switch (detail) {
       case 'cc_rejected_insufficient_amount':
         return 'Fondos insuficientes en la tarjeta';
@@ -31,9 +138,65 @@ function FailureContent() {
         return 'Pago duplicado';
       case 'cc_rejected_high_risk':
         return 'Pago rechazado por seguridad';
+      case 'cc_rejected_blacklist':
+        return 'Tarjeta en lista negra';
+      case 'cc_rejected_card_expired':
+        return 'Tarjeta vencida';
+      case 'cc_rejected_invalid_installments':
+        return 'Número de cuotas inválido';
+      case 'cc_rejected_max_attempts':
+        return 'Demasiados intentos fallidos';
       default:
         return 'Hubo un problema procesando tu pago';
     }
+  };
+
+  const getErrorTitle = (errorType?: string | null) => {
+    if (errorType === 'payment_creation_failed') {
+      return 'Error al crear el pago';
+    }
+    return 'Pago no procesado';
+  };
+
+  const getSuggestions = (errorType?: string | null, detail?: string | null) => {
+    if (errorType === 'payment_creation_failed') {
+      return [
+        '• Verifica tu conexión a internet',
+        '• Asegúrate de haber llenado todos los campos',
+        '• Intenta recargar la página',
+        '• Si persiste, contacta al soporte técnico'
+      ];
+    }
+    
+    // Sugerencias específicas para errores de MercadoPago
+    const specificSuggestions: { [key: string]: string[] } = {
+      'cc_rejected_insufficient_amount': [
+        '• Verifica que tengas fondos suficientes',
+        '• Consulta con tu banco el límite disponible',
+        '• Intenta con otra tarjeta'
+      ],
+      'cc_rejected_call_for_authorize': [
+        '• Llama a tu banco para autorizar el pago',
+        '• Verifica que la tarjeta esté habilitada para compras online',
+        '• Intenta de nuevo después de la autorización'
+      ],
+      'cc_rejected_high_risk': [
+        '• Contacta a tu banco para verificar la transacción',
+        '• Intenta con otra tarjeta',
+        '• Usa un método de pago alternativo'
+      ]
+    };
+    
+    if (detail && specificSuggestions[detail]) {
+      return specificSuggestions[detail];
+    }
+    
+    return [
+      '• Verifica los datos de tu tarjeta',
+      '• Asegúrate de tener fondos suficientes',
+      '• Intenta con otra tarjeta',
+      '• Contacta a tu banco si persiste el problema'
+    ];
   };
 
   const handleRetry = () => {
@@ -51,30 +214,39 @@ function FailureContent() {
 
         {/* Título */}
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Pago no procesado
+          {getErrorTitle(error)}
         </h1>
         
         <p className="text-gray-600 mb-6">
-          {getErrorMessage(statusDetail)}
+          {getErrorMessage(statusDetail, error)}
         </p>
 
         {/* Detalles del error */}
-        {orderId && (
+        {(orderId || error) && (
           <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
             <h3 className="font-semibold text-gray-900 mb-2">
               Información del intento
             </h3>
             
             <div className="space-y-1 text-sm text-gray-600">
-              <div className="flex justify-between">
-                <span>Pedido:</span>
-                <span className="font-mono">{orderId}</span>
-              </div>
+              {orderId && (
+                <div className="flex justify-between">
+                  <span>Pedido:</span>
+                  <span className="font-mono">{orderId}</span>
+                </div>
+              )}
               
               {status && (
                 <div className="flex justify-between">
                   <span>Estado:</span>
                   <span>{status}</span>
+                </div>
+              )}
+              
+              {error && (
+                <div className="flex justify-between">
+                  <span>Tipo de error:</span>
+                  <span>{error}</span>
                 </div>
               )}
             </div>
@@ -85,15 +257,46 @@ function FailureContent() {
         <div className="bg-yellow-50 rounded-lg p-4 mb-8">
           <h4 className="font-medium text-yellow-800 mb-2">Qué puedes hacer:</h4>
           <ul className="text-yellow-700 text-sm text-left space-y-1">
-            <li>• Verifica los datos de tu tarjeta</li>
-            <li>• Asegúrate de tener fondos suficientes</li>
-            <li>• Intenta con otra tarjeta</li>
-            <li>• Contacta a tu banco si persiste el problema</li>
+            {getSuggestions(error, statusDetail).map((suggestion, index) => (
+              <li key={index}>{suggestion}</li>
+            ))}
           </ul>
         </div>
 
+        {/* Botón temporal para testing */}
+        {!hasRecoveryData && (
+          <div className="bg-gray-100 rounded-lg p-4 mb-4">
+            <p className="text-gray-700 text-sm mb-2">🧪 Modo testing:</p>
+            <button
+              onClick={createTestRecoveryData}
+              className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
+            >
+              Simular datos de recuperación
+            </button>
+          </div>
+        )}
+
         {/* Botones de acción */}
         <div className="space-y-3">
+          {/* Botón especial de recuperación si hay datos guardados */}
+          {hasRecoveryData && recoveryData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-blue-800 text-sm font-medium mb-2">
+                📦 Tus datos fueron guardados automáticamente
+              </p>
+              <p className="text-blue-700 text-xs mb-3">
+                Podemos restaurar tu carrito con {recoveryData.items?.length || 0} producto(s) 
+                por un total de ${recoveryData.total?.toFixed(2) || '0.00'}
+              </p>
+              <button
+                onClick={handleRecoverCart}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded text-sm transition-colors"
+              >
+                🔄 Restaurar mi carrito y reintentar
+              </button>
+            </div>
+          )}
+          
           <button 
             onClick={handleRetry}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
@@ -108,6 +311,14 @@ function FailureContent() {
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver al carrito
+          </Link>
+          
+          <Link 
+            href="/ayuda/errores-de-pago"
+            className="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Ver guía de errores de pago
           </Link>
           
           <Link 

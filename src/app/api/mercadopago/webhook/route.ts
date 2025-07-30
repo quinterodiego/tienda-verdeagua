@@ -4,8 +4,9 @@ import { getPaymentService } from '@/lib/mercadopago';
 // Función para actualizar el estado del pedido
 async function updateOrderStatus(orderId: string, paymentStatus: string, paymentId: number) {
   try {
-    // En una aplicación real, actualizarías la base de datos
-    // Por ahora solo logueamos
+    // Importar la función de actualización de Google Sheets
+    const { updateOrderStatus: updateOrderInSheets } = await import('@/lib/orders-sheets');
+    
     console.log(`Actualizando pedido ${orderId}:`, {
       paymentStatus,
       paymentId,
@@ -13,7 +14,7 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
     });
 
     // Mapear estados de MercadoPago a estados de pedido
-    let orderStatus = 'pending';
+    let orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending';
     
     switch (paymentStatus) {
       case 'approved':
@@ -29,25 +30,22 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
         break;
     }
 
-    // Aquí harías la actualización en tu base de datos:
-    // await db.orders.update({
-    //   where: { id: orderId },
-    //   data: {
-    //     status: orderStatus,
-    //     paymentStatus,
-    //     paymentId: paymentId.toString(),
-    //     updatedAt: new Date()
-    //   }
-    // });
+    // Actualizar en Google Sheets
+    const success = await updateOrderInSheets(orderId, orderStatus, paymentId.toString());
+    
+    if (!success) {
+      console.error(`❌ Error al actualizar el pedido ${orderId} en Google Sheets`);
+      return false;
+    }
 
-    console.log(`Pedido ${orderId} actualizado a estado: ${orderStatus}`);
+    console.log(`✅ Pedido ${orderId} actualizado exitosamente a estado: ${orderStatus}`);
     
     // TODO: Enviar notificación por email al cliente
-    // await sendOrderStatusEmail(orderId, orderStatus);
+    // await sendOrderStatusEmail(orderId, orderStatus, paymentStatus);
     
     return true;
   } catch (error) {
-    console.error('Error al actualizar estado del pedido:', error);
+    console.error('❌ Error al actualizar estado del pedido:', error);
     return false;
   }
 }
