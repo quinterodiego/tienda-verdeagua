@@ -29,6 +29,29 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
         // Estructura actualizada para coincidir con admin-products-sheets:
         // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, etc.
         
+        // DETECTAR LA COLUMNA DE ESTADO - columna 'Activo' en índice 9
+        let productStatus: ProductStatus = 'active';
+        
+        const activoValue = row[9]; // Columna J (índice 9) - "Activo"
+        console.log(`🔍 Producto ${row[1]} - Columna Activo (índice 9): '${activoValue}' (tipo: ${typeof activoValue})`);
+        
+        if (activoValue !== undefined && activoValue !== '') {
+          // Convertir string a boolean y luego a status
+          if (activoValue === 'TRUE' || activoValue === 'true' || activoValue === true) {
+            productStatus = 'active';
+            console.log(`✅ ${row[1]} -> ACTIVO (TRUE)`);
+          } else if (activoValue === 'FALSE' || activoValue === 'false' || activoValue === false) {
+            productStatus = 'inactive';
+            console.log(`❌ ${row[1]} -> INACTIVO (FALSE)`);
+          } else {
+            // Fallback: si no es TRUE/FALSE, asumir activo
+            productStatus = 'active';
+            console.log(`⚠️ ${row[1]} -> ACTIVO por defecto (valor: '${activoValue}')`);
+          }
+        } else {
+          console.log(`⚠️ ${row[1]} -> ACTIVO por defecto (valor vacío)`);
+        }
+        
         const product: Product = {
           id: row[0] || '',
           name: row[1] || '',
@@ -47,7 +70,7 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
             }
           })() : '', // Tomar la primera imagen de la columna H
           stock: parseInt(row[8]) || 0, // Columna I (índice 8)
-          status: (row[11] as ProductStatus) || 'active', // Columna L (índice 11) - estado
+          status: productStatus, // Estado detectado automáticamente
           rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
           reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
           createdAt: row[14] || '', // Columna O (índice 14)
