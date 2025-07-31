@@ -63,12 +63,31 @@ export async function GET(request: NextRequest) {
       console.log(`🎯 Filtrado por status '${status}': ${filteredProducts.length} productos`);
     }
 
-    // FILTRADO PRINCIPAL: Para usuarios no admin, solo productos activos
+    // FILTRADO FINAL Y SEGURO - Esta es la última línea de defensa
+    // Para cualquier request que NO sea de admin, filtrar todo lo que no sea 'active'
     if (!shouldIncludeInactive) {
-      const beforeCount = filteredProducts.length;
-      filteredProducts = filteredProducts.filter(product => product.status === 'active');
-      console.log(`🔒 FILTRADO PÚBLICO: ${beforeCount} -> ${filteredProducts.length} productos activos`);
-      console.log(`✅ Productos finales para usuario público:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      console.log(`🚨 APLICANDO FILTRADO DE SEGURIDAD PARA USUARIO PÚBLICO`);
+      console.log(`📊 Productos antes del filtrado final:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      
+      // Filtrado SUPER ESTRICTO - solo 'active' exacto
+      filteredProducts = filteredProducts.filter(product => {
+        const isActive = product.status === 'active';
+        if (!isActive) {
+          console.log(`� BLOQUEANDO producto no activo para usuario público: ${product.name} (status: '${product.status}')`);
+        }
+        return isActive;
+      });
+      
+      console.log(`✅ FILTRADO FINAL COMPLETADO: ${filteredProducts.length} productos activos para usuario público`);
+      console.log(`📋 Lista final de productos:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      
+      // VALIDACIÓN ADICIONAL - Verificar que NO hay productos no activos
+      const invalidProducts = filteredProducts.filter(p => p.status !== 'active');
+      if (invalidProducts.length > 0) {
+        console.error(`🚨 ERROR CRÍTICO: Se detectaron productos no activos que pasaron el filtro:`, invalidProducts);
+        // Filtrar nuevamente como medida de seguridad
+        filteredProducts = filteredProducts.filter(p => p.status === 'active');
+      }
     } else {
       console.log(`👑 Usuario admin - mostrando todos los productos: ${filteredProducts.length}`);
     }
