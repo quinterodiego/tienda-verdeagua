@@ -110,6 +110,30 @@ export const products: Product[] = [
     stock: 20,
     rating: 4.7,
     reviews: 143
+  },
+  {
+    id: '12',
+    name: 'Producto Inactivo - Taza Descontinuada',
+    description: 'Este producto está inactivo y no debería aparecer para usuarios comunes.',
+    price: 1500,
+    image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop',
+    category: 'Tazas',
+    stock: 0,
+    rating: 4.0,
+    reviews: 15,
+    status: 'inactive' as const
+  },
+  {
+    id: '13',
+    name: 'Producto Pendiente - Agenda Nueva',
+    description: 'Este producto está pendiente de aprobación.',
+    price: 3000,
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
+    category: 'Agendas',
+    stock: 25,
+    rating: 0,
+    reviews: 0,
+    status: 'pending' as const
   }
 ];
 

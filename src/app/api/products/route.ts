@@ -36,15 +36,30 @@ export async function GET(request: NextRequest) {
       
       // Fallback a productos estáticos del archivo de datos
       const { products: staticProducts } = await import('@/data/products');
+      
+      // Mapear productos estáticos asignando status 'active' por defecto
+      const mappedProducts = staticProducts.map(p => ({ 
+        ...p, 
+        status: (p.status || 'active') as 'active' | 'inactive' | 'pending' | 'draft'
+      }));
+      
+      // Si no es admin, filtrar solo productos activos
       products = shouldIncludeInactive 
-        ? staticProducts.map(p => ({ ...p, status: p.status || 'active' }))
-        : staticProducts.filter(p => (p.status || 'active') === 'active').map(p => ({ ...p, status: p.status || 'active' }));
+        ? mappedProducts
+        : mappedProducts.filter(p => p.status === 'active');
     }
 
     // Filtrar por estado específico si se proporciona
     let filteredProducts = products;
     if (status) {
       filteredProducts = products.filter(product => product.status === status);
+    }
+
+    // Para usuarios no admin (llamadas desde frontend público), asegurarse de que solo se retornen productos activos
+    if (!shouldIncludeInactive) {
+      const originalCount = filteredProducts.length;
+      filteredProducts = filteredProducts.filter(product => product.status === 'active');
+      console.log(`🔒 Filtrado para usuario público: ${originalCount} productos -> ${filteredProducts.length} productos activos`);
     }
 
     // Agregar estadísticas para admins
@@ -64,7 +79,12 @@ export async function GET(request: NextRequest) {
       products: filteredProducts,
       count: filteredProducts.length,
       stats,
-      isAdmin: shouldIncludeInactive
+      isAdmin: shouldIncludeInactive,
+      debug: {
+        isPublicRequest: !shouldIncludeInactive,
+        totalBeforeFiltering: products.length,
+        finalCount: filteredProducts.length
+      }
     });
 
   } catch (error) {
