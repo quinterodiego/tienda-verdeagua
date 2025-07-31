@@ -61,11 +61,24 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
       }
     }).filter((product): product is Product => product !== null && Boolean(product.id) && Boolean(product.name)); // Filtrar productos vacíos
 
-    // Si includeInactive es false, filtrar solo productos activos
+    console.log(`📊 getProductsFromSheets - Total productos procesados: ${productsData.length}`);
+    console.log(`⚙️ getProductsFromSheets - includeInactive: ${includeInactive}`);
+    
+    // FILTRADO CONDICIONAL: Si includeInactive es false, filtrar solo productos activos
     if (!includeInactive) {
-      return productsData.filter(product => product.status === 'active');
+      const activeProducts = productsData.filter(product => product.status === 'active');
+      console.log(`🔒 getProductsFromSheets - Filtrando para usuarios públicos: ${productsData.length} -> ${activeProducts.length} productos activos`);
+      
+      // Log de productos filtrados
+      const filteredOut = productsData.filter(product => product.status !== 'active');
+      if (filteredOut.length > 0) {
+        console.log(`🚫 getProductsFromSheets - Productos filtrados:`, filteredOut.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      }
+      
+      return activeProducts;
     }
 
+    console.log(`👑 getProductsFromSheets - Retornando todos los productos para admin: ${productsData.length}`);
     return productsData;
   } catch (error) {
     console.error('Error al obtener productos desde Google Sheets:', error);

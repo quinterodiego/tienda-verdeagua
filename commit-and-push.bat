@@ -8,11 +8,14 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-git commit -m "🔧 Debug: Agregar herramientas de debugging para filtrado de productos
+git commit -m "🔧 CRITICAL Fix: Corregir filtrado de productos en Google Sheets
 
-- Crear endpoint /api/debug/products para analizar filtrado
-- Agregar script de test para verificar productos visibles
-- Investigar por qué usuarios no admin ven productos inactivos"
+- FIX CRÍTICO: getProductsFromSheets ahora respeta el parámetro includeInactive
+- Usar shouldIncludeInactive correctamente para filtrar productos de Google Sheets
+- Agregar logging extenso en getProductsFromSheets para debugging
+- Corregir manejo de permisos de usuario vs filtrado de productos
+- Resolver problema donde productos inactivos de Google Sheets eran visibles
+- Asegurar consistencia entre Google Sheets y fallback estático"
 
 if %errorlevel% neq 0 (
     echo Error en git commit

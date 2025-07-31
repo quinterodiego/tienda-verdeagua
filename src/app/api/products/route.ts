@@ -32,20 +32,35 @@ export async function GET(request: NextRequest) {
     // Obtener productos con fallback a productos estáticos si hay error
     let products = [];
     try {
-      // SIEMPRE obtener todos los productos primero, luego filtraremos
-      products = await getProductsFromSheets(true); // true = incluir todos
+      // CAMBIO CRÍTICO: Usar el parámetro correcto para el filtrado
+      // shouldIncludeInactive define si incluir productos inactivos según permisos
+      products = await getProductsFromSheets(shouldIncludeInactive);
       console.log(`📊 Productos obtenidos de Google Sheets: ${products.length}`);
       
+      // VERIFICAR si realmente obtuvo los productos correctos según permisos
+      const statusCount: Record<string, number> = {};
+      products.forEach(p => {
+        const status = p.status || 'no-status';
+        statusCount[status] = (statusCount[status] || 0) + 1;
+      });
+      console.log(`🔍 Productos de Google Sheets por estado:`, statusCount);
+      
     } catch (error) {
-      console.error('Error al obtener productos desde Google Sheets, usando fallback:', error);
+      console.error('❌ Error al obtener productos desde Google Sheets, usando fallback:', error);
       
       // Fallback a productos estáticos del archivo de datos
       const { products: staticProducts } = await import('@/data/products');
-      products = staticProducts.map(p => ({ 
+      const mappedProducts = staticProducts.map(p => ({ 
         ...p, 
         status: (p.status || 'active') as 'active' | 'inactive' | 'pending' | 'draft'
       }));
-      console.log(`📊 Productos obtenidos de fallback: ${products.length}`);
+      
+      // Aplicar el mismo filtrado que en Google Sheets
+      products = shouldIncludeInactive 
+        ? mappedProducts
+        : mappedProducts.filter(p => p.status === 'active');
+        
+      console.log(`📊 Productos obtenidos de fallback (${shouldIncludeInactive ? 'todos' : 'solo activos'}): ${products.length}`);
     }
 
     // Asegurar que todos los productos tengan un status válido
