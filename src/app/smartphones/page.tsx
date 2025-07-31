@@ -19,7 +19,11 @@ export default function SmartphonesPage() {
         if (!response.ok) {
           throw new Error('Error al cargar productos');
         }
-        const allProducts = await response.json();
+        const data = await response.json();
+        
+        // La API retorna un objeto con products dentro
+        const allProductsData = data.products || [];
+        const allProducts = Array.isArray(allProductsData) ? allProductsData : [];
         
         // Filtrar solo smartphones
         const smartphones = allProducts.filter((product: Product) => 

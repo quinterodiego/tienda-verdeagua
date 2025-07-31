@@ -21,10 +21,14 @@ export default function FavoritosPage() {
         if (!response.ok) {
           throw new Error('Error al cargar productos');
         }
-        const productsData = await response.json();
-        setProducts(productsData);
+        const data = await response.json();
+        
+        // La API retorna un objeto con products dentro
+        const productsData = data.products || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
       } catch (err) {
         console.error('Error al cargar productos:', err);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }

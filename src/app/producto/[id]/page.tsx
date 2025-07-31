@@ -30,9 +30,12 @@ export default function ProductPage() {
         if (!response.ok) {
           throw new Error('Error al cargar productos');
         }
-        const products = await response.json();
-        setAllProducts(products);
-        const foundProduct = products.find((p: Product) => p.id === params.id);
+        const data = await response.json();
+        
+        // La API retorna un objeto con products dentro
+        const productsData = data.products || [];
+        setAllProducts(Array.isArray(productsData) ? productsData : []);
+        const foundProduct = productsData.find((p: Product) => p.id === params.id);
         setProduct(foundProduct || null);
       } catch (err) {
         console.error('Error al cargar producto:', err);

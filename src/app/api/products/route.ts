@@ -31,6 +31,13 @@ export async function GET(request: NextRequest) {
     let products = [];
     try {
       products = await getProductsFromSheets(shouldIncludeInactive);
+      
+      // Asegurar que todos los productos tengan un status válido
+      products = products.map(p => ({
+        ...p,
+        status: p.status || 'active'
+      }));
+      
     } catch (error) {
       console.error('Error al obtener productos desde Google Sheets:', error);
       
@@ -58,8 +65,18 @@ export async function GET(request: NextRequest) {
     // Para usuarios no admin (llamadas desde frontend público), asegurarse de que solo se retornen productos activos
     if (!shouldIncludeInactive) {
       const originalCount = filteredProducts.length;
-      filteredProducts = filteredProducts.filter(product => product.status === 'active');
+      console.log(`🔍 Estado de productos antes del filtrado:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      
+      filteredProducts = filteredProducts.filter(product => {
+        const isActive = product.status === 'active';
+        if (!isActive) {
+          console.log(`❌ Filtrando producto inactivo: ${product.name} (status: ${product.status})`);
+        }
+        return isActive;
+      });
+      
       console.log(`🔒 Filtrado para usuario público: ${originalCount} productos -> ${filteredProducts.length} productos activos`);
+      console.log(`✅ Productos finales:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
     }
 
     // Agregar estadísticas para admins
