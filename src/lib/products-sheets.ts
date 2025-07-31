@@ -1,8 +1,8 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES, ensureSheetsExist } from './google-sheets';
-import { Product } from '@/types';
+import { Product, ProductStatus } from '@/types';
 
 // Función para obtener todos los productos desde Google Sheets
-export async function getProductsFromSheets(): Promise<Product[]> {
+export async function getProductsFromSheets(includeInactive: boolean = false): Promise<Product[]> {
   try {
     const sheets = await getGoogleSheetsAuth();
     
@@ -15,7 +15,7 @@ export async function getProductsFromSheets(): Promise<Product[]> {
     
     const products: Product[] = rows.map((row) => {
       // Estructura actualizada para coincidir con admin-products-sheets:
-      // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, etc.
+      // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, etc.
       
       return {
         id: row[0] || '',
@@ -35,8 +35,18 @@ export async function getProductsFromSheets(): Promise<Product[]> {
           }
         })() : '', // Tomar la primera imagen de la columna H
         stock: parseInt(row[8]) || 0, // Columna I (índice 8)
+        status: (row[11] as any) || 'active', // Columna L (índice 11) - estado
+        rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
+        reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
+        createdAt: row[14] || '', // Columna O (índice 14)
+        updatedAt: row[15] || '', // Columna P (índice 15)
       };
     }).filter(product => product.id && product.name); // Filtrar productos vacíos
+
+    // Si includeInactive es false, filtrar solo productos activos
+    if (!includeInactive) {
+      return products.filter(product => product.status === 'active');
+    }
 
     return products;
   } catch (error) {
@@ -90,7 +100,7 @@ export async function updateProductStock(productId: string, newStock: number): P
     const sheets = await getGoogleSheetsAuth();
     
     // Primero encontrar la fila del producto
-    const products = await getProductsFromSheets();
+    const products = await getProductsFromSheets(true); // Incluir inactivos para encontrar el producto
     const productIndex = products.findIndex(p => p.id === productId);
     
     if (productIndex === -1) {
@@ -102,7 +112,7 @@ export async function updateProductStock(productId: string, newStock: number): P
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!G${rowNumber}`, // Columna G es stock
+      range: `${SHEET_NAMES.PRODUCTS}!I${rowNumber}`, // Columna I es stock
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[newStock]],
@@ -112,6 +122,56 @@ export async function updateProductStock(productId: string, newStock: number): P
     return true;
   } catch (error) {
     console.error('Error al actualizar stock:', error);
+    return false;
+  }
+}
+
+// Función para actualizar el estado de un producto
+export async function updateProductStatus(productId: string, newStatus: ProductStatus): Promise<boolean> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los productos actuales
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!A2:P`,
+    });
+
+    const rows = response.data.values || [];
+    const productIndex = rows.findIndex(row => row[0] === productId);
+    
+    if (productIndex === -1) {
+      console.error(`Producto ${productId} no encontrado`);
+      return false;
+    }
+
+    // La fila en la hoja (considerando que fila 1 son encabezados)
+    const rowNumber = productIndex + 2;
+
+    // Actualizar estado (columna L - índice 11)
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!L${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[newStatus]],
+      },
+    });
+
+    // También actualizar fecha de modificación (columna P - índice 15)
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!P${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[new Date().toISOString()]],
+      },
+    });
+
+    console.log(`✅ Estado del producto ${productId} actualizado a: ${newStatus}`);
+    return true;
+  } catch (error) {
+    console.error('Error al actualizar estado del producto:', error);
     return false;
   }
 }

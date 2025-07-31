@@ -1,3 +1,5 @@
+export type ProductStatus = 'active' | 'inactive' | 'pending' | 'draft';
+
 export interface Product {
   id: string;
   name: string;
@@ -8,6 +10,9 @@ export interface Product {
   stock: number;
   rating?: number;
   reviews?: number;
+  status?: ProductStatus; // Estado del producto
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {

@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'IDs de productos requeridos' }, { status: 400 });
     }
 
-    // Obtener productos desde Google Sheets
-    const products = await getProductsFromSheets();
+    // Obtener productos desde Google Sheets (solo productos activos)
+    const products = await getProductsFromSheets(false);
     
     // Filtrar solo los productos solicitados
     const requestedProducts = products.filter(product => productIds.includes(product.id));
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Items requeridos' }, { status: 400 });
     }
 
-    // Obtener productos desde Google Sheets
-    const products = await getProductsFromSheets();
+    // Obtener productos desde Google Sheets (solo productos activos)
+    const products = await getProductsFromSheets(false);
     const productMap = new Map(products.map(p => [p.id, p]));
 
     // Verificar stock para cada item

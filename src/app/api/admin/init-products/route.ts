@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       product.stock || 50, // Stock por defecto
       '', // Brand vacía
       '', // Tags vacías
-      'active', // Estado activo
+      'pending', // ✨ Estado pendiente por defecto para nuevos productos
       `SKU-${product.id}`, // SKU generado
       '', // Weight vacío
       new Date().toISOString(),
@@ -73,9 +73,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Productos inicializados correctamente',
+      message: 'Productos inicializados correctamente en estado PENDIENTE',
+      note: 'Los productos están en estado "pending" y no serán visibles para usuarios normales hasta ser activados',
       count: products.length,
-      initialized: products.map(p => ({ id: p.id, name: p.name, stock: p.stock || 50 }))
+      initialized: products.map(p => ({ id: p.id, name: p.name, stock: p.stock || 50, status: 'pending' }))
     });
 
   } catch (error) {
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       product.stock || 50,
       '',
       '',
-      'active',
+      'pending', // ✨ Estado pendiente por defecto
       `SKU-${product.id}`,
       '',
       new Date().toISOString(),
@@ -147,7 +148,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Productos reinicializados correctamente',
+      message: 'Productos reinicializados correctamente en estado PENDIENTE',
+      note: 'Recuerda activar los productos que quieras mostrar a los usuarios',
       count: products.length
     });
 
