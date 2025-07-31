@@ -27,11 +27,16 @@ function HomeContent() {
         if (!response.ok) {
           throw new Error('Error al cargar productos');
         }
-        const productsData = await response.json();
-        setProducts(productsData);
+        const data = await response.json();
+        
+        // La API retorna un objeto con products dentro
+        const productsData = data.products || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
       } catch (err) {
         console.error('Error al cargar productos:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar productos');
+        // Asegurar que products sea siempre un array
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }

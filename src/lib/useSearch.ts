@@ -25,6 +25,12 @@ export function useSearch({ products }: UseSearchProps) {
   });
 
   const filteredProducts = useMemo(() => {
+    // Validar que products sea un array
+    if (!Array.isArray(products)) {
+      console.warn('useSearch: products no es un array:', products);
+      return [];
+    }
+
     return products.filter(product => {
       // Filtro por búsqueda de texto (más robusto)
       const searchTerm = filters.query.toLowerCase().trim();
