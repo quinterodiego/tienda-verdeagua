@@ -27,56 +27,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    console.log(`🔍 API Request - shouldIncludeInactive: ${shouldIncludeInactive}, isAdmin: ${isAdmin}, includeInactive: ${includeInactive}`);
+
     // Obtener productos con fallback a productos estáticos si hay error
     let products = [];
     try {
-      products = await getProductsFromSheets(shouldIncludeInactive);
-      
-      // Asegurar que todos los productos tengan un status válido
-      products = products.map(p => ({
-        ...p,
-        status: p.status || 'active'
-      }));
+      // SIEMPRE obtener todos los productos primero, luego filtraremos
+      products = await getProductsFromSheets(true); // true = incluir todos
+      console.log(`📊 Productos obtenidos de Google Sheets: ${products.length}`);
       
     } catch (error) {
-      console.error('Error al obtener productos desde Google Sheets:', error);
+      console.error('Error al obtener productos desde Google Sheets, usando fallback:', error);
       
       // Fallback a productos estáticos del archivo de datos
       const { products: staticProducts } = await import('@/data/products');
-      
-      // Mapear productos estáticos asignando status 'active' por defecto
-      const mappedProducts = staticProducts.map(p => ({ 
+      products = staticProducts.map(p => ({ 
         ...p, 
         status: (p.status || 'active') as 'active' | 'inactive' | 'pending' | 'draft'
       }));
-      
-      // Si no es admin, filtrar solo productos activos
-      products = shouldIncludeInactive 
-        ? mappedProducts
-        : mappedProducts.filter(p => p.status === 'active');
+      console.log(`📊 Productos obtenidos de fallback: ${products.length}`);
     }
+
+    // Asegurar que todos los productos tengan un status válido
+    products = products.map(p => ({
+      ...p,
+      status: p.status || 'active'
+    }));
+
+    console.log(`🔍 Estados de productos:`, products.map(p => ({ id: p.id, name: p.name, status: p.status })));
 
     // Filtrar por estado específico si se proporciona
     let filteredProducts = products;
     if (status) {
       filteredProducts = products.filter(product => product.status === status);
+      console.log(`🎯 Filtrado por status '${status}': ${filteredProducts.length} productos`);
     }
 
-    // Para usuarios no admin (llamadas desde frontend público), asegurarse de que solo se retornen productos activos
+    // FILTRADO PRINCIPAL: Para usuarios no admin, solo productos activos
     if (!shouldIncludeInactive) {
-      const originalCount = filteredProducts.length;
-      console.log(`🔍 Estado de productos antes del filtrado:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
-      
-      filteredProducts = filteredProducts.filter(product => {
-        const isActive = product.status === 'active';
-        if (!isActive) {
-          console.log(`❌ Filtrando producto inactivo: ${product.name} (status: ${product.status})`);
-        }
-        return isActive;
-      });
-      
-      console.log(`🔒 Filtrado para usuario público: ${originalCount} productos -> ${filteredProducts.length} productos activos`);
-      console.log(`✅ Productos finales:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+      const beforeCount = filteredProducts.length;
+      filteredProducts = filteredProducts.filter(product => product.status === 'active');
+      console.log(`🔒 FILTRADO PÚBLICO: ${beforeCount} -> ${filteredProducts.length} productos activos`);
+      console.log(`✅ Productos finales para usuario público:`, filteredProducts.map(p => ({ id: p.id, name: p.name, status: p.status })));
+    } else {
+      console.log(`👑 Usuario admin - mostrando todos los productos: ${filteredProducts.length}`);
     }
 
     // Agregar estadísticas para admins

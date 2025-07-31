@@ -8,14 +8,15 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-git commit -m "🔧 Fix: Corregir filtrado de productos y detalle de producto
+git commit -m "🔧 CRITICAL Fix: Implementar filtrado robusto de productos activos/inactivos
 
-- Corregir manejo de respuesta API en todas las páginas que consumen productos
-- Asegurar filtrado correcto de productos activos/inactivos  
-- Agregar logging detallado para debugging del filtrado
-- Corregir página de detalle de producto para manejar respuesta API correcta
-- Corregir páginas de favoritos, categorías y smartphones
-- Garantizar que usuarios comunes solo vean productos activos"
+- Simplificar lógica de filtrado en API para mayor confiabilidad
+- Obtener TODOS los productos primero, luego filtrar según permisos de usuario  
+- Agregar logging extenso para debugging completo del proceso
+- Asegurar que usuarios públicos SOLO vean productos con status 'active'
+- Corregir manejo de fallback para respetar filtrado de estados
+- Garantizar que productos sin status defaulteen a 'active'
+- Separar lógica de permisos de admin vs filtrado público"
 
 if %errorlevel% neq 0 (
     echo Error en git commit
