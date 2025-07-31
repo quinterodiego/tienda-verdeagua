@@ -20,6 +20,7 @@ export interface Order {
   updatedAt: string;
   paymentId?: string;
   paymentStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  paymentMethod?: 'mercadopago' | 'cash_on_pickup';
   shippingAddress: {
     firstName: string;
     lastName: string;

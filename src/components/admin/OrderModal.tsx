@@ -106,6 +106,59 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
             </div>
           </div>
 
+          {/* Información de pago */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Información de Pago</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Método de Pago</p>
+                <div className="flex items-center mt-1">
+                  {order.paymentMethod === 'cash_on_pickup' ? (
+                    <>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Pago al Retirar
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        MercadoPago
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Estado de Pago</p>
+                <div className="flex items-center mt-1">
+                  {order.paymentStatus === 'approved' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Aprobado
+                    </span>
+                  ) : order.paymentStatus === 'pending' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Pendiente
+                    </span>
+                  ) : order.paymentStatus === 'rejected' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Rechazado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      {order.paymentStatus || 'No definido'}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {order.paymentId && (
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-gray-700">ID de Pago</p>
+                  <p className="text-sm text-gray-900 font-mono">{order.paymentId}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Dirección de envío */}
           {order.shippingAddress && (
             <div className="bg-gray-50 rounded-lg p-4">

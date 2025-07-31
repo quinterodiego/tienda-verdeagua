@@ -31,11 +31,12 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
       order.paymentId || '',
       order.paymentStatus || 'pending',
       new Date().toISOString(),
+      order.paymentMethod || 'mercadopago',
     ]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A:J`,
+      range: `${SHEET_NAMES.ORDERS}!A:K`, // Cambiado de A:J a A:K para incluir paymentMethod
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -56,7 +57,7 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:J`, // Desde la fila 2 (sin encabezados)
+      range: `${SHEET_NAMES.ORDERS}!A2:K`, // Cambiado de A2:J a A2:K para incluir paymentMethod
     });
 
     const rows = response.data.values || [];
@@ -88,6 +89,7 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
             updatedAt: new Date(row[9] || Date.now()),
             paymentId: row[7] || undefined,
             paymentStatus: row[8] as Order['paymentStatus'] || 'pending',
+            paymentMethod: row[10] as Order['paymentMethod'] || 'mercadopago',
             shippingAddress: {
               firstName: '',
               lastName: '',
@@ -120,7 +122,7 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
     // Primero encontrar la fila del pedido
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:J`,
+      range: `${SHEET_NAMES.ORDERS}!A2:K`, // Cambiado de A2:J a A2:K
     });
 
     const rows = response.data.values || [];
@@ -196,7 +198,7 @@ export async function getAllOrdersFromSheets(): Promise<Order[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:J`,
+      range: `${SHEET_NAMES.ORDERS}!A2:K`, // Cambiado de A2:J a A2:K
     });
 
     const rows = response.data.values || [];
@@ -225,6 +227,7 @@ export async function getAllOrdersFromSheets(): Promise<Order[]> {
           updatedAt: new Date(row[9] || Date.now()),
           paymentId: row[7] || undefined,
           paymentStatus: row[8] as Order['paymentStatus'] || 'pending',
+          paymentMethod: row[10] as Order['paymentMethod'] || 'mercadopago',
           shippingAddress: {
             firstName: '',
             lastName: '',

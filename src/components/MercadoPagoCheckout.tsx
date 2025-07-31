@@ -53,6 +53,7 @@ export default function MercadoPagoCheckoutPage() {
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
   const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
   const [currentStep, setCurrentStep] = useState(1);
+  const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup'>('mercadopago');
 
   // Verificar autenticación
   useEffect(() => {
@@ -132,6 +133,84 @@ export default function MercadoPagoCheckoutPage() {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleCashOnPickupOrder = async () => {
+    if (!validateForm()) {
+      addNotification('Por favor, corrige los errores en el formulario', 'error');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      // Generar ID único para el pedido
+      const orderId = generateOrderId();
+      
+      // Crear el pedido directamente sin MercadoPago
+      const orderData = {
+        customer: {
+          name: `${form.firstName} ${form.lastName}`,
+          email: form.email,
+        },
+        items: items.map(item => ({
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+          },
+          quantity: item.quantity,
+        })),
+        total: finalTotal,
+        shippingAddress: {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zipCode: form.zipCode,
+          phone: form.phone,
+        },
+        paymentMethod: 'cash_on_pickup',
+        paymentStatus: 'pending' as const,
+        status: 'confirmed' as const, // Los pedidos para retirar se confirman automáticamente
+      };
+
+      // Guardar el pedido en Google Sheets
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!orderResponse.ok) {
+        const orderError = await orderResponse.json();
+        console.error('Error al crear pedido:', orderError);
+        throw new Error('Error al guardar el pedido');
+      }
+
+      const orderResult = await orderResponse.json();
+      console.log('Pedido para retirar creado exitosamente:', orderResult.orderId);
+      
+      // Limpiar el carrito
+      clearCart();
+      
+      addNotification('¡Pedido confirmado! Te contactaremos para coordinar el retiro.', 'success');
+      
+      // Redirigir a página de éxito
+      router.push(`/checkout/success?order_id=${orderResult.orderId}&payment_method=cash_on_pickup`);
+      
+    } catch (error) {
+      console.error('Error al procesar el pedido:', error);
+      addNotification(
+        error instanceof Error ? error.message : 'Error al procesar el pedido',
+        'error'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleMercadoPagoPayment = async () => {
@@ -214,6 +293,7 @@ export default function MercadoPagoCheckoutPage() {
         },
         paymentId: data.preferenceId,
         paymentStatus: 'pending' as const,
+        paymentMethod: 'mercadopago' as const,
         status: 'pending' as const,
       };
 
@@ -610,38 +690,144 @@ export default function MercadoPagoCheckoutPage() {
                 <h2 className="text-xl font-semibold text-gray-900">Método de pago</h2>
               </div>
 
-              {/* Información sobre MercadoPago */}
-              <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-medium text-blue-900 mb-1">Pago seguro con MercadoPago</h3>
-                    <p className="text-blue-800 text-sm">
-                      Acepta tarjetas de crédito, débito, transferencias bancarias y más. 
-                      Tus datos están protegidos con la más alta seguridad.
-                    </p>
+              {/* Selector de método de pago */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* MercadoPago */}
+                <div 
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                    paymentMethod === 'mercadopago' 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setPaymentMethod('mercadopago')}
+                >
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      checked={paymentMethod === 'mercadopago'}
+                      onChange={() => setPaymentMethod('mercadopago')}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <CreditCard className="h-5 w-5 text-blue-600 mr-2" />
+                        <h3 className="font-medium text-gray-900">Pago Online</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Tarjetas de crédito, débito, transferencias
+                      </p>
+                      <div className="flex items-center text-sm text-blue-600">
+                        <Shield className="h-4 w-4 mr-1" />
+                        Pago seguro con MercadoPago
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pago al retirar */}
+                <div 
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                    paymentMethod === 'cash_on_pickup' 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setPaymentMethod('cash_on_pickup')}
+                >
+                  <div className="flex items-start">
+                    <input
+                      type="radio"
+                      checked={paymentMethod === 'cash_on_pickup'}
+                      onChange={() => setPaymentMethod('cash_on_pickup')}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <MapPin className="h-5 w-5 text-green-600 mr-2" />
+                        <h3 className="font-medium text-gray-900">Pago al Retirar</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Efectivo o transferencia al retirar
+                      </p>
+                      <div className="flex items-center text-sm text-green-600">
+                        <Truck className="h-4 w-4 mr-1" />
+                        Sin costo de envío
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Botón de pago */}
-              <button
-                onClick={handleMercadoPagoPayment}
-                disabled={isCreatingPreference || items.length === 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center"
-              >
-                {isCreatingPreference ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Procesando...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-5 w-5 mr-3" />
-                    Pagar con MercadoPago
-                  </>
-                )}
-              </button>
+              {/* Información específica según método seleccionado */}
+              {paymentMethod === 'mercadopago' ? (
+                <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-start">
+                    <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-medium text-blue-900 mb-1">Pago seguro con MercadoPago</h3>
+                      <p className="text-blue-800 text-sm">
+                        Acepta tarjetas de crédito, débito, transferencias bancarias y más. 
+                        Tus datos están protegidos con la más alta seguridad.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-green-50 rounded-lg p-4 mb-6">
+                  <div className="flex items-start">
+                    <MapPin className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-medium text-green-900 mb-1">Instrucciones para el retiro</h3>
+                      <p className="text-green-800 text-sm mb-2">
+                        Tu pedido se reservará por 48 horas. Te contactaremos para coordinar el retiro.
+                      </p>
+                      <ul className="text-green-800 text-sm space-y-1">
+                        <li>• Puedes pagar en efectivo o transferencia</li>
+                        <li>• Horarios: Lunes a Viernes 9:00 - 18:00</li>
+                        <li>• Dirección: Te enviaremos por WhatsApp</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botón de pago dinámico */}
+              {paymentMethod === 'mercadopago' ? (
+                <button
+                  onClick={handleMercadoPagoPayment}
+                  disabled={isCreatingPreference || items.length === 0}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  {isCreatingPreference ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-5 w-5 mr-3" />
+                      Pagar con MercadoPago
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleCashOnPickupOrder}
+                  disabled={isProcessing || items.length === 0}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Procesando pedido...
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-5 w-5 mr-3" />
+                      Confirmar Pedido para Retirar
+                    </>
+                  )}
+                </button>
+              )}
 
               {/* Garantías */}
               <div className="mt-6 pt-6 border-t border-gray-200">
