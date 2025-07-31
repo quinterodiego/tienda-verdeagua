@@ -1,12 +1,17 @@
 'use client';
 
 import { useCartStore } from '@/lib/store';
-import { Minus, Plus, X } from 'lucide-react';
+import { useStockCheck } from '@/lib/useStockCheck';
+import { Minus, Plus, X, AlertTriangle, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeItem, clearCart } = useCartStore();
+  const { stockChecks, allSufficient, loading: stockLoading, error: stockError, refreshStock } = useStockCheck(items);
+
+  // Crear un mapa de stock para fácil acceso
+  const stockMap = new Map(stockChecks.map(check => [check.productId, check]));
 
   if (items.length === 0) {
     return (
@@ -34,6 +39,37 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Alerta de stock insuficiente */}
+        {!stockLoading && !allSufficient && stockChecks.length > 0 && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-red-800 mb-2">
+                  Stock insuficiente para algunos productos
+                </h3>
+                <div className="text-sm text-red-700 space-y-1">
+                  {stockChecks
+                    .filter(check => !check.sufficient)
+                    .map(check => (
+                      <div key={check.productId}>
+                        <strong>{check.productName}:</strong> Solo {check.availableStock} disponibles 
+                        (tienes {check.requestedQuantity} en el carrito)
+                      </div>
+                    ))}
+                </div>
+                <button
+                  onClick={refreshStock}
+                  className="mt-2 inline-flex items-center text-sm text-red-800 hover:text-red-900"
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Actualizar stock
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Cart Items */}
           <div className="lg:w-2/3">
@@ -51,60 +87,81 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={item.product.id} className="flex items-center space-x-4 border-b pb-4">
-                    <div className="relative w-20 h-20">
-                      <Image
-                        src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover rounded-md"
-                      />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {item.product.name}
-                      </h3>
-                      <p className="text-gray-600 text-sm">
-                        {item.product.category}
-                      </p>
-                      <p className="font-bold text-lg text-gray-900">
-                        ${item.product.price.toLocaleString()}
-                      </p>
-                    </div>
+                {items.map((item) => {
+                  const stockInfo = stockMap.get(item.product.id);
+                  const hasStockIssue = stockInfo && !stockInfo.sufficient;
+                  
+                  return (
+                    <div key={item.product.id} className={`border-b pb-4 ${hasStockIssue ? 'bg-red-50 border-red-200 p-4 rounded-lg' : ''}`}>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative w-20 h-20">
+                          <Image
+                            src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
+                            alt={item.product.name}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {item.product.name}
+                          </h3>
+                          <p className="text-gray-600 text-sm">
+                            {item.product.category}
+                          </p>
+                          <p className="font-bold text-lg text-gray-900">
+                            ${item.product.price.toLocaleString()}
+                          </p>
+                          
+                          {/* Alerta de stock individual */}
+                          {hasStockIssue && (
+                            <div className="mt-2 flex items-center text-sm text-red-700">
+                              <AlertTriangle className="h-4 w-4 mr-1" />
+                              Solo {stockInfo.availableStock} disponibles
+                            </div>
+                          )}
+                        </div>
 
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="font-semibold px-3 py-1 bg-gray-100 rounded">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
+                        <div className="flex items-center space-x-3">
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="font-semibold px-3 py-1 bg-gray-100 rounded">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            className={`p-1 rounded-full ${
+                              hasStockIssue 
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                : 'bg-gray-100 hover:bg-gray-200'
+                            }`}
+                            disabled={hasStockIssue}
+                            title={hasStockIssue ? 'Stock insuficiente' : 'Agregar uno más'}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
 
-                    <div className="text-right">
-                      <p className="font-bold text-lg">
-                        ${(item.product.price * item.quantity).toLocaleString()}
-                      </p>
-                      <button
-                        onClick={() => removeItem(item.product.id)}
-                        className="text-red-600 hover:text-red-700 mt-2"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">
+                            ${(item.product.price * item.quantity).toLocaleString()}
+                          </p>
+                          <button
+                            onClick={() => removeItem(item.product.id)}
+                            className="text-red-600 hover:text-red-700 mt-2"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -133,12 +190,27 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <Link
-                href="/checkout"
-                className="block w-full bg-[#68c3b7] text-white py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors mb-4 text-center"
-              >
-                Proceder al checkout
-              </Link>
+              {/* Botón de checkout condicionado por stock */}
+              {!allSufficient && !stockLoading ? (
+                <div className="mb-4">
+                  <button
+                    disabled
+                    className="block w-full bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed mb-2"
+                  >
+                    Stock insuficiente
+                  </button>
+                  <p className="text-sm text-gray-600 text-center">
+                    Ajusta las cantidades antes de continuar
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="block w-full bg-[#68c3b7] text-white py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors mb-4 text-center"
+                >
+                  Proceder al checkout
+                </Link>
+              )}
               
               <Link
                 href="/"

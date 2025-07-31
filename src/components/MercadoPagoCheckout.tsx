@@ -144,6 +144,31 @@ export default function MercadoPagoCheckoutPage() {
     setIsProcessing(true);
     
     try {
+      // ✨ NUEVO: Verificar stock antes de procesar el pedido
+      const stockItems = items.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }));
+
+      const stockResponse = await fetch('/api/products/stock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: stockItems }),
+      });
+
+      const stockData = await stockResponse.json();
+
+      if (!stockData.allSufficient) {
+        const errorMessages = stockData.errors?.map((error: any) => 
+          `${error.productName}: ${error.error}`
+        ).join('\n') || 'Stock insuficiente';
+        
+        addNotification(`❌ Stock insuficiente:\n${errorMessages}`, 'error');
+        return;
+      }
+
       // Generar ID único para el pedido
       const orderId = generateOrderId();
       
@@ -222,6 +247,31 @@ export default function MercadoPagoCheckoutPage() {
     setIsCreatingPreference(true);
     
     try {
+      // ✨ NUEVO: Verificar stock antes de procesar el pedido
+      const stockItems = items.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }));
+
+      const stockResponse = await fetch('/api/products/stock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: stockItems }),
+      });
+
+      const stockData = await stockResponse.json();
+
+      if (!stockData.allSufficient) {
+        const errorMessages = stockData.errors?.map((error: any) => 
+          `${error.productName}: ${error.error}`
+        ).join('\n') || 'Stock insuficiente';
+        
+        addNotification(`❌ Stock insuficiente:\n${errorMessages}`, 'error');
+        return;
+      }
+
       // Generar ID único para el pedido
       const orderId = generateOrderId();
       

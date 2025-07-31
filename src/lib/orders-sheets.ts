@@ -1,5 +1,6 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { Order, Customer, CartItem } from '@/types';
+import { decrementProductsStock } from './products-sheets';
 
 // Función para guardar un pedido en Google Sheets
 export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<string | null> {
@@ -42,6 +43,21 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
         values,
       },
     });
+
+    // ✨ NUEVO: Decrementar stock de productos cuando se confirma un pedido
+    if (order.status === 'confirmed' || order.status === 'pending') {
+      const stockItems = order.items.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }));
+      
+      const stockUpdated = await decrementProductsStock(stockItems);
+      if (!stockUpdated) {
+        console.warn(`⚠️ No se pudo actualizar el stock para el pedido ${orderId}, pero el pedido se guardó correctamente`);
+      } else {
+        console.log(`✅ Stock actualizado correctamente para el pedido ${orderId}`);
+      }
+    }
 
     return orderId;
   } catch (error) {

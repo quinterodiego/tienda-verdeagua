@@ -167,3 +167,70 @@ export async function migrateProductsToSheets(products: Product[]): Promise<bool
     return false;
   }
 }
+
+// Función para decrementar el stock de múltiples productos (para cuando se hace un pedido)
+export async function decrementProductsStock(items: Array<{ productId: string; quantity: number }>): Promise<boolean> {
+  try {
+    console.log('🔄 Actualizando stock de productos...');
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los productos actuales
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!A2:P`,
+    });
+
+    const rows = response.data.values || [];
+    
+    // Verificar que hay suficiente stock antes de hacer cambios
+    for (const item of items) {
+      const productIndex = rows.findIndex(row => row[0] === item.productId);
+      
+      if (productIndex === -1) {
+        console.error(`Producto ${item.productId} no encontrado`);
+        return false;
+      }
+      
+      const currentStock = parseInt(rows[productIndex][8]) || 0; // Columna I (índice 8) es stock
+      const productName = rows[productIndex][1] || 'Producto sin nombre';
+      
+      if (currentStock < item.quantity) {
+        console.error(`Stock insuficiente para producto ${productName}. Stock actual: ${currentStock}, cantidad solicitada: ${item.quantity}`);
+        return false;
+      }
+    }
+
+    // Si todo está bien, actualizar el stock
+    for (const item of items) {
+      const productIndex = rows.findIndex(row => row[0] === item.productId);
+      
+      if (productIndex !== -1) {
+        const currentStock = parseInt(rows[productIndex][8]) || 0;
+        const newStock = currentStock - item.quantity;
+        const productName = rows[productIndex][1] || 'Producto sin nombre';
+        
+        // La fila en la hoja (considerando que fila 1 son encabezados)
+        const rowNumber = productIndex + 2;
+
+        // Actualizar stock (columna I)
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEET_NAMES.PRODUCTS}!I${rowNumber}`,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: {
+            values: [[newStock]],
+          },
+        });
+        
+        console.log(`📦 Producto ${productName}: ${currentStock} → ${newStock} (vendidos: ${item.quantity})`);
+      }
+    }
+
+    console.log('✅ Stock actualizado correctamente para todos los productos');
+    return true;
+  } catch (error) {
+    console.error('Error al decrementar stock de productos:', error);
+    return false;
+  }
+}
