@@ -54,26 +54,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log('=== WEBHOOK MERCADOPAGO RECIBIDO ===');
+    console.log('Tiempo:', new Date().toISOString());
+    console.log('URL:', request.url);
+    console.log('Headers:', Object.fromEntries(request.headers.entries()));
     console.log('Tipo:', body.type);
     console.log('Acción:', body.action);
-    console.log('Datos:', body.data);
+    console.log('Datos completos:', JSON.stringify(body, null, 2));
 
     // Verificar que es una notificación de pago
     if (body.type === 'payment') {
       const paymentId = body.data.id;
       
       if (!paymentId) {
-        console.error('Payment ID no encontrado en el webhook');
+        console.error('❌ Payment ID no encontrado en el webhook');
         return NextResponse.json({ error: 'Payment ID no encontrado' }, { status: 400 });
       }
 
-      console.log(`Procesando pago ID: ${paymentId}`);
+      console.log(`🔄 Procesando pago ID: ${paymentId}`);
 
       // Obtener información completa del pago
       const paymentService = getPaymentService();
       const payment = await paymentService.get({ id: paymentId });
       
-      console.log('=== INFORMACIÓN DEL PAGO ===');
+      console.log('=== INFORMACIÓN COMPLETA DEL PAGO ===');
       console.log('ID:', payment.id);
       console.log('Estado:', payment.status);
       console.log('Referencia externa (Order ID):', payment.external_reference);
@@ -82,9 +85,12 @@ export async function POST(request: NextRequest) {
       console.log('Método de pago:', payment.payment_method_id);
       console.log('Fecha de creación:', payment.date_created);
       console.log('Fecha de aprobación:', payment.date_approved);
+      console.log('Estado detalle:', payment.status_detail);
 
       // Actualizar el estado del pedido
       if (payment.external_reference && payment.status && payment.id) {
+        console.log(`📝 Actualizando pedido ${payment.external_reference} con estado de pago: ${payment.status}`);
+        
         const updateSuccess = await updateOrderStatus(
           payment.external_reference,
           payment.status,
@@ -92,12 +98,15 @@ export async function POST(request: NextRequest) {
         );
 
         if (updateSuccess) {
-          console.log('✅ Estado del pedido actualizado correctamente');
+          console.log('✅ Estado del pedido actualizado correctamente en Google Sheets');
         } else {
-          console.error('❌ Error al actualizar el estado del pedido');
+          console.error('❌ Error al actualizar el estado del pedido en Google Sheets');
         }
       } else {
-        console.error('❌ Faltan datos necesarios en el pago (external_reference, status o id)');
+        console.error('❌ Faltan datos necesarios en el pago:');
+        console.error('- external_reference:', payment.external_reference);
+        console.error('- status:', payment.status);
+        console.error('- id:', payment.id);
       }
 
       // Procesar según el estado del pago

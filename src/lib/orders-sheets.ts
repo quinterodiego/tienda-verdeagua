@@ -155,6 +155,33 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
       });
     }
 
+    // Actualizar paymentStatus basado en el status del pedido
+    let paymentStatus = 'pending';
+    switch (status) {
+      case 'confirmed':
+      case 'processing':
+      case 'shipped':
+      case 'delivered':
+        paymentStatus = 'approved';
+        break;
+      case 'cancelled':
+        paymentStatus = 'cancelled';
+        break;
+      default:
+        paymentStatus = 'pending';
+    }
+
+    // Actualizar paymentStatus en columna I
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!I${rowNumber}`, // Columna I es paymentStatus
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[paymentStatus]],
+      },
+    });
+
+    console.log(`✅ Pedido ${orderId} actualizado a estado: ${status}, paymentStatus: ${paymentStatus}`);
     return true;
   } catch (error) {
     console.error('Error al actualizar estado del pedido:', error);
