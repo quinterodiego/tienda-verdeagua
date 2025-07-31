@@ -27,8 +27,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Obtener productos
-    const products = await getProductsFromSheets(shouldIncludeInactive);
+    // Obtener productos con fallback a productos estáticos si hay error
+    let products = [];
+    try {
+      products = await getProductsFromSheets(shouldIncludeInactive);
+    } catch (error) {
+      console.error('Error al obtener productos desde Google Sheets:', error);
+      
+      // Fallback a productos estáticos del archivo de datos
+      const { products: staticProducts } = await import('@/data/products');
+      products = shouldIncludeInactive 
+        ? staticProducts.map(p => ({ ...p, status: p.status || 'active' }))
+        : staticProducts.filter(p => (p.status || 'active') === 'active').map(p => ({ ...p, status: p.status || 'active' }));
+    }
 
     // Filtrar por estado específico si se proporciona
     let filteredProducts = products;

@@ -4,6 +4,11 @@ import { Product, ProductStatus } from '@/types';
 // Función para obtener todos los productos desde Google Sheets
 export async function getProductsFromSheets(includeInactive: boolean = false): Promise<Product[]> {
   try {
+    // Verificar que tenemos las variables de entorno necesarias
+    if (!SPREADSHEET_ID) {
+      throw new Error('GOOGLE_SHEET_ID no está configurado');
+    }
+
     const sheets = await getGoogleSheetsAuth();
     
     const response = await sheets.spreadsheets.values.get({
@@ -13,45 +18,59 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
 
     const rows = response.data.values || [];
     
-    const products: Product[] = rows.map((row) => {
-      // Estructura actualizada para coincidir con admin-products-sheets:
-      // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, etc.
-      
-      return {
-        id: row[0] || '',
-        name: row[1] || '',
-        description: row[2] || '',
-        price: parseFloat(row[3]) || 0,
-        category: row[5] || '', // Columna F (índice 5)
-        image: row[7] ? (() => {
-          const imageField = row[7]; // Columna H (índice 7) - imágenes
-          // Intentar con el nuevo separador '|' primero, luego con comas como fallback
-          if (imageField.includes('|')) {
-            return imageField.split('|')[0].trim();
-          } else if (imageField.includes(',')) {
-            return imageField.split(',')[0].trim();
-          } else {
-            return imageField.trim();
-          }
-        })() : '', // Tomar la primera imagen de la columna H
-        stock: parseInt(row[8]) || 0, // Columna I (índice 8)
-        status: (row[11] as any) || 'active', // Columna L (índice 11) - estado
-        rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
-        reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
-        createdAt: row[14] || '', // Columna O (índice 14)
-        updatedAt: row[15] || '', // Columna P (índice 15)
-      };
-    }).filter(product => product.id && product.name); // Filtrar productos vacíos
+    // Si no hay filas, retornar array vacío
+    if (rows.length === 0) {
+      console.log('📋 No hay productos en Google Sheets, retornando array vacío');
+      return [];
+    }
+
+    const productsData = rows.map((row, index) => {
+      try {
+        // Estructura actualizada para coincidir con admin-products-sheets:
+        // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, etc.
+        
+        const product: Product = {
+          id: row[0] || '',
+          name: row[1] || '',
+          description: row[2] || '',
+          price: parseFloat(row[3]) || 0,
+          category: row[5] || '', // Columna F (índice 5)
+          image: row[7] ? (() => {
+            const imageField = row[7]; // Columna H (índice 7) - imágenes
+            // Intentar con el nuevo separador '|' primero, luego con comas como fallback
+            if (imageField.includes('|')) {
+              return imageField.split('|')[0].trim();
+            } else if (imageField.includes(',')) {
+              return imageField.split(',')[0].trim();
+            } else {
+              return imageField.trim();
+            }
+          })() : '', // Tomar la primera imagen de la columna H
+          stock: parseInt(row[8]) || 0, // Columna I (índice 8)
+          status: (row[11] as ProductStatus) || 'active', // Columna L (índice 11) - estado
+          rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
+          reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
+          createdAt: row[14] || '', // Columna O (índice 14)
+          updatedAt: row[15] || '', // Columna P (índice 15)
+        };
+
+        return product;
+      } catch (rowError) {
+        console.error(`Error al procesar fila ${index + 2}:`, rowError);
+        return null;
+      }
+    }).filter((product): product is Product => product !== null && Boolean(product.id) && Boolean(product.name)); // Filtrar productos vacíos
 
     // Si includeInactive es false, filtrar solo productos activos
     if (!includeInactive) {
-      return products.filter(product => product.status === 'active');
+      return productsData.filter(product => product.status === 'active');
     }
 
-    return products;
+    return productsData;
   } catch (error) {
-    console.error('Error al obtener productos:', error);
-    return [];
+    console.error('Error al obtener productos desde Google Sheets:', error);
+    // En lugar de retornar array vacío, lanzar el error para que el caller pueda manejar el fallback
+    throw error;
   }
 }
 
