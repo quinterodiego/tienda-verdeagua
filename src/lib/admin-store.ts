@@ -61,6 +61,8 @@ export interface AdminProduct {
   sku: string;
   brand?: string;
   tags: string[];
+  medidas?: string; // Nuevo campo para medidas
+  color?: string; // Nuevo campo para color
   createdAt: string;
   updatedAt: string;
 }

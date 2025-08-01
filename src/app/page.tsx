@@ -58,7 +58,7 @@ function HomeContent() {
     const searchQuery = searchParams.get('search');
     if (searchQuery) {
       updateFilter('query', searchQuery);
-      setShowAdvancedFilters(true); // Mostrar filtros cuando hay búsqueda
+      // setShowAdvancedFilters(true); // Mostrar filtros cuando hay búsqueda - COMENTADO
     }
   }, [searchParams, updateFilter]);
 
@@ -156,21 +156,21 @@ function HomeContent() {
                     className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                   />
                 </div>
-                <button
+                {/* <button
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   className="text-white bg-gray-400 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
                 >
                   {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
-                </button>
+                </button> */}
               </div>
 
-              {showAdvancedFilters && (
+              {/* {showAdvancedFilters && (
                 <SearchFilters
                   filters={filters}
                   onFilterChange={updateFilter}
                   onClearFilters={clearFilters}
                 />
-              )}
+              )} */}
 
               {/* Active Filters */}
               <ActiveFilters

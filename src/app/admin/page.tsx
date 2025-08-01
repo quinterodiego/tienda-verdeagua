@@ -514,7 +514,9 @@ function DashboardContent({
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS'
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -875,9 +877,11 @@ function ProductsContent({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -999,11 +1003,13 @@ function ProductsContent({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{formatCurrency(product.price)}</div>
+                      {/* COMENTADO - Sin funcionalidad de descuentos
                       {product.originalPrice && (
                         <div className="text-xs text-gray-500 line-through">
                           {formatCurrency(product.originalPrice)}
                         </div>
                       )}
+                      */}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm font-medium ${stockStatus.color}`}>
@@ -1133,9 +1139,11 @@ function OrdersContent({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -1373,9 +1381,11 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManage
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 

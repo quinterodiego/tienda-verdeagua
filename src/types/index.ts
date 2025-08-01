@@ -11,6 +11,8 @@ export interface Product {
   rating?: number;
   reviews?: number;
   status?: ProductStatus; // Estado del producto
+  medidas?: string; // Medidas del producto personalizado
+  color?: string; // Color del producto personalizado
   createdAt?: string;
   updatedAt?: string;
 }

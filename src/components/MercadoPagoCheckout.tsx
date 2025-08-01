@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatCurrency } from '@/lib/currency';
 import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
@@ -693,7 +694,7 @@ export default function MercadoPagoCheckoutPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        {formatCurrency(item.product.price * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -704,19 +705,19 @@ export default function MercadoPagoCheckoutPage() {
               <div className="space-y-3 py-4 border-t border-gray-200">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
-                  <span>{shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? 'Gratis' : formatCurrency(shipping)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>IVA</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-200">
                   <span>Total</span>
-                  <span>${finalTotal.toFixed(2)}</span>
+                  <span>{formatCurrency(finalTotal)}</span>
                 </div>
               </div>
 

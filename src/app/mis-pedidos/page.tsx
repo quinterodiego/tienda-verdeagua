@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { formatCurrency } from '@/lib/currency';
 import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Order } from '@/types';
 
@@ -202,7 +203,7 @@ export default function MisPedidosPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Gastado</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  ${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
+                  {formatCurrency(orders.reduce((sum, order) => sum + order.total, 0))}
                 </p>
               </div>
             </div>
@@ -258,7 +259,7 @@ export default function MisPedidosPage() {
                       )}
                       
                       <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">${order.total.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-gray-900">{formatCurrency(order.total)}</p>
                         <p className="text-sm text-gray-600">{order.items.length} producto(s)</p>
                       </div>
                     </div>
@@ -318,7 +319,8 @@ export default function MisPedidosPage() {
                           <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">${item.product.price.toFixed(2)}</p>
+                          <p className="font-semibold text-gray-900">{formatCurrency(item.product.price * item.quantity)}</p>
+                          <p className="text-sm text-gray-600">{formatCurrency(item.product.price)} c/u</p>
                         </div>
                       </div>
                     ))}

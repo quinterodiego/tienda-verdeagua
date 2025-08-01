@@ -3,6 +3,7 @@
 import { Product } from '@/types';
 import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
+import { formatCurrency } from '@/lib/currency';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -101,6 +102,22 @@ export default function ProductCard({ product }: ProductCardProps) {
         <p className="text-gray-600 text-sm mb-3 line-clamp-2">
           {product.description}
         </p>
+
+        {/* Información adicional para productos personalizados */}
+        {((product as any).medidas || (product as any).color) && (
+          <div className="mb-3 space-y-1">
+            {(product as any).medidas && (
+              <p className="text-xs text-gray-500">
+                <span className="font-medium">Medidas:</span> {(product as any).medidas}
+              </p>
+            )}
+            {(product as any).color && (
+              <p className="text-xs text-gray-500">
+                <span className="font-medium">Color:</span> {(product as any).color}
+              </p>
+            )}
+          </div>
+        )}
         
         {/* Rating */}
         {product.rating && (
@@ -126,7 +143,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-2xl font-bold text-gray-900">
-              ${product.price.toLocaleString()}
+              {formatCurrency(product.price)}
             </span>
             <p className="text-xs text-gray-500">
               Stock: {product.stock}

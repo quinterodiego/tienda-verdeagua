@@ -2,6 +2,7 @@
 
 import { useCartStore } from '@/lib/store';
 import { useStockCheck } from '@/lib/useStockCheck';
+import { formatCurrency } from '@/lib/currency';
 import { Minus, Plus, X, AlertTriangle, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -111,7 +112,9 @@ export default function CartPage() {
                             {item.product.category}
                           </p>
                           <p className="font-bold text-lg text-gray-900">
-                            ${item.product.price.toLocaleString()}
+                                                      <p className="text-lg font-bold text-gray-900">
+                            {formatCurrency(item.product.price)}
+                          </p>
                           </p>
                           
                           {/* Alerta de stock individual */}
@@ -149,7 +152,7 @@ export default function CartPage() {
 
                         <div className="text-right">
                           <p className="font-bold text-lg">
-                            ${(item.product.price * item.quantity).toLocaleString()}
+                            {formatCurrency(item.product.price * item.quantity)}
                           </p>
                           <button
                             onClick={() => removeItem(item.product.id)}
@@ -176,7 +179,7 @@ export default function CartPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">${total.toLocaleString()}</span>
+                  <span className="font-semibold">{formatCurrency(total)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
@@ -185,7 +188,7 @@ export default function CartPage() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold">Total</span>
-                    <span className="text-lg font-bold">${total.toLocaleString()}</span>
+                    <span className="text-lg font-bold">{formatCurrency(total)}</span>
                   </div>
                 </div>
               </div>

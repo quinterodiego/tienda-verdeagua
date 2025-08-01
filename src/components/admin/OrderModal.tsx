@@ -54,9 +54,11 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 

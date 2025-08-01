@@ -13,7 +13,7 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:P`, // Usar el mismo rango que admin (16 columnas)
+      range: `${SHEET_NAMES.PRODUCTS}!A2:Q`, // Ampliado hasta columna Q para incluir Medidas y Color
     });
 
     const rows = response.data.values || [];
@@ -27,7 +27,7 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
     const productsData = rows.map((row, index) => {
       try {
         // Estructura actualizada para coincidir con admin-products-sheets:
-        // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, etc.
+        // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, M=rating, N=reviews, O=createdAt, P=medidas, Q=color
         
         // DETECTAR LA COLUMNA DE ESTADO - columna 'Activo' en índice 9
         let productStatus: ProductStatus = 'active';
@@ -73,8 +73,10 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
           status: productStatus, // Estado detectado automáticamente
           rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
           reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
+          medidas: row[15] || undefined, // Columna P (índice 15) - Medidas
+          color: row[16] || undefined, // Columna Q (índice 16) - Color
           createdAt: row[14] || '', // Columna O (índice 14)
-          updatedAt: row[15] || '', // Columna P (índice 15)
+          updatedAt: '', // No hay columna updatedAt en esta estructura
         };
 
         return product;

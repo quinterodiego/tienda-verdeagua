@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/currency';
 import { XCircle, RefreshCw, ArrowLeft, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/lib/store';
@@ -286,7 +287,7 @@ function FailureContent() {
               </p>
               <p className="text-blue-700 text-xs mb-3">
                 Podemos restaurar tu carrito con {recoveryData.items?.length || 0} producto(s) 
-                por un total de ${recoveryData.total?.toFixed(2) || '0.00'}
+                por un total de {formatCurrency(recoveryData.total || 0)}
               </p>
               <button
                 onClick={handleRecoverCart}

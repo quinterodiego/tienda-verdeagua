@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface FilterChip {
   label: string;
@@ -42,7 +43,7 @@ export default function ActiveFilters({ filters, onRemoveFilter, onClearAll }: A
 
   if (filters.minPrice > 0) {
     activeFilters.push({
-      label: `Precio min: $${filters.minPrice}`,
+      label: `Precio min: ${formatCurrency(filters.minPrice)}`,
       value: 'minPrice',
       onRemove: () => onRemoveFilter('minPrice')
     });
@@ -50,7 +51,7 @@ export default function ActiveFilters({ filters, onRemoveFilter, onClearAll }: A
 
   if (filters.maxPrice < 10000) {
     activeFilters.push({
-      label: `Precio max: $${filters.maxPrice}`,
+      label: `Precio max: ${formatCurrency(filters.maxPrice)}`,
       value: 'maxPrice',
       onRemove: () => onRemoveFilter('maxPrice')
     });

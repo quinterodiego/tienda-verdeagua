@@ -21,7 +21,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
     name: '',
     description: '',
     price: 0,
-    originalPrice: undefined as number | undefined,
+    // originalPrice: undefined as number | undefined, // COMENTADO - Sin funcionalidad de descuentos
     category: '',
     subcategory: '',
     images: [''] as string[],
@@ -29,7 +29,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
     isActive: true,
     sku: '',
     brand: '',
-    tags: ''
+    tags: '',
+    medidas: '', // Nuevo campo para medidas
+    color: '' // Nuevo campo para color
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -43,7 +45,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           name: product.name || '',
           description: product.description || '',
           price: product.price || 0,
-          originalPrice: product.originalPrice || undefined,
+          // originalPrice: product.originalPrice || undefined, // COMENTADO - Sin funcionalidad de descuentos
           category: product.category || '',
           subcategory: product.subcategory || '',
           images: product.images && product.images.length > 0 ? product.images.filter(img => img.trim()) : [''],
@@ -51,7 +53,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           isActive: product.isActive ?? true,
           sku: product.sku || '',
           brand: product.brand || '',
-          tags: product.tags?.join(', ') || ''
+          tags: product.tags?.join(', ') || '',
+          medidas: (product as any).medidas || '', // Nuevo campo para medidas
+          color: (product as any).color || '' // Nuevo campo para color
         });
       } else {
         console.log('🆕 ProductModal: Creando producto nuevo');
@@ -60,7 +64,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           name: '',
           description: '',
           price: 0,
-          originalPrice: undefined,
+          // originalPrice: undefined, // COMENTADO - Sin funcionalidad de descuentos
           category: '',
           subcategory: '',
           images: [''],
@@ -68,7 +72,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           isActive: true,
           sku: '',
           brand: '',
-          tags: ''
+          tags: '',
+          medidas: '', // Nuevo campo para medidas
+          color: '' // Nuevo campo para color
         });
       }
       setErrors({});
@@ -125,9 +131,11 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
 
     const productData = {
       ...formData,
-      originalPrice: formData.originalPrice || undefined,
+      // originalPrice: formData.originalPrice || undefined, // COMENTADO - Sin funcionalidad de descuentos
       subcategory: formData.subcategory || undefined,
       brand: formData.brand || undefined,
+      medidas: formData.medidas || undefined, // Incluir medidas
+      color: formData.color || undefined, // Incluir color
       images: formData.images.filter(img => img.trim()),
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
     };
@@ -217,6 +225,37 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
             {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </div>
 
+          {/* Campos para productos personalizados */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Medidas
+              </label>
+              <input
+                type="text"
+                value={formData.medidas}
+                onChange={(e) => setFormData({ ...formData, medidas: e.target.value })}
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                placeholder="Ej: 20cm x 30cm x 5cm"
+              />
+              <p className="text-xs text-gray-500 mt-1">Opcional. Para productos personalizados</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Color
+              </label>
+              <input
+                type="text"
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                placeholder="Ej: Azul marino, Rojo, Negro mate"
+              />
+              <p className="text-xs text-gray-500 mt-1">Opcional. Para productos personalizados</p>
+            </div>
+          </div>
+
           {/* Precios y categoría */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -236,7 +275,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Precio Original
               </label>
@@ -252,7 +291,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Para descuentos"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -350,7 +389,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-              placeholder="nuevo, premium, oferta (separadas por comas)"
+              placeholder="nuevo, premium, destacado (separadas por comas)"
             />
             <p className="text-xs text-gray-500 mt-1">Separa las etiquetas con comas</p>
           </div>

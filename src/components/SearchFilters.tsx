@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatCurrency } from '@/lib/currency';
 import { Filter, X, Star } from 'lucide-react';
 
 interface SearchFiltersProps {
@@ -73,7 +74,7 @@ export default function SearchFilters({
           {/* Rango de precios */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Rango de precio: ${filters.minPrice} - ${filters.maxPrice}
+              Rango de precio: {formatCurrency(filters.minPrice)} - {formatCurrency(filters.maxPrice)}
             </label>
             <div className="space-y-3">
               <div>

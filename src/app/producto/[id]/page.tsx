@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/store';
+import { formatCurrency } from '@/lib/currency';
 import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Heart, Share } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -234,14 +235,16 @@ export default function ProductPage() {
             <div className="border-t border-b py-6">
               <div className="flex items-center space-x-4">
                 <span className="text-4xl font-bold text-gray-900">
-                  ${product.price.toLocaleString()}
+                  {formatCurrency(product.price)}
                 </span>
+                {/* COMENTADO - Sin funcionalidad de descuentos
                 <span className="text-sm text-gray-500 line-through">
-                  ${(product.price * 1.2).toLocaleString()}
+                  {formatCurrency(product.price * 1.2)}
                 </span>
                 <span className="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
                   -17%
                 </span>
+                */}
               </div>
             </div>
 
@@ -253,6 +256,27 @@ export default function ProductPage() {
               <p className="text-gray-600 leading-relaxed">
                 {product.description}
               </p>
+              
+              {/* Información adicional para productos personalizados */}
+              {((product as any).medidas || (product as any).color) && (
+                <div className="mt-6 space-y-3">
+                  <h4 className="font-semibold text-gray-900">Especificaciones del producto:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <span className="font-medium text-gray-700">Medidas:</span>
+                      <span className="ml-2 text-gray-600">
+                        {(product as any).medidas || '-'}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <span className="font-medium text-gray-700">Color:</span>
+                      <span className="ml-2 text-gray-600">
+                        {(product as any).color || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Características adicionales */}
               <div className="mt-6 space-y-2">
@@ -314,7 +338,7 @@ export default function ProductPage() {
                 className="w-full bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-8 py-4 rounded-lg font-semibold text-lg flex items-center justify-center space-x-2 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
-                <span>Agregar al carrito - ${(product.price * quantity).toLocaleString()}</span>
+                <span>Agregar al carrito - {formatCurrency(product.price * quantity)}</span>
               </button>
               
               <div className="flex space-x-4">
@@ -359,7 +383,7 @@ export default function ProductPage() {
                       {relatedProduct.name}
                     </h3>
                     <p className="text-lg font-bold text-gray-900">
-                      ${relatedProduct.price.toLocaleString()}
+                      {formatCurrency(relatedProduct.price)}
                     </p>
                   </div>
                 </Link>

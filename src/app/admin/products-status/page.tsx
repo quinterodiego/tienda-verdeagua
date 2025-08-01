@@ -241,7 +241,12 @@ export default function ProductsStatusPage() {
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ${product.price.toLocaleString()}
+                            {new Intl.NumberFormat('es-AR', {
+                              style: 'currency',
+                              currency: 'ARS',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }).format(product.price)}
                           </div>
                         </div>
                       </div>
