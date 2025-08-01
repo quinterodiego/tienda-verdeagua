@@ -26,7 +26,8 @@ import {
   Truck,
   Shield,
   Tag,
-  CreditCard
+  CreditCard,
+  HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
@@ -267,6 +268,13 @@ export default function AdminPage() {
               <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link
+                href="/admin/ayuda"
+                className="flex items-center text-gray-600 hover:text-[#68c3b7] transition-colors"
+              >
+                <HelpCircle className="w-5 h-5 mr-1" />
+                <span className="text-sm">Ayuda</span>
+              </Link>
               <span className="text-sm text-gray-600">
                 Hola, {session.user?.name}
               </span>

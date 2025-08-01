@@ -36,6 +36,44 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // Función para generar SKU basado en el nombre del producto
+  const generateSKUFromName = (name: string): string => {
+    if (!name.trim()) return '';
+    
+    // Limpiar y procesar el nombre
+    const cleanName = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, '') // Quitar caracteres especiales
+      .trim();
+    
+    // Tomar las primeras letras de cada palabra
+    const words = cleanName.split(/\s+/);
+    let prefix = '';
+    
+    if (words.length >= 2) {
+      // Si hay 2+ palabras, tomar primeras 2-3 letras de cada una
+      prefix = words.slice(0, 2).map(word => word.substring(0, 3)).join('');
+    } else {
+      // Si hay solo 1 palabra, tomar primeras 4-6 letras
+      prefix = words[0].substring(0, 6);
+    }
+    
+    // Generar número aleatorio de 3 dígitos
+    const randomNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+    
+    return `${prefix}-${randomNum}`;
+  };
+
+  // Función para manejar cambios en el nombre y generar SKU automáticamente
+  const handleNameChange = (newName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      name: newName,
+      // Solo generar SKU automáticamente en modo crear y si el SKU está vacío o es generado
+      sku: mode === 'create' ? generateSKUFromName(newName) : prev.sku
+    }));
+  };
+
   // Actualizar el formulario cuando cambie el producto o el modo
   useEffect(() => {
     if (isOpen) {
@@ -184,7 +222,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => handleNameChange(e.target.value)}
                 className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -204,9 +242,14 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 className={`text-gray-600 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent ${
                   errors.sku ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Ej: IPH15P-001"
+                placeholder="Se genera automáticamente al escribir el nombre"
               />
               {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
+              {mode === 'create' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Se genera automáticamente cuando escribes el nombre del producto
+                </p>
+              )}
             </div>
           </div>
 
@@ -238,7 +281,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Ej: 20cm x 30cm x 5cm"
               />
-              <p className="text-xs text-gray-500 mt-1">Opcional. Para productos personalizados</p>
+              <p className="text-xs text-gray-500 mt-1">Opcional</p>
             </div>
 
             <div>
@@ -252,7 +295,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Ej: Azul marino, Rojo, Negro mate"
               />
-              <p className="text-xs text-gray-500 mt-1">Opcional. Para productos personalizados</p>
+              <p className="text-xs text-gray-500 mt-1">Opcional</p>
             </div>
           </div>
 

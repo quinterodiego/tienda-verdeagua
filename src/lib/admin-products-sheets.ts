@@ -1,6 +1,16 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { deleteImageByUrl } from './cloudinary';
 
+// Función para generar SKU automático
+function generateRandomSKU(): string {
+  const categories = ['PERS', 'DECO', 'TEXTO', 'GRAF', 'PROM'];
+  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+  const randomNumber = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+  const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
+  
+  return `${randomCategory}-${randomNumber}${randomLetter}`;
+}
+
 // Interfaz para productos del admin (más completa)
 export interface AdminProduct {
   id: string;
@@ -16,6 +26,8 @@ export interface AdminProduct {
   sku: string;
   brand?: string;
   tags: string[];
+  medidas?: string; // Nuevo campo para medidas
+  color?: string; // Nuevo campo para color
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +39,7 @@ export async function getAdminProductsFromSheets(): Promise<AdminProduct[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:P`, // Columnas ampliadas para admin
+      range: `${SHEET_NAMES.PRODUCTS}!A2:Q`, // Ampliado hasta Q para incluir medidas y color
     });
 
     const rows = response.data.values || [];
@@ -60,9 +72,11 @@ export async function getAdminProductsFromSheets(): Promise<AdminProduct[]> {
           })() : [row[5] || ''], // Usar imagen básica si no hay imágenes avanzadas
           stock: parseInt(row[8]) || 0,
           isActive: row[9] ? (row[9] === 'true' || row[9] === 'TRUE') : true, // Por defecto activo si no se especifica
-          sku: row[10] || `SKU-${row[0]}`, // Generar SKU si no existe
+          sku: row[10] || generateRandomSKU(), // Generar SKU automático si no existe
           brand: row[11] || '',
           tags: row[12] ? row[12].split(',').map((tag: string) => tag.trim()) : [],
+          medidas: row[15] || undefined, // Columna P (índice 15) - Medidas
+          color: row[16] || undefined, // Columna Q (índice 16) - Color
           createdAt: row[13] || new Date().toISOString(),
           updatedAt: row[14] || new Date().toISOString(),
         };
@@ -90,6 +104,9 @@ export async function addAdminProductToSheets(product: Omit<AdminProduct, 'id' |
     
     const now = new Date().toISOString();
     
+    // Generar SKU automático si no se proporciona
+    const finalSku = product.sku || generateRandomSKU();
+    
     const values = [[
       productId,
       product.name,
@@ -101,23 +118,25 @@ export async function addAdminProductToSheets(product: Omit<AdminProduct, 'id' |
       product.images.join(' | '),
       product.stock,
       product.isActive,
-      product.sku,
+      finalSku, // SKU generado automáticamente
       product.brand || '',
       product.tags.join(', '),
       now, // createdAt
-      now  // updatedAt
+      now, // updatedAt
+      product.medidas || '', // Medidas (columna P)
+      product.color || '' // Color (columna Q)
     ]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A:P`,
+      range: `${SHEET_NAMES.PRODUCTS}!A:Q`, // Ampliado hasta Q
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
       },
     });
 
-    console.log('Producto agregado exitosamente:', productId);
+    console.log('Producto agregado exitosamente:', productId, 'con SKU:', finalSku);
     return productId;
   } catch (error) {
     console.error('Error al agregar producto:', error);
@@ -135,7 +154,7 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
     // Primero obtener todos los productos para encontrar la fila
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A:P`,
+      range: `${SHEET_NAMES.PRODUCTS}!A:Q`, // Ampliado hasta Q
     });
 
     const rows = response.data.values || [];
@@ -180,11 +199,13 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       })() : [],
       stock: parseInt(currentRow[8]) || 0,
       isActive: currentRow[9] === 'true' || currentRow[9] === 'TRUE',
-      sku: currentRow[10] || '',
+      sku: currentRow[10] || generateRandomSKU(), // Generar SKU si no existe
       brand: currentRow[11] || '',
       tags: currentRow[12] ? currentRow[12].split(',').map((tag: string) => tag.trim()) : [],
       createdAt: currentRow[13] || new Date().toISOString(),
       updatedAt: currentRow[14] || new Date().toISOString(),
+      medidas: currentRow[15] || undefined, // Columna P (índice 15) - Medidas
+      color: currentRow[16] || undefined, // Columna Q (índice 16) - Color
     };
 
     // Aplicar actualizaciones
@@ -211,11 +232,13 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       updatedProduct.brand || '',
       updatedProduct.tags.join(', '),
       updatedProduct.createdAt,
-      updatedProduct.updatedAt
+      updatedProduct.updatedAt,
+      updatedProduct.medidas || '', // Medidas (columna P)
+      updatedProduct.color || '' // Color (columna Q)
     ];
 
     // Actualizar la fila (rowIndex + 2 porque Google Sheets es 1-indexed y saltamos headers)
-    const range = `${SHEET_NAMES.PRODUCTS}!A${productRowIndex + 2}:P${productRowIndex + 2}`;
+    const range = `${SHEET_NAMES.PRODUCTS}!A${productRowIndex + 2}:Q${productRowIndex + 2}`;
     console.log(`🎯 Actualizando en rango: ${range}`);
     console.log('📊 Fila actualizada:', updatedRow.slice(0, 5)); // Mostrar primeros 5 campos
     
@@ -314,7 +337,7 @@ export async function permanentlyDeleteAdminProductFromSheets(productId: string)
     // Obtener todos los productos para encontrar la fila
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:P`,
+      range: `${SHEET_NAMES.PRODUCTS}!A2:Q`, // Ampliado hasta Q
     });
 
     const rows = response.data.values || [];
@@ -440,12 +463,14 @@ export async function migrateAdminProductsToSheets(): Promise<boolean> {
       'Marca',
       'Etiquetas',
       'Fecha Creación',
-      'Fecha Actualización'
+      'Fecha Actualización',
+      'Medidas',
+      'Color'
     ]];
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A1:P1`,
+      range: `${SHEET_NAMES.PRODUCTS}!A1:Q1`, // Ampliado hasta Q
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: headerValues,
