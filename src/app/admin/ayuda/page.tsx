@@ -27,7 +27,8 @@ import {
   Settings,
   BarChart3,
   AlertTriangle,
-  Download
+  Download,
+  ArrowLeft
 } from 'lucide-react';
 
 interface Section {
@@ -803,14 +804,23 @@ export default function AdminAyudaPage() {
               <HelpCircle className="w-8 h-8 text-[#68c3b7] mr-3" />
               <h1 className="text-3xl font-bold text-gray-900">Centro de Ayuda - Administración</h1>
             </div>
-            <button
-              onClick={generatePDF}
-              disabled={generatingPDF}
-              className="flex items-center bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              {generatingPDF ? 'Generando PDF...' : 'Descargar PDF'}
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href="/admin"
+                className="flex items-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver al Panel
+              </a>
+              {/* <button
+                onClick={generatePDF}
+                disabled={generatingPDF}
+                className="flex items-center bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                {generatingPDF ? 'Generando PDF...' : 'Descargar PDF'}
+              </button> */}
+            </div>
           </div>
           <p className="text-gray-600 text-lg">
             Aprende a gestionar tu tienda online de productos personalizados

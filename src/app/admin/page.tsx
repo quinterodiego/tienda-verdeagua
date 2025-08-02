@@ -76,6 +76,64 @@ export default function AdminPage() {
 
   const [showUserRoleManager, setShowUserRoleManager] = useState(false);
 
+  // Verificar si Cloudinary está configurado
+  const isCloudinaryConfigured = useMemo(() => {
+    // Verificar localStorage
+    if (typeof window !== 'undefined' && localStorage.getItem('cloudinary_configured')) {
+      return true;
+    }
+    
+    // Verificar si ya hay productos con imágenes de Cloudinary
+    const hasCloudinaryImages = sheetsProducts.some((product: AdminProduct) => 
+      product.images?.some((img: string) => img.includes('cloudinary.com'))
+    );
+    
+    if (hasCloudinaryImages) {
+      // Marcar como configurado en localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cloudinary_configured', 'true');
+      }
+      return true;
+    }
+    
+    return false;
+  }, [sheetsProducts]);
+
+  // Verificar si el sistema necesita configuración inicial
+  const needsSystemConfiguration = useMemo(() => {
+    // No mostrar durante la carga
+    if (loading) {
+      return false;
+    }
+
+    // 1. Verificar localStorage - Si nunca se configuró
+    const hasBeenConfigured = typeof window !== 'undefined' && 
+      localStorage.getItem('admin_system_configured') === 'true';
+    
+    // 2. Verificar si hay datos básicos en el sistema
+    const hasBasicData = sheetsProducts.length > 0 || sheetsUsers.length > 0 || sheetsOrders.length > 0;
+    
+    // 3. Auto-marcado inteligente: Si hay datos pero no está marcado como configurado
+    if (hasBasicData && !hasBeenConfigured && typeof window !== 'undefined') {
+      // Marcar automáticamente como configurado
+      localStorage.setItem('admin_system_configured', 'true');
+      return false; // Ocultar el botón inmediatamente
+    }
+    
+    // 4. Si ya se configuró antes y hay datos, no necesita configuración
+    if (hasBeenConfigured && hasBasicData) {
+      return false;
+    }
+    
+    // 5. Si no hay datos básicos, necesita configuración
+    if (!hasBasicData) {
+      return true;
+    }
+    
+    // 6. Fallback: no mostrar por defecto
+    return false;
+  }, [loading, sheetsProducts.length, sheetsUsers.length, sheetsOrders.length]);
+
   useEffect(() => {
     if (status === 'loading') return;
     
@@ -139,6 +197,11 @@ export default function AdminPage() {
       const data = await response.json();
       
       if (data.success) {
+        // Marcar el sistema como configurado
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_system_configured', 'true');
+        }
+        
         addNotification('Sistema configurado exitosamente', 'success');
         await loadSheetsData(); // Recargar datos después de configurar
       } else {
@@ -180,10 +243,6 @@ export default function AdminPage() {
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
-  // Verificar si Cloudinary está configurado
-  const isCloudinaryConfigured = process.env.NODE_ENV === 'production' || 
-    (typeof window !== 'undefined' && localStorage.getItem('cloudinary_configured'));
-
   // Función para abrir setup de Cloudinary
   const openCloudinarySetup = () => {
     window.open('/setup', '_blank');
@@ -198,6 +257,7 @@ export default function AdminPage() {
             sheetsUsers={sheetsUsers}
             sheetsOrders={sheetsOrders}
             dataLoading={dataLoading}
+            needsSystemConfiguration={needsSystemConfiguration}
             onSetupSheets={setupAdminSheets}
             onReloadData={loadSheetsData}
           />
@@ -244,6 +304,7 @@ export default function AdminPage() {
             sheetsUsers={sheetsUsers}
             sheetsOrders={sheetsOrders}
             dataLoading={dataLoading}
+            needsSystemConfiguration={needsSystemConfiguration}
             onSetupSheets={setupAdminSheets}
             onReloadData={loadSheetsData}
           />
@@ -431,6 +492,7 @@ interface DashboardContentProps {
   sheetsUsers: AdminUser[];
   sheetsOrders: Order[];
   dataLoading: boolean;
+  needsSystemConfiguration: boolean;
   onSetupSheets: () => Promise<void>;
   onReloadData: () => Promise<void>;
 }
@@ -439,7 +501,8 @@ function DashboardContent({
   sheetsProducts, 
   sheetsUsers, 
   sheetsOrders, 
-  dataLoading, 
+  dataLoading,
+  needsSystemConfiguration,
   onSetupSheets, 
   onReloadData 
 }: DashboardContentProps) {
@@ -589,48 +652,23 @@ function DashboardContent({
               Actualizar Datos
             </button>
             
-            <button
-              onClick={onSetupSheets}
-              disabled={dataLoading}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {dataLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              ) : (
-                <Settings className="w-4 h-4 mr-2" />
-              )}
-              Configurar Sistema
-            </button>
+            {needsSystemConfiguration && (
+              <button
+                onClick={onSetupSheets}
+                disabled={dataLoading}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {dataLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <Settings className="w-4 h-4 mr-2" />
+                )}
+                Configurar Sistema
+              </button>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Alerta informativa sobre datos */}
-      {stats.totalOrders === 0 && (
-        <div className="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">
-                Dashboard con datos reales de Google Sheets
-              </h3>
-              <div className="mt-2 text-sm text-blue-700">
-                <p>
-                  Las estadísticas muestran <strong>datos reales</strong> desde Google Sheets (no datos de prueba).
-                  Si no hay pedidos aún, las estadísticas mostrarán ceros, lo cual es normal.
-                </p>
-                <p className="mt-1">
-                  Para ver datos en el dashboard, realiza algunos pedidos de prueba a través del proceso normal de compra en la tienda.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
