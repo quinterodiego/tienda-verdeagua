@@ -1,6 +1,18 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { Order, Customer, CartItem } from '@/types';
-import { decrementProductsStock } from './products-sheets';
+import { decrementProductsStock, getProductsFromSheets } from './products-sheets';
+
+// Función para obtener la imagen de un producto por su ID
+async function getProductImageById(productId: string): Promise<string> {
+  try {
+    const products = await getProductsFromSheets(true); // Incluir inactivos para encontrar el producto
+    const product = products.find(p => p.id === productId);
+    return product?.image || '';
+  } catch (error) {
+    console.error(`Error al obtener imagen del producto ${productId}:`, error);
+    return '';
+  }
+}
 
 // Función para guardar un pedido en Google Sheets
 export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<string | null> {
@@ -15,8 +27,7 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
       console.log('🛒 Guardando item en pedido:', {
         productId: item.product.id,
         productName: item.product.name,
-        productImage: item.product.image,
-        fullProduct: item.product
+        // NO guardamos la imagen, se obtendrá dinámicamente
       });
       
       return {
@@ -24,7 +35,7 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
         productName: item.product.name,
         quantity: item.quantity,
         price: item.product.price,
-        image: item.product.image,
+        // Removido: image: item.product.image,
       };
     }));
 
@@ -88,12 +99,24 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
 
     const rows = response.data.values || [];
     
+    // Obtener todos los productos una sola vez para optimizar
+    const allProducts = await getProductsFromSheets(true);
+    console.log('🔍 Productos disponibles para buscar imágenes:', allProducts.length);
+    
     // Filtrar pedidos del usuario y convertir a objetos Order
     const userOrders: Order[] = rows
       .filter(row => row[1] === userEmail) // Columna B es email
       .map(row => {
         try {
           const items = JSON.parse(row[5] || '[]');
+          console.log('🔍 Items recuperados para pedido usuario', row[0], ':', items);
+          
+          // Parsear dirección de envío
+          const addressParts = (row[6] || '').split(', ');
+          const [fullName = '', address = '', city = '', state = '', zipCode = '', phone = ''] = addressParts;
+          const [firstName = '', ...lastNameParts] = fullName.split(' ');
+          const lastName = lastNameParts.join(' ');
+          
           return {
             id: row[0] || '',
             customer: {
@@ -101,14 +124,31 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
               name: row[2] || '',
               email: row[1] || '',
             } as Customer,
-            items: items.map((item: any) => ({
-              product: {
-                id: item.productId,
-                name: item.productName,
-                price: item.price,
-              },
-              quantity: item.quantity,
-            })) as CartItem[],
+            items: items.map((item: any) => {
+              // Buscar la imagen actual del producto
+              const currentProduct = allProducts.find(p => p.id === item.productId);
+              const productImage = currentProduct?.image || '';
+              
+              console.log('🔍 Procesando item para usuario:', {
+                productId: item.productId,
+                productName: item.productName,
+                imageFromProduct: productImage,
+                productFound: !!currentProduct
+              });
+              
+              return {
+                product: {
+                  id: item.productId,
+                  name: item.productName,
+                  price: item.price,
+                  image: productImage, // Imagen obtenida dinámicamente
+                  description: '',
+                  category: '',
+                  stock: 0,
+                },
+                quantity: item.quantity,
+              };
+            }) as CartItem[],
             total: parseFloat(row[3]) || 0,
             status: row[4] as Order['status'] || 'pending',
             createdAt: new Date(row[9] || Date.now()),
@@ -117,13 +157,13 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
             paymentStatus: row[8] as Order['paymentStatus'] || 'pending',
             paymentMethod: row[10] as Order['paymentMethod'] || 'mercadopago',
             shippingAddress: {
-              firstName: '',
-              lastName: '',
-              address: row[6] || '',
-              city: '',
-              state: '',
-              zipCode: '',
-              phone: '',
+              firstName: firstName,
+              lastName: lastName,
+              address: address,
+              city: city,
+              state: state,
+              zipCode: zipCode,
+              phone: phone,
             },
           };
         } catch (error) {
@@ -289,21 +329,29 @@ export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
 
     const rows = response.data.values || [];
     
+    // Obtener todos los productos una sola vez para optimizar
+    const allProducts = await getProductsFromSheets(true);
+    console.log('🔍 Admin - Productos disponibles para buscar imágenes:', allProducts.length);
+    
     const orders = rows.map(row => {
       try {
         const items = JSON.parse(row[5] || '[]');
-        console.log('🔍 Items recuperados para pedido', row[0], ':', items);
+        console.log('🔍 Items recuperados para pedido admin', row[0], ':', items);
         
         return {
           id: row[0] || '',
           customerName: row[2] || '',
           customerEmail: row[1] || '',
           items: items.map((item: any) => {
-            console.log('🔍 Procesando item:', {
+            // Buscar la imagen actual del producto
+            const currentProduct = allProducts.find(p => p.id === item.productId);
+            const productImage = currentProduct?.image || '';
+            
+            console.log('🔍 Admin - Procesando item:', {
               productId: item.productId,
               productName: item.productName,
-              image: item.image,
-              fallback: item.image || '/placeholder-image.svg'
+              imageFromProduct: productImage,
+              productFound: !!currentProduct
             });
             
             return {
@@ -311,7 +359,7 @@ export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
               name: item.productName,
               price: item.price,
               quantity: item.quantity,
-              image: item.image || '/placeholder-image.svg',
+              image: productImage, // Imagen obtenida dinámicamente
             };
           }),
           total: parseFloat(row[3]) || 0,

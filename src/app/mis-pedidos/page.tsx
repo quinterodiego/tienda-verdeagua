@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/lib/currency';
 import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Order } from '@/types';
+import OrderDetailModal from '@/components/OrderDetailModal';
+import Image from 'next/image';
 
 // Función para obtener el color del estado
 const getStatusColor = (status: Order['status']) => {
@@ -72,6 +74,8 @@ export default function MisPedidosPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | undefined>(undefined);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -145,6 +149,34 @@ export default function MisPedidosPage() {
   const reorderItems = async (order: Order) => {
     // Esta función podría agregar los productos del pedido al carrito actual
     alert('Funcionalidad de "Volver a comprar" en desarrollo');
+  };
+
+  const showOrderDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderDetail(true);
+  };
+
+  const closeOrderDetail = () => {
+    setShowOrderDetail(false);
+    setSelectedOrder(undefined);
+  };
+
+  // Función para validar y limpiar URL de imagen
+  const getValidImageUrl = (imageUrl: string): string => {
+    if (!imageUrl) return '/placeholder-image.svg';
+    
+    // Si ya es una URL válida de Cloudinary o externa, usarla tal como está
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // Si es una ruta relativa, convertirla a absoluta
+    if (imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Si no tiene protocolo, asumir que es un path relativo
+    return `/${imageUrl}`;
   };
 
   if (loading) {
@@ -311,8 +343,18 @@ export default function MisPedidosPage() {
                   <div className="space-y-4">
                     {order.items.map((item, index) => (
                       <div key={`${order.id}-${index}`} className="flex items-center space-x-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-8 h-8 text-gray-400" />
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                          <Image
+                            src={getValidImageUrl(item.product.image)}
+                            alt={item.product.name}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder-image.svg';
+                            }}
+                          />
                         </div>
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{item.product.name}</h4>
@@ -353,7 +395,7 @@ export default function MisPedidosPage() {
                   <div className="mt-6 flex flex-col sm:flex-row gap-3">
                     <button 
                       className="flex-1 sm:flex-none bg-[#68c3b7] text-white px-6 py-2 rounded-lg hover:bg-[#5bb3a7] transition-colors"
-                      onClick={() => alert('Vista de detalles en desarrollo')}
+                      onClick={() => showOrderDetails(order)}
                     >
                       Ver detalles
                     </button>
@@ -380,6 +422,13 @@ export default function MisPedidosPage() {
           </div>
         )}
       </div>
+      
+      {/* Modal de detalles del pedido */}
+      <OrderDetailModal
+        isOpen={showOrderDetail}
+        onClose={closeOrderDetail}
+        order={selectedOrder}
+      />
     </div>
   );
 }
