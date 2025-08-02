@@ -27,7 +27,9 @@ import {
   Shield,
   Tag,
   CreditCard,
-  HelpCircle
+  HelpCircle,
+  Menu,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
@@ -54,6 +56,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
 
   // Estados para datos de Google Sheets
@@ -319,24 +322,41 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              {/* Botón hamburguesa para mobile */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#68c3b7] mr-2"
+                aria-label="Abrir menú de navegación"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+              
               <Link
                 href="/"
-                className="flex items-center text-[#68c3b7] hover:text-[#64b7ac] mr-6"
+                className="flex items-center text-[#68c3b7] hover:text-[#64b7ac] mr-3 sm:mr-6"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver a la tienda
+                <span className="hidden sm:inline">Volver a la tienda</span>
+                <span className="sm:hidden">Tienda</span>
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                <span className="hidden sm:inline">Panel de Administración</span>
+                <span className="sm:hidden">Admin</span>
+              </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link
                 href="/admin/ayuda"
                 className="flex items-center text-gray-600 hover:text-[#68c3b7] transition-colors"
               >
                 <HelpCircle className="w-5 h-5 mr-1" />
-                <span className="text-sm">Ayuda</span>
+                <span className="text-sm hidden sm:inline">Ayuda</span>
               </Link>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 hidden md:inline">
                 Hola, {session.user?.name}
               </span>
               <div className="w-8 h-8 bg-[#68c3b7] rounded-full flex items-center justify-center">
@@ -350,9 +370,30 @@ export default function AdminPage() {
       </header>
 
       <div className="flex">
+        {/* Overlay para mobile */}
+        {isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-sm min-h-screen">
-          <nav className="mt-8">
+        <aside className={`
+          fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-sm transform transition-transform duration-300 ease-in-out lg:transform-none
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <div className="flex items-center justify-between p-4 lg:hidden border-b">
+            <h2 className="text-lg font-semibold text-gray-900">Menú</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <nav className="mt-4 lg:mt-8">
             <div className="px-4">
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
                 Navegación
@@ -363,7 +404,10 @@ export default function AdminPage() {
                   return (
                     <li key={item.id}>
                       <button
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          setIsMobileMenuOpen(false); // Cerrar menú en mobile
+                        }}
                         className={`w-full flex items-center px-3 py-2 text-left rounded-lg transition-colors ${
                           activeTab === item.id
                             ? 'bg-[#68c3b7]/10 text-[#68c3b7] border-r-2 border-[#68c3b7]'
@@ -382,14 +426,14 @@ export default function AdminPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-0">
           {/* Banner de configuración de Cloudinary */}
           {!isCloudinaryConfigured && (
             <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -397,17 +441,21 @@ export default function AdminPage() {
                     <h3 className="text-sm font-medium text-blue-800">
                       Configurar hosting de imágenes
                     </h3>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-blue-700 hidden sm:block">
                       Configura Cloudinary para subir y optimizar imágenes de productos automáticamente
+                    </p>
+                    <p className="text-xs text-blue-700 sm:hidden">
+                      Configura Cloudinary para subir imágenes
                     </p>
                   </div>
                 </div>
                 <div className="flex-shrink-0">
                   <button
                     onClick={openCloudinarySetup}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
                   >
-                    Configurar ahora
+                    <span className="sm:hidden">Configurar</span>
+                    <span className="hidden sm:inline">Configurar ahora</span>
                   </button>
                 </div>
               </div>
@@ -994,116 +1042,208 @@ function ProductsContent({
       {/* Products Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {filteredProducts.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Producto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Categoría
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Precio
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => {
-                const stockStatus = getStockStatus(product.stock);
-                return (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Producto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Categoría
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Precio
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stock
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => {
+                    const stockStatus = getStockStatus(product.stock);
+                    return (
+                      <tr key={product.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              src={product.images[0] || '/placeholder-image.svg'}
+                              alt={product.name}
+                              className="w-12 h-12 object-cover rounded-lg mr-4"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-image.svg';
+                              }}
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-500">SKU: {product.sku}</div>
+                              {product.brand && (
+                                <div className="text-xs text-gray-400">{product.brand}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 capitalize">{product.category}</div>
+                          {product.subcategory && (
+                            <div className="text-xs text-gray-500">{product.subcategory}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{formatCurrency(product.price)}</div>
+                          {/* COMENTADO - Sin funcionalidad de descuentos
+                          {product.originalPrice && (
+                            <div className="text-xs text-gray-500 line-through">
+                              {formatCurrency(product.originalPrice)}
+                            </div>
+                          )}
+                          */}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={`text-sm font-medium ${stockStatus.color}`}>
+                            {product.stock} unidades
+                          </div>
+                          <div className={`text-xs ${stockStatus.color}`}>
+                            {stockStatus.text}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            product.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.isActive ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            <button 
+                              onClick={() => onOpenProductModal('edit', product)}
+                              className="text-[#68c3b7] hover:text-[#64b7ac] p-1"
+                              title="Editar producto"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="text-yellow-600 hover:text-yellow-800 p-1"
+                              title="Desactivar producto (eliminar temporalmente)"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handlePermanentDeleteProduct(product.id, product.name)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                              title="⚠️ ELIMINAR DEFINITIVAMENTE (no se puede deshacer)"
+                            >
+                              <Trash2 className="w-4 h-4 fill-current" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden">
+              <div className="divide-y divide-gray-200">
+                {filteredProducts.map((product) => {
+                  const stockStatus = getStockStatus(product.stock);
+                  return (
+                    <div key={product.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start space-x-3">
                         <img
                           src={product.images[0] || '/placeholder-image.svg'}
                           alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg mr-4"
+                          className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                           onError={(e) => {
                             e.currentTarget.src = '/placeholder-image.svg';
                           }}
                         />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-500">SKU: {product.sku}</div>
-                          {product.brand && (
-                            <div className="text-xs text-gray-400">{product.brand}</div>
-                          )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                {product.name}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-1">SKU: {product.sku}</p>
+                              {product.brand && (
+                                <p className="text-xs text-gray-400 mt-1">{product.brand}</p>
+                              )}
+                              <div className="flex items-center space-x-4 mt-2">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {formatCurrency(product.price)}
+                                </span>
+                                <span className="text-xs text-gray-500 capitalize">
+                                  {product.category}
+                                  {product.subcategory && ` > ${product.subcategory}`}
+                                </span>
+                              </div>
+                            </div>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              product.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {product.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center space-x-2">
+                              <span className={`text-xs font-medium ${stockStatus.color}`}>
+                                {product.stock} en stock
+                              </span>
+                              <span className={`text-xs ${stockStatus.color}`}>
+                                ({stockStatus.text})
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center space-x-1">
+                              <button 
+                                onClick={() => onOpenProductModal('edit', product)}
+                                className="text-[#68c3b7] hover:text-[#64b7ac] p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                                title="Editar producto"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteProduct(product.id, product.name)}
+                                className="text-yellow-600 hover:text-yellow-800 p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                                title="Desactivar producto"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handlePermanentDeleteProduct(product.id, product.name)}
+                                className="text-red-600 hover:text-red-900 p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                                title="⚠️ Eliminar definitivamente"
+                              >
+                                <Trash2 className="w-4 h-4 fill-current" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 capitalize">{product.category}</div>
-                      {product.subcategory && (
-                        <div className="text-xs text-gray-500">{product.subcategory}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatCurrency(product.price)}</div>
-                      {/* COMENTADO - Sin funcionalidad de descuentos
-                      {product.originalPrice && (
-                        <div className="text-xs text-gray-500 line-through">
-                          {formatCurrency(product.originalPrice)}
-                        </div>
-                      )}
-                      */}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${stockStatus.color}`}>
-                        {product.stock} unidades
-                      </div>
-                      <div className={`text-xs ${stockStatus.color}`}>
-                        {stockStatus.text}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        product.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.isActive ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button 
-                          onClick={() => onOpenProductModal('edit', product)}
-                          className="text-[#68c3b7] hover:text-[#64b7ac] p-1"
-                          title="Editar producto"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteProduct(product.id, product.name)}
-                          className="text-yellow-600 hover:text-yellow-800 p-1"
-                          title="Desactivar producto (eliminar temporalmente)"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handlePermanentDeleteProduct(product.id, product.name)}
-                          className="text-red-600 hover:text-red-900 p-1"
-                          title="⚠️ ELIMINAR DEFINITIVAMENTE (no se puede deshacer)"
-                        >
-                          <Trash2 className="w-4 h-4 fill-current" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
         ) : (
           <div className="p-12 text-center">
             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -1252,81 +1392,153 @@ function OrdersContent({
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {filteredOrders.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pedido
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cliente
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Productos
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order: Order) => {
-                const currentStatusInfo = statusInfo[order.status];
-                const StatusIcon = currentStatusInfo.icon;
-                
-                return (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
-                        <div className="text-sm text-gray-500">{order.customerEmail}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(order.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {order.items.reduce((total: number, item: any) => total + item.quantity, 0)} unidades
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatCurrency(order.total)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentStatusInfo.color}`}>
-                        <StatusIcon className="w-3 h-3 mr-1" />
-                        {currentStatusInfo.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => onOpenOrderModal(order)}
-                        className="text-[#68c3b7] hover:text-[#64b7ac] mr-3"
-                      >
-                        Ver Detalles
-                      </button>
-                    </td>
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Pedido
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Productos
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredOrders.map((order: Order) => {
+                    const currentStatusInfo = statusInfo[order.status];
+                    const StatusIcon = currentStatusInfo.icon;
+                    
+                    return (
+                      <tr key={order.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {order.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                            <div className="text-sm text-gray-500">{order.customerEmail}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatDate(order.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {order.items.reduce((total: number, item: any) => total + item.quantity, 0)} unidades
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formatCurrency(order.total)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentStatusInfo.color}`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {currentStatusInfo.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button 
+                            onClick={() => onOpenOrderModal(order)}
+                            className="text-[#68c3b7] hover:text-[#64b7ac] mr-3"
+                          >
+                            Ver Detalles
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden">
+              <div className="divide-y divide-gray-200">
+                {filteredOrders.map((order: Order) => {
+                  const currentStatusInfo = statusInfo[order.status];
+                  const StatusIcon = currentStatusInfo.icon;
+                  
+                  return (
+                    <div key={order.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Pedido #{order.id}
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatDate(order.createdAt)}
+                          </p>
+                        </div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentStatusInfo.color}`}>
+                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {currentStatusInfo.label}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">Cliente:</span>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                            <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">Productos:</span>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-900">
+                              {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {order.items.reduce((total: number, item: any) => total + item.quantity, 0)} unidades
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">Total:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatCurrency(order.total)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <button 
+                          onClick={() => onOpenOrderModal(order)}
+                          className="w-full text-center text-[#68c3b7] hover:text-[#64b7ac] text-sm font-medium py-2 px-4 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                        >
+                          Ver Detalles
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
         ) : (
           <div className="p-12 text-center">
             <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -1500,102 +1712,186 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManage
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {filteredUsers.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Registro
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actividad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#68c3b7] rounded-full flex items-center justify-center mr-4">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rol
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Registro
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actividad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-[#68c3b7] rounded-full flex items-center justify-center mr-4">
+                            <span className="text-white text-sm font-medium">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm text-gray-500">ID: {user.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.role === 'admin' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(user.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {user.ordersCount} pedidos
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatCurrency(user.totalSpent)} gastados
+                        </div>
+                        {user.lastLogin && (
+                          <div className="text-xs text-gray-400">
+                            Último: {formatDate(user.lastLogin)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                          disabled={isUpdating}
+                          className={`text-sm px-3 py-1 rounded-lg ${
+                            user.isActive
+                              ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                              : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden">
+              <div className="divide-y divide-gray-200">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-12 h-12 bg-[#68c3b7] rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-sm font-medium">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">ID: {user.id}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                              {user.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">{user.email}</p>
+                            <p className="text-xs text-gray-400 mt-1">ID: {user.id}</p>
+                          </div>
+                          <div className="flex flex-col items-end space-y-1">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.role === 'admin' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {user.role === 'admin' ? 'Admin' : 'Usuario'}
+                            </span>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-500">Registro:</span>
+                            <div className="text-gray-900">{formatDate(user.createdAt)}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Pedidos:</span>
+                            <div className="text-gray-900">{user.ordersCount}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Gastado:</span>
+                            <div className="text-gray-900">{formatCurrency(user.totalSpent)}</div>
+                          </div>
+                          {user.lastLogin && (
+                            <div>
+                              <span className="text-gray-500">Último acceso:</span>
+                              <div className="text-gray-900">{formatDate(user.lastLogin)}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-gray-200">
+                          <button 
+                            onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                            disabled={isUpdating}
+                            className={`w-full text-center text-sm font-medium py-2 px-4 rounded-lg transition-colors ${
+                              user.isActive
+                                ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                                : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                            } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'active:bg-gray-200'}`}
+                          >
+                            {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      user.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.role === 'admin' ? 'Administrador' : 'Usuario'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatDate(user.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {user.ordersCount} pedidos
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {formatCurrency(user.totalSpent)} gastados
-                    </div>
-                    {user.lastLogin && (
-                      <div className="text-xs text-gray-400">
-                        Último: {formatDate(user.lastLogin)}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      user.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
-                      onClick={() => handleToggleUserStatus(user.id, user.isActive)}
-                      disabled={isUpdating}
-                      className={`text-sm px-3 py-1 rounded-lg ${
-                        user.isActive
-                          ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
-                          : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                      } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         ) : (
           <div className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
