@@ -82,8 +82,11 @@ function HomeContent() {
             <p className="text-xl md:text-2xl mb-8 opacity-90 font-medium">
               Productos personalizados para hacer únicas tus ideas
             </p>
-            <p className="text-lg mb-8 opacity-80 font-light">
+            {/* <p className="text-lg mb-8 opacity-80 font-light">
               Agendas, tazas, llaveros, stickers y más con tu toque personal
+            </p> */}
+            <p className="text-lg mb-8 opacity-80 font-light">
+              Encontrarás todo lo que buscas para tu evento, souvenirs, decoración, invitaciones digitales. También para tu emprendimiento, creación de logos, folletos publicitarios, tarjetas personales y mucho más.
             </p>
             <button 
               onClick={() => {

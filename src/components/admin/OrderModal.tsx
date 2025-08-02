@@ -63,7 +63,7 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
@@ -177,7 +177,9 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
           {/* Productos */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Productos</h3>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            
+            {/* Desktop Table */}
+            <div className="hidden lg:block border border-gray-200 rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -201,9 +203,12 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <img
-                            src={item.image}
+                            src={item.image || '/placeholder-image.svg'}
                             alt={item.name}
                             className="w-12 h-12 object-cover rounded-lg mr-4"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-image.svg';
+                            }}
                           />
                           <div>
                             <div className="text-sm font-medium text-gray-900">{item.name}</div>
@@ -224,6 +229,45 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden space-y-3">
+              {order.items.map((item, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <img
+                      src={item.image || '/placeholder-image.svg'}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-image.svg';
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {item.name}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
+                      
+                      <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Precio:</span>
+                          <div className="font-medium text-gray-900">{formatCurrency(item.price)}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Cantidad:</span>
+                          <div className="font-medium text-gray-900">{item.quantity}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Total:</span>
+                          <div className="font-medium text-gray-900">{formatCurrency(item.price * item.quantity)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Resumen del total */}

@@ -173,7 +173,7 @@ export default function AdminPage() {
       }
 
       // Cargar pedidos
-      const ordersResponse = await fetch('/api/orders');
+      const ordersResponse = await fetch('/api/admin/orders');
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
         setSheetsOrders(ordersData.orders || []);

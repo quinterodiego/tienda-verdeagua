@@ -11,12 +11,22 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
     const orderId = `ORD-${Date.now()}`;
     
     // Convertir items a string JSON para almacenar
-    const itemsJson = JSON.stringify(order.items.map(item => ({
-      productId: item.product.id,
-      productName: item.product.name,
-      quantity: item.quantity,
-      price: item.product.price,
-    })));
+    const itemsJson = JSON.stringify(order.items.map(item => {
+      console.log('🛒 Guardando item en pedido:', {
+        productId: item.product.id,
+        productName: item.product.name,
+        productImage: item.product.image,
+        fullProduct: item.product
+      });
+      
+      return {
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+        image: item.product.image,
+      };
+    }));
 
     // Convertir dirección de envío a string
     const shippingAddressStr = `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}, ${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.phone}`;
@@ -263,6 +273,73 @@ export async function getAllOrdersFromSheets(): Promise<Order[]> {
     return orders;
   } catch (error) {
     console.error('Error al obtener todos los pedidos:', error);
+    return [];
+  }
+}
+
+// Función específica para obtener todos los pedidos en formato Admin (estructura plana)
+export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!A2:K`,
+    });
+
+    const rows = response.data.values || [];
+    
+    const orders = rows.map(row => {
+      try {
+        const items = JSON.parse(row[5] || '[]');
+        console.log('🔍 Items recuperados para pedido', row[0], ':', items);
+        
+        return {
+          id: row[0] || '',
+          customerName: row[2] || '',
+          customerEmail: row[1] || '',
+          items: items.map((item: any) => {
+            console.log('🔍 Procesando item:', {
+              productId: item.productId,
+              productName: item.productName,
+              image: item.image,
+              fallback: item.image || '/placeholder-image.svg'
+            });
+            
+            return {
+              id: item.productId,
+              name: item.productName,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image || '/placeholder-image.svg',
+            };
+          }),
+          total: parseFloat(row[3]) || 0,
+          status: row[4] || 'pending',
+          createdAt: row[9] || new Date().toISOString(),
+          updatedAt: row[9] || new Date().toISOString(),
+          paymentId: row[7] || undefined,
+          paymentStatus: row[8] || 'pending',
+          paymentMethod: row[10] || 'mercadopago',
+          shippingAddress: {
+            firstName: '',
+            lastName: '',
+            address: row[6] || '',
+            city: '',
+            state: '',
+            zipCode: '',
+            phone: '',
+          },
+        };
+      } catch (error) {
+        console.error('Error al parsear pedido para admin:', error);
+        return null;
+      }
+    }).filter(order => order !== null);
+
+    return orders;
+  } catch (error) {
+    console.error('Error al obtener pedidos para admin:', error);
     return [];
   }
 }

@@ -27,7 +27,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
     
     if (!imageUrl || imageUrl.trim() === '') {
-      return '/placeholder-image.jpg'; // Fallback image
+      return '/placeholder-image.svg'; // Fallback image
     }
     
     // Si es una URL completa válida, usarla tal como está
@@ -59,20 +59,20 @@ export default function ProductCard({ product }: ProductCardProps) {
       href={`/producto/${product.id}`}
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 block"
     >
-      <div className="relative aspect-square">
+      <div className="relative aspect-square overflow-hidden">        
         <Image
           src={imageUrl}
           alt={product.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          unoptimized
+          width={300}
+          height={300}
+          className="w-full h-full object-cover"
           onError={(e) => {
             // Fallback si la imagen falla al cargar
             const target = e.target as HTMLImageElement;
-            target.src = '/placeholder-image.jpg';
+            target.src = '/placeholder-image.svg';
           }}
         />
+        
         {/* Botón de favoritos */}
         <button
           onClick={handleToggleFavorite}
