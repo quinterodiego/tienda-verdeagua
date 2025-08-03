@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPaymentService } from '@/lib/mercadopago';
 
 // Función para actualizar el estado del pedido
-async function updateOrderStatus(orderId: string, paymentStatus: string, paymentId: number) {
+async function updateOrderStatus(orderId: string, paymentStatus: string, paymentId: number, paymentMethod?: string) {
   try {
     // Importar la función de actualización de Google Sheets
     const { updateOrderStatus: updateOrderInSheets } = await import('@/lib/orders-sheets');
@@ -10,6 +10,7 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
     console.log(`Actualizando pedido ${orderId}:`, {
       paymentStatus,
       paymentId,
+      paymentMethod,
       updatedAt: new Date().toISOString()
     });
 
@@ -30,15 +31,49 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
         break;
     }
 
+    // Mapear método de pago a nombre legible
+    let paymentType = 'Mercado Pago';
+    if (paymentMethod) {
+      switch (paymentMethod) {
+        case 'visa':
+        case 'master':
+        case 'amex':
+        case 'diners':
+        case 'naranja':
+        case 'cabal':
+        case 'cencosud':
+        case 'cordobesa':
+        case 'argencard':
+          paymentType = 'Tarjeta de Crédito';
+          break;
+        case 'debvisa':
+        case 'debmaster':
+          paymentType = 'Tarjeta de Débito';
+          break;
+        case 'rapipago':
+        case 'pagofacil':
+          paymentType = 'Efectivo';
+          break;
+        case 'account_money':
+          paymentType = 'Dinero en Cuenta MP';
+          break;
+        case 'debin':
+          paymentType = 'Transferencia Bancaria';
+          break;
+        default:
+          paymentType = `Mercado Pago (${paymentMethod})`;
+      }
+    }
+
     // Actualizar en Google Sheets
-    const success = await updateOrderInSheets(orderId, orderStatus, paymentId.toString());
+    const success = await updateOrderInSheets(orderId, orderStatus, paymentId.toString(), paymentType);
     
     if (!success) {
       console.error(`❌ Error al actualizar el pedido ${orderId} en Google Sheets`);
       return false;
     }
 
-    console.log(`✅ Pedido ${orderId} actualizado exitosamente a estado: ${orderStatus}`);
+    console.log(`✅ Pedido ${orderId} actualizado exitosamente a estado: ${orderStatus}, tipo de pago: ${paymentType}`);
     
     // TODO: Enviar notificación por email al cliente
     // await sendOrderStatusEmail(orderId, orderStatus, paymentStatus);
@@ -94,7 +129,8 @@ export async function POST(request: NextRequest) {
         const updateSuccess = await updateOrderStatus(
           payment.external_reference,
           payment.status,
-          payment.id
+          payment.id,
+          payment.payment_method_id // Agregar el método de pago
         );
 
         if (updateSuccess) {

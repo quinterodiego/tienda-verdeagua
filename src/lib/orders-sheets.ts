@@ -181,7 +181,7 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
 }
 
 // Función para actualizar el estado de un pedido
-export async function updateOrderStatus(orderId: string, status: Order['status'], paymentId?: string): Promise<boolean> {
+export async function updateOrderStatus(orderId: string, status: Order['status'], paymentId?: string, paymentType?: string): Promise<boolean> {
   try {
     const sheets = await getGoogleSheetsAuth();
     
@@ -223,6 +223,18 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
       });
     }
 
+    // Si hay paymentType, actualizarlo en la columna K
+    if (paymentType) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAMES.ORDERS}!K${rowNumber}`, // Columna K es paymentType
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[paymentType]],
+        },
+      });
+    }
+
     // Actualizar paymentStatus basado en el status del pedido
     let paymentStatus = 'pending';
     switch (status) {
@@ -249,7 +261,7 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
       },
     });
 
-    console.log(`✅ Pedido ${orderId} actualizado a estado: ${status}, paymentStatus: ${paymentStatus}`);
+    console.log(`✅ Pedido ${orderId} actualizado a estado: ${status}, paymentStatus: ${paymentStatus}, paymentType: ${paymentType || 'no especificado'}`);
     return true;
   } catch (error) {
     console.error('Error al actualizar estado del pedido:', error);

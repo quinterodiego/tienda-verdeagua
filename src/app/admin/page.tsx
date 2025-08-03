@@ -26,10 +26,11 @@ import {
   Truck,
   Shield,
   Tag,
-  CreditCard,
+  // CreditCard, // Oculto temporalmente
   HelpCircle,
   Menu,
-  X
+  X,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore, Order } from '@/lib/admin-store';
@@ -38,9 +39,12 @@ import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
 import CategoryModal from '@/components/admin/CategoryModal';
 import UserRoleManager from '@/components/admin/UserRoleManager';
-import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel';
+// import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel'; // Oculto temporalmente
+import EmailTestPanel from '@/components/admin/EmailTestPanel';
+import EmailPreviewPanel from '@/components/admin/EmailPreviewPanel';
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-config';
+import { useSettings } from '@/lib/use-settings';
 import { User, Category } from '@/types';
 
 // Interfaz para usuarios de admin desde Google Sheets (extendida de User)
@@ -242,7 +246,9 @@ export default function AdminPage() {
     { id: 'categories', label: 'Categorías', icon: Tag },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'users', label: 'Usuarios', icon: Users },
-    { id: 'test-payments', label: 'Pagos de Prueba', icon: CreditCard },
+    // { id: 'test-payments', label: 'Pagos de Prueba', icon: CreditCard }, // Oculto temporalmente
+    { id: 'test-emails', label: 'Envío de Emails', icon: Mail },
+    { id: 'email-preview', label: 'Diseño de Emails', icon: Eye },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -296,8 +302,30 @@ export default function AdminPage() {
             onOpenRoleManager={() => setShowUserRoleManager(true)}
           />
         );
-      case 'test-payments':
-        return <MercadoPagoTestPanel />;
+      // case 'test-payments':
+      //   return <MercadoPagoTestPanel />; // Oculto temporalmente
+      case 'test-emails':
+        return (
+          <EmailTestPanel 
+            onSendTest={(result) => {
+              addNotification(
+                result.message,
+                result.success ? 'success' : 'error'
+              );
+            }}
+          />
+        );
+      case 'email-preview':
+        return (
+          <EmailPreviewPanel 
+            onSendTest={(result) => {
+              addNotification(
+                result.message,
+                result.success ? 'success' : 'error'
+              );
+            }}
+          />
+        );
       case 'settings':
         return <SettingsContent />;
       default:
@@ -573,16 +601,52 @@ function DashboardContent({
     const monthlyRevenue = sheetsOrders
       .filter(order => {
         const orderDate = new Date(order.createdAt);
-        return order.status === 'delivered' && 
+        // Incluir todos los pedidos excepto los cancelados
+        return order.status !== 'cancelled' && 
                orderDate.getMonth() === currentMonth && 
                orderDate.getFullYear() === currentYear;
       })
-      .reduce((sum, order) => sum + order.total, 0);
+      .reduce((sum, order) => {
+        // Asegurarse de que total sea un número
+        const total = typeof order.total === 'string' ? parseFloat(order.total) : order.total;
+        return sum + (isNaN(total) ? 0 : total);
+      }, 0);
+
+    // Debug: Log para ver los pedidos del mes
+    const currentMonthOrders = sheetsOrders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      const isValidDate = !isNaN(orderDate.getTime());
+      const isCurrentMonth = orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+      const isNotCancelled = order.status !== 'cancelled';
+      
+      console.log('Order debug:', {
+        orderId: order.id,
+        status: order.status,
+        total: order.total,
+        totalType: typeof order.total,
+        totalParsed: typeof order.total === 'string' ? parseFloat(order.total) : order.total,
+        createdAt: order.createdAt,
+        orderDate: orderDate.toString(),
+        isValidDate,
+        isCurrentMonth,
+        isNotCancelled,
+        shouldInclude: isNotCancelled && isCurrentMonth && isValidDate
+      });
+      
+      return isNotCancelled && isCurrentMonth && isValidDate;
+    });
+    
+    console.log('Todos los pedidos:', sheetsOrders);
+    console.log('Pedidos del mes filtrados:', currentMonthOrders);
+    console.log('Ingresos del mes calculados:', monthlyRevenue);
 
     // Calcular ingresos totales (para comparación)
     const totalRevenue = sheetsOrders
-      .filter(order => order.status === 'delivered')
-      .reduce((sum, order) => sum + order.total, 0);
+      .filter(order => order.status !== 'cancelled')
+      .reduce((sum, order) => {
+        const total = typeof order.total === 'string' ? parseFloat(order.total) : order.total;
+        return sum + (isNaN(total) ? 0 : total);
+      }, 0);
 
     // Calcular usuarios nuevos esta semana
     const oneWeekAgo = new Date();
@@ -1285,7 +1349,15 @@ function OrdersContent({
   onOpenOrderModal 
 }: OrdersContentProps) {
   const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('ORD-1754141616846'); // Pre-poblado para debug
+
+  // Debug: Buscar orden específica
+  useEffect(() => {
+    const specificOrder = sheetsOrders.find(order => order.id === 'ORD-1754141616846');
+    if (specificOrder) {
+      console.log('🔍 ORDEN ESPECÍFICA EN ORDERS CONTENT:', specificOrder);
+    }
+  }, [sheetsOrders]);
 
   const statusOptions = [
     { value: 'all', label: 'Todos los estados' },
@@ -1939,42 +2011,90 @@ function UsersContent({ sheetsUsers, dataLoading, onReloadData, onOpenRoleManage
 
 // Componente Configuración
 function SettingsContent() {
-  const settings = useAdminStore((state) => state.settings);
-  const updateSettings = useAdminStore((state) => state.updateSettings);
   const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+  const { settings, loading, saving, error, saveSettings, updateSettings } = useSettings();
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const handleInputChange = (field: keyof typeof settings, value: any) => {
-    setLocalSettings(prev => ({ ...prev, [field]: value }));
+  // Sincronizar localSettings cuando se cargan los settings desde Sheets
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+      setHasChanges(false);
+    }
+  }, [settings]);
+
+  const handleInputChange = (field: keyof NonNullable<typeof settings>, value: any) => {
+    if (!settings) return;
+    setLocalSettings(prev => ({ ...prev!, [field]: value }));
     setHasChanges(true);
   };
 
   const handleNestedChange = (
-    parent: keyof typeof settings, 
+    parent: keyof NonNullable<typeof settings>, 
     field: string, 
     value: any
   ) => {
+    if (!settings) return;
     setLocalSettings(prev => ({
-      ...prev,
+      ...prev!,
       [parent]: {
-        ...(prev[parent] as any),
+        ...(prev![parent] as any),
         [field]: value
       }
     }));
     setHasChanges(true);
   };
 
-  const handleSave = () => {
-    updateSettings(localSettings);
-    setHasChanges(false);
-    addNotification('Configuración guardada exitosamente', 'success');
+  const handleSave = async () => {
+    if (!localSettings) return;
+    
+    const result = await saveSettings(localSettings);
+    if (result.success) {
+      setHasChanges(false);
+      addNotification('Configuración guardada exitosamente en Google Sheets', 'success');
+    } else {
+      addNotification(`Error al guardar: ${result.error}`, 'error');
+    }
   };
 
   const handleReset = () => {
-    setLocalSettings(settings);
-    setHasChanges(false);
+    if (settings) {
+      setLocalSettings(settings);
+      setHasChanges(false);
+    }
   };
+
+  // Mostrar loading mientras se cargan los settings
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+        <span className="ml-3 text-gray-600">Cargando configuración...</span>
+      </div>
+    );
+  }
+
+  // Mostrar error si no se pudieron cargar los settings
+  if (error && !settings) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <AlertTriangle className="h-5 w-5 text-red-400" />
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error al cargar configuración</h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!localSettings) return null;
 
   return (
     <div>
@@ -2061,9 +2181,8 @@ function SettingsContent() {
                 onChange={(e) => handleInputChange('currency', e.target.value)}
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
               >
-                <option value="EUR">Euro (€)</option>
-                <option value="USD">Dólar ($)</option>
-                <option value="GBP">Libra (£)</option>
+                <option value="ARS">Pesos ($)</option>
+                <option value="USD">Dólar (USD)</option>
               </select>
             </div>
           </div>
@@ -2074,42 +2193,29 @@ function SettingsContent() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Métodos de Pago</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">PayPal</span>
+              <span className="text-sm font-medium text-gray-700">Mercado Pago</span>
               <button
-                onClick={() => handleNestedChange('paymentMethods', 'paypal', !localSettings.paymentMethods.paypal)}
+                onClick={() => handleNestedChange('paymentMethods', 'mercadopago', !localSettings.paymentMethods.mercadopago)}
                 className={`px-3 py-1 rounded text-sm font-medium ${
-                  localSettings.paymentMethods.paypal 
+                  localSettings.paymentMethods.mercadopago 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                {localSettings.paymentMethods.paypal ? 'Activo' : 'Inactivo'}
+                {localSettings.paymentMethods.mercadopago ? 'Activo' : 'Inactivo'}
               </button>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Stripe</span>
+              <span className="text-sm font-medium text-gray-700">Pago al retirar</span>
               <button
-                onClick={() => handleNestedChange('paymentMethods', 'stripe', !localSettings.paymentMethods.stripe)}
+                onClick={() => handleNestedChange('paymentMethods', 'cashOnPickup', !localSettings.paymentMethods.cashOnPickup)}
                 className={`px-3 py-1 rounded text-sm font-medium ${
-                  localSettings.paymentMethods.stripe 
+                  localSettings.paymentMethods.cashOnPickup 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                {localSettings.paymentMethods.stripe ? 'Activo' : 'Inactivo'}
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Transferencia Bancaria</span>
-              <button
-                onClick={() => handleNestedChange('paymentMethods', 'bankTransfer', !localSettings.paymentMethods.bankTransfer)}
-                className={`px-3 py-1 rounded text-sm font-medium ${
-                  localSettings.paymentMethods.bankTransfer 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {localSettings.paymentMethods.bankTransfer ? 'Activo' : 'Inactivo'}
+                {localSettings.paymentMethods.cashOnPickup ? 'Activo' : 'Inactivo'}
               </button>
             </div>
           </div>
@@ -2121,7 +2227,7 @@ function SettingsContent() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Costo de Envío Estándar (€)
+                Costo de Envío Estándar ($)
               </label>
               <input
                 type="number"
@@ -2134,7 +2240,7 @@ function SettingsContent() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Envío Gratis Desde (€)
+                Envío Gratis Desde ($)
               </label>
               <input
                 type="number"
@@ -2209,28 +2315,35 @@ function SettingsContent() {
       {/* Save Button */}
       <div className="mt-8 flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          Última actualización: {new Date().toLocaleDateString('es-ES')}
+          {localSettings.lastUpdated ? (
+            <>Última actualización en Sheets: {new Date(localSettings.lastUpdated).toLocaleString('es-ES')}</>
+          ) : (
+            <>Configuración desde localStorage</>
+          )}
         </div>
         <div className="space-x-3">
           <button
             onClick={handleReset}
-            disabled={!hasChanges}
+            disabled={!hasChanges || saving}
             className={`px-4 py-2 border border-gray-300 rounded-lg text-gray-700 ${
-              hasChanges ? 'hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'
+              hasChanges && !saving ? 'hover:bg-gray-50' : 'opacity-50 cursor-not-allowed'
             }`}
           >
             Descartar Cambios
           </button>
           <button
             onClick={handleSave}
-            disabled={!hasChanges}
-            className={`px-6 py-2 rounded-lg text-white ${
-              hasChanges 
+            disabled={!hasChanges || saving}
+            className={`px-6 py-2 rounded-lg text-white flex items-center ${
+              hasChanges && !saving
                 ? 'bg-[#68c3b7] hover:bg-[#64b7ac]' 
                 : 'bg-gray-400 cursor-not-allowed'
             }`}
           >
-            Guardar Configuración
+            {saving && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            )}
+            {saving ? 'Guardando en Sheets...' : 'Guardar en Google Sheets'}
           </button>
         </div>
       </div>
@@ -2370,20 +2483,20 @@ function CategoriesContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Categorías</h2>
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Categorías</h2>
         <button
           onClick={() => setCategoryModal({ isOpen: true, category: null })}
-          className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] flex items-center gap-2 transition-colors"
+          className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
-          Nueva Categoría
+          <span className="sm:inline">Nueva Categoría</span>
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+        <div className="relative flex-1 max-w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
@@ -2399,7 +2512,7 @@ function CategoriesContent() {
             const value = e.target.value;
             setFilterActive(value === 'all' ? null : value === 'true');
           }}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
         >
           <option value="all">Todas</option>
           <option value="true">Activas</option>
@@ -2407,8 +2520,8 @@ function CategoriesContent() {
         </select>
       </div>
 
-      {/* Lista de categorías */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Lista de categorías - Vista Desktop */}
+      <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -2497,6 +2610,83 @@ function CategoriesContent() {
             <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg mb-2">No hay categorías</p>
             <p className="text-gray-400">
+              {searchTerm || filterActive !== null 
+                ? 'No se encontraron categorías con los filtros aplicados'
+                : 'Crea tu primera categoría para organizar los productos'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Lista de categorías - Vista Móvil/Tablet */}
+      <div className="lg:hidden space-y-4">
+        {filteredCategories.map((category) => (
+          <div key={category.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            {/* Header de la tarjeta */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center flex-1 min-w-0">
+                <Tag className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {category.name}
+                  </h3>
+                  <div className="text-xs text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
+                    {category.slug}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Estado */}
+              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${
+                category.isActive
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {category.isActive ? 'Activa' : 'Inactiva'}
+              </span>
+            </div>
+
+            {/* Descripción */}
+            {category.description && (
+              <div className="mb-3">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {category.description}
+                </p>
+              </div>
+            )}
+
+            {/* Footer con fecha y acciones */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                Creada: {new Date(category.createdAt).toLocaleDateString('es-ES')}
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCategoryModal({ isOpen: true, category })}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="hidden sm:inline">Editar</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteCategory(category.id)}
+                  className="flex items-center gap-1 text-red-600 hover:text-red-900 px-2 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Eliminar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {filteredCategories.length === 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
+            <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">No hay categorías</p>
+            <p className="text-gray-400 px-4">
               {searchTerm || filterActive !== null 
                 ? 'No se encontraron categorías con los filtros aplicados'
                 : 'Crea tu primera categoría para organizar los productos'

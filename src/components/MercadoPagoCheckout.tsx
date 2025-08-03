@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import TestCardsHelper from '@/components/TestCardsHelper';
+import { useSettings } from '@/lib/use-settings';
+import { usePaymentMethods } from '@/lib/usePaymentMethods';
 
 interface CheckoutForm {
   // Información personal
@@ -55,6 +57,37 @@ export default function MercadoPagoCheckoutPage() {
   const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup'>('mercadopago');
+
+  // Cargar configuración del sitio y métodos de pago
+  const { settings, loading: settingsLoading } = useSettings();
+  const { 
+    availablePaymentMethods, 
+    hasAvailablePaymentMethods, 
+    shippingCost, 
+    freeShippingThreshold, 
+    taxRate 
+  } = usePaymentMethods();
+
+  // Determinar métodos de pago disponibles
+  const paymentMethodsConfig = {
+    mercadopago: availablePaymentMethods.some(method => method.id === 'mercadopago'),
+    cashOnPickup: availablePaymentMethods.some(method => method.id === 'cashOnPickup'),
+  };
+
+  // Establecer método de pago por defecto basado en configuración
+  useEffect(() => {
+    if (availablePaymentMethods.length > 0) {
+      // Si solo uno está habilitado, usarlo como defecto
+      if (paymentMethodsConfig.mercadopago && !paymentMethodsConfig.cashOnPickup) {
+        setPaymentMethod('mercadopago');
+      } else if (!paymentMethodsConfig.mercadopago && paymentMethodsConfig.cashOnPickup) {
+        setPaymentMethod('cash_on_pickup');
+      } else if (paymentMethodsConfig.mercadopago) {
+        // Si ambos están disponibles, preferir MercadoPago
+        setPaymentMethod('mercadopago');
+      }
+    }
+  }, [availablePaymentMethods]);
 
   // Verificar autenticación
   useEffect(() => {
@@ -435,16 +468,21 @@ export default function MercadoPagoCheckoutPage() {
     }
   };
 
-  // Calcular totales
+  // Calcular totales usando configuración del sitio
   const subtotal = total;
-  const shipping = total >= 50 ? 0 : 9.99;
-  const tax = (total >= 50 ? total : total + shipping) * 0.1;
+  const shipping = total >= freeShippingThreshold ? 0 : shippingCost;
+  const tax = (total >= freeShippingThreshold ? total : total + shipping) * taxRate;
   const finalTotal = subtotal + shipping + tax;
 
-  if (status === 'loading') {
+  if (status === 'loading' || settingsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {status === 'loading' ? 'Verificando sesión...' : 'Cargando configuración...'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -722,7 +760,7 @@ export default function MercadoPagoCheckoutPage() {
               </div>
 
               {/* Beneficios del envío */}
-              {total >= 50 && (
+              {total >= freeShippingThreshold && (
                 <div className="bg-green-50 rounded-lg p-4 mt-4">
                   <div className="flex items-center">
                     <Truck className="h-5 w-5 text-green-600 mr-2" />
@@ -742,71 +780,93 @@ export default function MercadoPagoCheckoutPage() {
               </div>
 
               {/* Selector de método de pago */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {/* MercadoPago */}
-                <div 
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'mercadopago' 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setPaymentMethod('mercadopago')}
-                >
-                  <div className="flex items-start">
-                    <input
-                      type="radio"
-                      checked={paymentMethod === 'mercadopago'}
-                      onChange={() => setPaymentMethod('mercadopago')}
-                      className="mt-1 mr-3"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <CreditCard className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="font-medium text-gray-900">Pago Online</h3>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Tarjetas de crédito, débito, transferencias
+              {!hasAvailablePaymentMethods ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                    <div>
+                      <h3 className="text-red-800 font-semibold">Sin métodos de pago disponibles</h3>
+                      <p className="text-red-700 text-sm mt-1">
+                        No hay métodos de pago configurados. Contacta al administrador.
                       </p>
-                      <div className="flex items-center text-sm text-blue-600">
-                        <Shield className="h-4 w-4 mr-1" />
-                        Pago seguro con MercadoPago
-                      </div>
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className={`grid gap-4 mb-6 ${
+                  (paymentMethodsConfig.mercadopago && paymentMethodsConfig.cashOnPickup) 
+                    ? 'grid-cols-1 md:grid-cols-2' 
+                    : 'grid-cols-1'
+                }`}>
+                  {/* MercadoPago */}
+                  {paymentMethodsConfig.mercadopago && (
+                    <div 
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        paymentMethod === 'mercadopago' 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('mercadopago')}
+                    >
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          checked={paymentMethod === 'mercadopago'}
+                          onChange={() => setPaymentMethod('mercadopago')}
+                          className="mt-1 mr-3"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <CreditCard className="h-5 w-5 text-blue-600 mr-2" />
+                            <h3 className="font-medium text-gray-900">Pago Online</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Tarjetas de crédito, débito, transferencias
+                          </p>
+                          <div className="flex items-center text-sm text-blue-600">
+                            <Shield className="h-4 w-4 mr-1" />
+                            Pago seguro con MercadoPago
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Pago al retirar */}
-                <div 
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'cash_on_pickup' 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setPaymentMethod('cash_on_pickup')}
-                >
-                  <div className="flex items-start">
-                    <input
-                      type="radio"
-                      checked={paymentMethod === 'cash_on_pickup'}
-                      onChange={() => setPaymentMethod('cash_on_pickup')}
-                      className="mt-1 mr-3"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <MapPin className="h-5 w-5 text-green-600 mr-2" />
-                        <h3 className="font-medium text-gray-900">Pago al Retirar</h3>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Efectivo o transferencia al retirar
-                      </p>
-                      <div className="flex items-center text-sm text-green-600">
-                        <Truck className="h-4 w-4 mr-1" />
-                        Sin costo de envío
+                  {/* Pago al retirar */}
+                  {paymentMethodsConfig.cashOnPickup && (
+                    <div 
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        paymentMethod === 'cash_on_pickup' 
+                          ? 'border-green-500 bg-green-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('cash_on_pickup')}
+                    >
+                      <div className="flex items-start">
+                        <input
+                          type="radio"
+                          checked={paymentMethod === 'cash_on_pickup'}
+                          onChange={() => setPaymentMethod('cash_on_pickup')}
+                          className="mt-1 mr-3"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <MapPin className="h-5 w-5 text-green-600 mr-2" />
+                            <h3 className="font-medium text-gray-900">Pago al Retirar</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Efectivo o transferencia al retirar
+                          </p>
+                          <div className="flex items-center text-sm text-green-600">
+                            <Truck className="h-4 w-4 mr-1" />
+                            Sin costo de envío
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               {/* Información específica según método seleccionado */}
               {paymentMethod === 'mercadopago' ? (
@@ -842,7 +902,14 @@ export default function MercadoPagoCheckoutPage() {
               )}
 
               {/* Botón de pago dinámico */}
-              {paymentMethod === 'mercadopago' ? (
+              {!hasAvailablePaymentMethods ? (
+                <button
+                  disabled
+                  className="w-full bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg cursor-not-allowed"
+                >
+                  Sin métodos de pago disponibles
+                </button>
+              ) : paymentMethod === 'mercadopago' && paymentMethodsConfig.mercadopago ? (
                 <button
                   onClick={handleMercadoPagoPayment}
                   disabled={isCreatingPreference || items.length === 0}
@@ -860,7 +927,7 @@ export default function MercadoPagoCheckoutPage() {
                     </>
                   )}
                 </button>
-              ) : (
+              ) : paymentMethod === 'cash_on_pickup' && paymentMethodsConfig.cashOnPickup ? (
                 <button
                   onClick={handleCashOnPickupOrder}
                   disabled={isProcessing || items.length === 0}
@@ -877,6 +944,13 @@ export default function MercadoPagoCheckoutPage() {
                       Confirmar Pedido para Retirar
                     </>
                   )}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg cursor-not-allowed"
+                >
+                  Método de pago no disponible
                 </button>
               )}
 

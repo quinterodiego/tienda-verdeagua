@@ -81,9 +81,8 @@ export interface StoreSettings {
     newUsers: boolean;
   };
   paymentMethods: {
-    paypal: boolean;
-    stripe: boolean;
-    bankTransfer: boolean;
+    mercadopago: boolean;
+    cashOnPickup: boolean;
   };
 }
 
@@ -315,7 +314,7 @@ const initialSettings: StoreSettings = {
   storeName: 'TechStore',
   contactEmail: 'contact@techstore.com',
   description: 'La mejor tienda de tecnología online',
-  currency: 'EUR',
+  currency: 'ARS',
   shippingCost: 15,
   freeShippingThreshold: 100,
   taxRate: 21,
@@ -325,9 +324,8 @@ const initialSettings: StoreSettings = {
     newUsers: false
   },
   paymentMethods: {
-    paypal: true,
-    stripe: false,
-    bankTransfer: true
+    mercadopago: true,
+    cashOnPickup: true
   }
 };
 
