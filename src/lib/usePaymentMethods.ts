@@ -13,25 +13,48 @@ export interface PaymentMethodConfig {
 export function usePaymentMethods() {
   const { settings, loading } = useSettings();
 
+  console.log('🔍 usePaymentMethods - Settings:', settings);
+  console.log('🔍 usePaymentMethods - Loading:', loading);
+
+  // Mientras se carga, no mostrar métodos de pago para evitar estado inconsistente
+  // Una vez cargado, usar la configuración real o valores por defecto si es la primera vez
+  const getMercadoPagoAvailable = () => {
+    if (loading) return false;
+    if (!settings) return true; // Primera vez, mostrar por defecto
+    return settings.paymentMethods?.mercadopago ?? true;
+  };
+
+  const getCashOnPickupAvailable = () => {
+    if (loading) return false;
+    if (!settings) return true; // Primera vez, mostrar por defecto
+    return settings.paymentMethods?.cashOnPickup ?? true;
+  };
+
   const paymentMethods: PaymentMethodConfig[] = [
     {
       id: 'mercadopago',
       name: 'Pago Online',
       description: 'Tarjetas de crédito, débito, transferencias',
       icon: 'credit-card',
-      available: settings?.paymentMethods?.mercadopago ?? true,
+      available: getMercadoPagoAvailable(),
     },
     {
       id: 'cashOnPickup',
       name: 'Pago al Retirar',
       description: 'Efectivo o transferencia al retirar',
       icon: 'map-pin',
-      available: settings?.paymentMethods?.cashOnPickup ?? true,
+      available: getCashOnPickupAvailable(),
     },
   ];
 
   const availablePaymentMethods = paymentMethods.filter(method => method.available);
   const hasAvailablePaymentMethods = availablePaymentMethods.length > 0;
+
+  console.log('🔍 usePaymentMethods - Payment methods config:', {
+    mercadopago: settings?.paymentMethods?.mercadopago,
+    cashOnPickup: settings?.paymentMethods?.cashOnPickup
+  });
+  console.log('🔍 usePaymentMethods - Available methods:', availablePaymentMethods.map(m => m.id));
 
   return {
     paymentMethods,

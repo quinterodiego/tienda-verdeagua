@@ -105,13 +105,13 @@ export default function CartPage() {
                         </div>
                         
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
+                          <h3 className="font-semibold text-gray-600">
                             {item.product.name}
                           </h3>
                           <p className="text-gray-600 text-sm">
                             {item.product.category}
                           </p>
-                          <p className="font-bold text-lg text-gray-900">
+                          <p className="font-bold text-lg text-gray-600">
                                                       <p className="text-lg font-bold text-gray-900">
                             {formatCurrency(item.product.price)}
                           </p>
@@ -129,18 +129,18 @@ export default function CartPage() {
                         <div className="flex items-center space-x-3">
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200"
+                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="font-semibold px-3 py-1 bg-gray-100 rounded">
+                          <span className="font-semibold px-3 py-1 bg-gray-100 rounded text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className={`p-1 rounded-full ${
+                            className={`p-1 rounded-full text-gray-600 ${
                               hasStockIssue 
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                ? 'bg-gray-300 cursor-not-allowed' 
                                 : 'bg-gray-100 hover:bg-gray-200'
                             }`}
                             disabled={hasStockIssue}
@@ -151,7 +151,7 @@ export default function CartPage() {
                         </div>
 
                         <div className="text-right">
-                          <p className="font-bold text-lg">
+                          <p className="font-bold text-lg text-gray-600">
                             {formatCurrency(item.product.price * item.quantity)}
                           </p>
                           <button
@@ -179,16 +179,16 @@ export default function CartPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold">{formatCurrency(total)}</span>
+                  <span className="font-semibold text-gray-600">{formatCurrency(total)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-semibold">Gratis</span>
+                  <span className="font-semibol text-gray-600">Gratis</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
-                    <span className="text-lg font-bold">Total</span>
-                    <span className="text-lg font-bold">{formatCurrency(total)}</span>
+                    <span className="text-lg font-bold text-gray-600">Total</span>
+                    <span className="text-lg font-bold text-gray-600">{formatCurrency(total)}</span>
                   </div>
                 </div>
               </div>

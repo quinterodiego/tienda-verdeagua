@@ -56,7 +56,7 @@ export default function MercadoPagoCheckoutPage() {
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
   const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
   const [currentStep, setCurrentStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup'>('mercadopago');
+  const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup' | null>(null);
 
   // Cargar configuración del sitio y métodos de pago
   const { settings, loading: settingsLoading } = useSettings();
@@ -68,6 +68,10 @@ export default function MercadoPagoCheckoutPage() {
     taxRate 
   } = usePaymentMethods();
 
+  console.log('🎯 MercadoPagoCheckout - Settings loading:', settingsLoading);
+  console.log('🎯 MercadoPagoCheckout - Available methods:', availablePaymentMethods.map(m => m.id));
+  console.log('🎯 MercadoPagoCheckout - Current payment method:', paymentMethod);
+
   // Determinar métodos de pago disponibles
   const paymentMethodsConfig = {
     mercadopago: availablePaymentMethods.some(method => method.id === 'mercadopago'),
@@ -77,17 +81,38 @@ export default function MercadoPagoCheckoutPage() {
   // Establecer método de pago por defecto basado en configuración
   useEffect(() => {
     if (availablePaymentMethods.length > 0) {
-      // Si solo uno está habilitado, usarlo como defecto
-      if (paymentMethodsConfig.mercadopago && !paymentMethodsConfig.cashOnPickup) {
-        setPaymentMethod('mercadopago');
-      } else if (!paymentMethodsConfig.mercadopago && paymentMethodsConfig.cashOnPickup) {
-        setPaymentMethod('cash_on_pickup');
-      } else if (paymentMethodsConfig.mercadopago) {
-        // Si ambos están disponibles, preferir MercadoPago
-        setPaymentMethod('mercadopago');
+      const hasMercadoPago = paymentMethodsConfig.mercadopago;
+      const hasCashOnPickup = paymentMethodsConfig.cashOnPickup;
+      
+      console.log('🔍 Métodos disponibles:', {
+        mercadopago: hasMercadoPago,
+        cashOnPickup: hasCashOnPickup,
+        currentSelection: paymentMethod
+      });
+      
+      // Solo cambiar si no hay método seleccionado o si el método actual no está disponible
+      const needsUpdate = paymentMethod === null || 
+        (paymentMethod === 'mercadopago' && !hasMercadoPago) ||
+        (paymentMethod === 'cash_on_pickup' && !hasCashOnPickup);
+      
+      if (needsUpdate) {
+        // Si solo uno está habilitado, usarlo como defecto
+        if (hasMercadoPago && !hasCashOnPickup) {
+          console.log('✅ Solo MercadoPago disponible');
+          setPaymentMethod('mercadopago');
+        } else if (!hasMercadoPago && hasCashOnPickup) {
+          console.log('✅ Solo Pago al Retirar disponible');
+          setPaymentMethod('cash_on_pickup');
+        } else if (hasMercadoPago && hasCashOnPickup) {
+          // Si ambos están disponibles, preferir MercadoPago solo si no hay selección previa
+          if (paymentMethod === null) {
+            console.log('✅ Ambos disponibles, prefiriendo MercadoPago');
+            setPaymentMethod('mercadopago');
+          }
+        }
       }
     }
-  }, [availablePaymentMethods]);
+  }, [availablePaymentMethods, paymentMethodsConfig.mercadopago, paymentMethodsConfig.cashOnPickup, paymentMethod]);
 
   // Verificar autenticación
   useEffect(() => {
