@@ -14,7 +14,7 @@ export default function OrderStatusEmailTestPanel({ className = '' }: OrderStatu
     orderId: 'TEST-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
     customerName: '',
     customerEmail: '',
-    newStatus: 'confirmed' as const,
+    newStatus: 'confirmed' as 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled',
     trackingNumber: '',
     estimatedDelivery: '',
     cancellationReason: ''

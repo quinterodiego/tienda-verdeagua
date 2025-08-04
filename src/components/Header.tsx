@@ -74,16 +74,16 @@ export default function Header() {
               Nosotros
             </Link>
             <Link 
-              href="/ayuda" 
-              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
-            >
-              Ayuda
-            </Link>
-            <Link 
               href="/contacto" 
               className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
             >
               Contacto
+            </Link>
+            <Link 
+              href="/ayuda" 
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
+            >
+              Ayuda
             </Link>
           </nav>
 
