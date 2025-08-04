@@ -407,7 +407,7 @@ export default function MisPedidosPage() {
                         Volver a comprar
                       </button>
                     )}
-                    {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing') && (
+                    {order.status === 'pending' && (
                       <button 
                         className="flex-1 sm:flex-none border border-red-300 text-red-700 px-6 py-2 rounded-lg hover:bg-red-50 transition-colors"
                         onClick={() => cancelOrder(order.id)}

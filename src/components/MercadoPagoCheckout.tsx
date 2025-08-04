@@ -54,6 +54,7 @@ export default function MercadoPagoCheckoutPage() {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
+  const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
   const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup' | null>(null);
@@ -132,12 +133,12 @@ export default function MercadoPagoCheckoutPage() {
     }
   }, [session, status, router]);
 
-  // Verificar que hay items en el carrito
+  // Verificar que hay items en el carrito (pero no redirigir si estamos procesando pago)
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isCreatingPreference && !isRedirectingToPayment) {
       router.push('/cart');
     }
-  }, [items, router]);
+  }, [items, router, isCreatingPreference, isRedirectingToPayment]);
   
   const [form, setForm] = useState<CheckoutForm>({
     firstName: session?.user?.name?.split(' ')[0] || '',
@@ -434,15 +435,20 @@ export default function MercadoPagoCheckoutPage() {
       const orderResult = await orderResponse.json();
       console.log('Pedido creado exitosamente:', orderResult.orderId);
       
-      // Limpiar el carrito
-      clearCart();
+      // Activar estado de redirección antes de limpiar carrito
+      setIsRedirectingToPayment(true);
       
       addNotification('Redirigiendo a MercadoPago...', 'success');
       
-      // Redirigir a MercadoPago
-      // En desarrollo usa sandbox_init_point, en producción init_point
-      const redirectUrl = data.sandboxInitPoint || data.initPoint;
-      window.location.href = redirectUrl;
+      // Esperar un poco antes de limpiar carrito para evitar desmontaje
+      setTimeout(() => {
+        clearCart();
+        
+        // Redirigir a MercadoPago
+        // En desarrollo usa sandbox_init_point, en producción init_point
+        const redirectUrl = data.sandboxInitPoint || data.initPoint;
+        window.location.href = redirectUrl;
+      }, 500);
       
     } catch (error) {
       console.error('Error completo al procesar el pago:', error);
@@ -500,6 +506,7 @@ export default function MercadoPagoCheckoutPage() {
       }
     } finally {
       setIsCreatingPreference(false);
+      setIsRedirectingToPayment(false);
     }
   };
 
@@ -528,6 +535,28 @@ export default function MercadoPagoCheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* Overlay de loading para proceso de pago */}
+      {(isCreatingPreference || isRedirectingToPayment) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {isCreatingPreference ? 'Procesando tu pago...' : 'Redirigiendo a MercadoPago...'}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              {isCreatingPreference 
+                ? 'Estamos configurando tu pago de forma segura. Por favor espera.' 
+                : 'Te estamos redirigiendo a la plataforma de pago segura de MercadoPago.'
+              }
+            </p>
+            <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
+              <Shield className="h-4 w-4 mr-1" />
+              Pago 100% seguro
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Indicador de Modo de Prueba */}
         {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_MERCADOPAGO_MODE === 'test' ? (
@@ -947,13 +976,18 @@ export default function MercadoPagoCheckoutPage() {
               ) : paymentMethod === 'mercadopago' && paymentMethodsConfig.mercadopago ? (
                 <button
                   onClick={handleMercadoPagoPayment}
-                  disabled={isCreatingPreference || items.length === 0}
+                  disabled={isCreatingPreference || isRedirectingToPayment || items.length === 0}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center"
                 >
                   {isCreatingPreference ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      Procesando...
+                      Procesando pago...
+                    </>
+                  ) : isRedirectingToPayment ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      Redirigiendo a MercadoPago...
                     </>
                   ) : (
                     <>
@@ -1003,7 +1037,6 @@ export default function MercadoPagoCheckoutPage() {
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" />
                     Compra garantizada
-                  </div>
                 </div>
               </div>
             </div>
