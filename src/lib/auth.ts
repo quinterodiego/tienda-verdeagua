@@ -66,6 +66,8 @@ export const authOptions: NextAuthOptions = {
           // No bloquear el login si falla el guardado en Sheets
         }
       }
+      
+      console.log('✅ SignIn callback retornando true');
       return true;
     },
     async jwt({ token, user }) {
@@ -89,6 +91,26 @@ export const authOptions: NextAuthOptions = {
         }
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      console.log('🔄 NextAuth redirect callback:', { url, baseUrl });
+      
+      // Si la URL ya es absoluta y del mismo dominio, usarla
+      if (url.startsWith(baseUrl)) {
+        console.log('✅ Redirigiendo a URL absoluta:', url);
+        return url;
+      }
+      
+      // Si la URL es relativa, convertirla a absoluta
+      if (url.startsWith('/')) {
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log('✅ Redirigiendo a URL relativa convertida:', redirectUrl);
+        return redirectUrl;
+      }
+      
+      // Fallback a la home
+      console.log('🏠 Fallback: redirigiendo a home');
+      return baseUrl;
     },
   },
   pages: {

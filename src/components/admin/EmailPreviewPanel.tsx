@@ -232,7 +232,7 @@ export default function EmailPreviewPanel({ onSendTest }: EmailPreviewPanelProps
                     className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
                       activeTemplate === template.id
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-gray-200 hover:border-gray-300 text-gray-600'
                     }`}
                   >
                     <span className="text-lg">{template.icon}</span>
@@ -252,7 +252,7 @@ export default function EmailPreviewPanel({ onSendTest }: EmailPreviewPanelProps
                     type="text"
                     value={previewData.welcome.userName}
                     onChange={(e) => updatePreviewData('welcome', 'userName', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                   />
                 </div>
                 <div>
@@ -261,7 +261,7 @@ export default function EmailPreviewPanel({ onSendTest }: EmailPreviewPanelProps
                     type="email"
                     value={previewData.welcome.userEmail}
                     onChange={(e) => updatePreviewData('welcome', 'userEmail', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                   />
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function EmailPreviewPanel({ onSendTest }: EmailPreviewPanelProps
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="Email para enviar prueba"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
                 />
                 <button
                   onClick={handleSendTest}

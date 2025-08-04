@@ -70,10 +70,36 @@ function HomeContent() {
     return filteredProducts.filter(product => product.category === selectedCategory);
   }, [filteredProducts, selectedCategory]);
 
+  // Early loading state before render
+  if (isLoading && products.length === 0) {
+    return (
+      <div className="bg-gray-50 flex flex-col h-full min-h-screen">
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                Bienvenidos a Verde Agua Personalizados
+              </h1>
+              <p className="text-xl md:text-2xl mb-8 opacity-90 font-medium">
+                Productos personalizados para hacer únicas tus ideas
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Loading Section */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#68c3b7]"></div>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 flex flex-col h-full">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white">
+      <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -103,7 +129,7 @@ function HomeContent() {
       </section>
 
       {/* Products Section */}
-      <section id="productos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section id="productos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Nuestros Productos
@@ -113,27 +139,30 @@ function HomeContent() {
           </p>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
-            <span className="ml-2 text-gray-600">Cargando productos...</span>
+        {/* Loading State - Solo para casos específicos */}
+        {isLoading && products.length > 0 && (
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#68c3b7]"></div>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <div className="text-red-600">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-4 text-center">
+              <div className="text-red-600 mb-4">
+                <svg className="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error al cargar productos</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-              </div>
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Error al cargar productos</h3>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Recargar página
+              </button>
             </div>
           </div>
         )}
@@ -211,10 +240,52 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <ClientOnly>
-      <Suspense fallback={<div>Cargando...</div>}>
+    <Suspense fallback={
+      <div className="bg-gray-50 flex flex-col h-full min-h-screen">
+        {/* Hero Section Placeholder */}
+        <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                Verde Agua Personalizados
+              </h1>
+              <p className="text-xl md:text-2xl mb-8 opacity-90 font-medium">
+                Productos personalizados para hacer únicas tus ideas
+              </p>
+            </div>
+          </div>
+        </section>
+        
+        {/* Loading Section */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#68c3b7]"></div>
+        </section>
+      </div>
+    }>
+      <ClientOnly fallback={
+        <div className="bg-gray-50 flex flex-col h-full min-h-screen">
+          {/* Hero Section Placeholder */}
+          <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+              <div className="text-center">
+                <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                  Verde Agua Personalizados
+                </h1>
+                <p className="text-xl md:text-2xl mb-8 opacity-90 font-medium">
+                  Productos personalizados para hacer únicas tus ideas
+                </p>
+              </div>
+            </div>
+          </section>
+          
+          {/* Loading Section */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#68c3b7]"></div>
+          </section>
+        </div>
+      }>
         <HomeContent />
-      </Suspense>
-    </ClientOnly>
+      </ClientOnly>
+    </Suspense>
   );
 }

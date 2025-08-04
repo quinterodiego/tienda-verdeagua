@@ -95,7 +95,7 @@ export default function ContactTestPanel({ onTestResult }: ContactTestPanelProps
         <div className="bg-gray-50 rounded-lg p-4">
           <h4 className="text-sm font-medium text-gray-700 mb-2">Email Actual Configurado:</h4>
           <div className="flex items-center gap-2">
-            <code className="text-sm bg-white px-2 py-1 rounded border">
+            <code className="text-sm bg-white px-2 py-1 rounded border text-gray-600">
               {currentEmail || 'No cargado'}
             </code>
             <button

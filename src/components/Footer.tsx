@@ -27,7 +27,7 @@ export default function Footer() {
               <span className="font-bold text-xl">Verde Agua Personalizados</span>
             </div>
             <p className="text-gray-400 mb-4">
-              Productos personalizados para hacer únicos tus estudios. 
+              Productos personalizados para hacer únicas tus ideas. 
               Calidad, creatividad y compromiso desde 2020.
             </p>
             <div className="flex space-x-4">

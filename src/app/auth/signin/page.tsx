@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn, getProviders } from 'next-auth/react';
+import { signIn, getProviders, useSession } from 'next-auth/react';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, Mail, ArrowLeft, Eye, EyeOff, Lock, User } from 'lucide-react';
@@ -17,6 +17,7 @@ interface Provider {
 
 function SignInContent() {
   const { showNotification } = useNotification();
+  const { data: session, status } = useSession();
   const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -33,6 +34,14 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
+  // Verificar si ya está autenticado y redirigir
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      console.log('🔄 Usuario ya autenticado, redirigiendo a:', callbackUrl);
+      router.push(callbackUrl);
+    }
+  }, [status, session, callbackUrl, router]);
+
   useEffect(() => {
     const fetchProviders = async () => {
       const res = await getProviders();
@@ -44,8 +53,13 @@ function SignInContent() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
+    console.log('🔍 Google Sign In iniciado, callbackUrl:', callbackUrl);
     try {
-      await signIn('google', { callbackUrl });
+      const result = await signIn('google', { 
+        callbackUrl,
+        redirect: true // Permitir redirección automática para Google
+      });
+      console.log('🔍 Resultado Google Sign In:', result);
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       setError('Error al iniciar sesión con Google');
@@ -101,6 +115,11 @@ function SignInContent() {
     e.preventDefault();
     setError('');
     
+    console.log('🚀 Iniciando proceso de autenticación...');
+    console.log('📍 CallbackUrl:', callbackUrl);
+    console.log('🔒 IsLogin:', isLogin);
+    console.log('📧 Email:', formData.email);
+    
     if (!validateForm()) {
       return;
     }
@@ -116,12 +135,31 @@ function SignInContent() {
           redirect: false,
         });
 
+        console.log('🔍 Resultado del login:', result);
+
         if (result?.error) {
+          console.log('❌ Error en login:', result.error);
           setError('Email o contraseña incorrectos');
           showNotification('Email o contraseña incorrectos', 'error');
         } else if (result?.ok) {
+          console.log('✅ Login exitoso, redirigiendo a:', callbackUrl);
           showNotification(`¡Bienvenido de vuelta!`, 'success');
-          router.push(callbackUrl);
+          
+          // Intentar redirección múltiple para asegurar que funcione
+          try {
+            router.push(callbackUrl);
+            
+            // Fallback con timeout
+            setTimeout(() => {
+              if (window.location.pathname === '/auth/signin') {
+                console.log('🔄 Fallback: usando window.location para redirección');
+                window.location.href = callbackUrl;
+              }
+            }, 1000);
+          } catch (error) {
+            console.error('❌ Error en router.push, usando window.location:', error);
+            window.location.href = callbackUrl;
+          }
         } else {
           setError('Error al iniciar sesión');
           showNotification('Error al iniciar sesión', 'error');
@@ -154,8 +192,24 @@ function SignInContent() {
             setError('Usuario creado, pero error al iniciar sesión automáticamente');
             showNotification('Usuario creado, pero error al iniciar sesión', 'warning');
           } else if (result?.ok) {
+            console.log('✅ Registro y login exitoso, redirigiendo a:', callbackUrl);
             showNotification('¡Bienvenido a TechStore!', 'success');
-            router.push(callbackUrl);
+            
+            // Intentar redirección múltiple para asegurar que funcione
+            try {
+              router.push(callbackUrl);
+              
+              // Fallback con timeout
+              setTimeout(() => {
+                if (window.location.pathname === '/auth/signin') {
+                  console.log('🔄 Fallback registro: usando window.location para redirección');
+                  window.location.href = callbackUrl;
+                }
+              }, 1000);
+            } catch (error) {
+              console.error('❌ Error en router.push registro, usando window.location:', error);
+              window.location.href = callbackUrl;
+            }
           } else {
             setError('Usuario creado, pero error al iniciar sesión');
             showNotification('Usuario creado, pero error al iniciar sesión', 'warning');
@@ -180,6 +234,19 @@ function SignInContent() {
       [e.target.name]: e.target.value
     });
   };
+
+  // Si está autenticado, mostrar pantalla de redirección
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7] mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">¡Sesión iniciada exitosamente!</h2>
+          <p className="text-gray-600">Redirigiendo...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

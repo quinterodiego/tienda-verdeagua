@@ -209,7 +209,7 @@ export default function CartPage() {
                   href="/checkout"
                   className="block w-full bg-[#68c3b7] text-white py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors mb-4 text-center"
                 >
-                  Proceder al checkout
+                  Proceder al pago
                 </Link>
               )}
               

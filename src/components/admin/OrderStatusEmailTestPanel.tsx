@@ -120,7 +120,7 @@ export default function OrderStatusEmailTestPanel({ className = '' }: OrderStatu
                 type="text"
                 value={formData.orderId}
                 onChange={(e) => handleInputChange('orderId', e.target.value)}
-                className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-gray-600"
                 placeholder="TEST-ABC123"
               />
               <button
@@ -141,7 +141,7 @@ export default function OrderStatusEmailTestPanel({ className = '' }: OrderStatu
               type="text"
               value={formData.customerName}
               onChange={(e) => handleInputChange('customerName', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-gray-600"
               placeholder="Juan Pérez"
               required
             />
@@ -155,7 +155,7 @@ export default function OrderStatusEmailTestPanel({ className = '' }: OrderStatu
               type="email"
               value={formData.customerEmail}
               onChange={(e) => handleInputChange('customerEmail', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-gray-600"
               placeholder="juan@example.com"
               required
             />
@@ -168,7 +168,7 @@ export default function OrderStatusEmailTestPanel({ className = '' }: OrderStatu
             <select
               value={formData.newStatus}
               onChange={(e) => handleInputChange('newStatus', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent text-gray-600"
             >
               {statusOptions.map((status) => {
                 const Icon = status.icon;

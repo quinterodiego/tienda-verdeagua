@@ -83,7 +83,7 @@ export default function EmailTestPanel({ onSendTest }: EmailTestPanelProps) {
             type="email"
             value={formData.recipientEmail}
             onChange={(e) => handleInputChange('recipientEmail', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
             placeholder="destinatario@ejemplo.com"
             required
           />
@@ -97,7 +97,7 @@ export default function EmailTestPanel({ onSendTest }: EmailTestPanelProps) {
           <select
             value={formData.testType}
             onChange={(e) => handleInputChange('testType', e.target.value as TestEmailData['testType'])}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
           >
             <option value="welcome">Email de Bienvenida</option>
             <option value="order_confirmation">Confirmación de Pedido</option>

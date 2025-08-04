@@ -9,7 +9,6 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import TestCardsHelper from '@/components/TestCardsHelper';
 import { useSettings } from '@/lib/use-settings';
 import { usePaymentMethods } from '@/lib/usePaymentMethods';
 
@@ -105,9 +104,9 @@ export default function MercadoPagoCheckoutPage() {
           console.log('✅ Solo Pago al Retirar disponible, estableciendo como defecto');
           setPaymentMethod('cash_on_pickup');
         } else if (hasMercadoPago && hasCashOnPickup) {
-          // Si ambos están disponibles, preferir Pago al Retirar como defecto
-          console.log('✅ Ambos métodos disponibles, prefiriendo Pago al Retirar como defecto');
-          setPaymentMethod('cash_on_pickup');
+          // Si ambos están disponibles, preferir MercadoPago como defecto
+          console.log('✅ Ambos métodos disponibles, prefiriendo MercadoPago como defecto');
+          setPaymentMethod('mercadopago');
         }
       }
       
@@ -513,13 +512,12 @@ export default function MercadoPagoCheckoutPage() {
   // Calcular totales usando configuración del sitio
   const subtotal = total;
   const shipping = total >= freeShippingThreshold ? 0 : shippingCost;
-  const tax = subtotal * taxRate; // IVA solo sobre productos, no sobre envío
-  const finalTotal = subtotal + shipping + tax;
+  const finalTotal = subtotal + shipping;
 
   if (status === 'loading' || settingsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-white rounded-lg shadow-lg p-8 max-w-md mx-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
             {status === 'loading' ? 'Verificando sesión...' : 'Cargando configuración...'}
@@ -537,8 +535,8 @@ export default function MercadoPagoCheckoutPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       {/* Overlay de loading para proceso de pago */}
       {(isCreatingPreference || isRedirectingToPayment) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        <div className="fixed inset-0 bg-white bg-opacity-80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center shadow-xl border">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {isCreatingPreference ? 'Procesando tu pago...' : 'Redirigiendo a MercadoPago...'}
@@ -558,24 +556,6 @@ export default function MercadoPagoCheckoutPage() {
       )}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Indicador de Modo de Prueba */}
-        {process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_MERCADOPAGO_MODE === 'test' ? (
-          <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
-              <div>
-                <h3 className="text-orange-800 font-semibold">🧪 Modo de Prueba Activado</h3>
-                <p className="text-orange-700 text-sm mt-1">
-                  Los pagos no son reales. Para producción, configura MERCADOPAGO_MODE=production y credenciales reales.
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* Helper de Tarjetas de Prueba */}
-        <TestCardsHelper />
-        
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -812,10 +792,6 @@ export default function MercadoPagoCheckoutPage() {
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
                   <span>{shipping === 0 ? 'Gratis' : formatCurrency(shipping)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>IVA</span>
-                  <span>{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-200">
                   <span>Total</span>

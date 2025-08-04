@@ -31,12 +31,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${poppins.variable} antialiased`}
+        className={`${poppins.variable} antialiased min-h-screen flex flex-col`}
       >
         <NotificationProvider>
           <AuthProvider>
             <Header />
-            {children}
+            <main className="flex-1">
+              {children}
+            </main>
             <Footer />
             <GlobalNotifications />
           </AuthProvider>
