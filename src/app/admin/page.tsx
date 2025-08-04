@@ -39,9 +39,11 @@ import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
 import CategoryModal from '@/components/admin/CategoryModal';
 import UserRoleManager from '@/components/admin/UserRoleManager';
+import ContactTestPanel from '@/components/admin/ContactTestPanel';
 // import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel'; // Oculto temporalmente
 import EmailTestPanel from '@/components/admin/EmailTestPanel';
 import EmailPreviewPanel from '@/components/admin/EmailPreviewPanel';
+import OrderStatusEmailTestPanel from '@/components/admin/OrderStatusEmailTestPanel';
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-config';
 import { useSettings } from '@/lib/use-settings';
@@ -306,14 +308,27 @@ export default function AdminPage() {
       //   return <MercadoPagoTestPanel />; // Oculto temporalmente
       case 'test-emails':
         return (
-          <EmailTestPanel 
-            onSendTest={(result) => {
-              addNotification(
-                result.message,
-                result.success ? 'success' : 'error'
-              );
-            }}
-          />
+          <div className="space-y-6">
+            <EmailTestPanel 
+              onSendTest={(result) => {
+                addNotification(
+                  result.message,
+                  result.success ? 'success' : 'error'
+                );
+              }}
+            />
+            
+            <OrderStatusEmailTestPanel />
+            
+            <ContactTestPanel 
+              onTestResult={(result) => {
+                addNotification(
+                  result.message,
+                  result.success ? 'success' : 'error'
+                );
+              }}
+            />
+          </div>
         );
       case 'email-preview':
         return (
@@ -2138,6 +2153,23 @@ function SettingsContent() {
         {/* General Settings */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración General</h3>
+          
+          {/* Información sobre configuración de emails */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <Mail className="h-5 w-5 text-blue-400" />
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-blue-800">Configuración de Emails</h4>
+                <div className="mt-2 text-sm text-blue-700">
+                  <p><strong>Email General:</strong> Se muestra en el sitio web</p>
+                  <p><strong>Email Formulario:</strong> Recibe mensajes de contacto</p>
+                  <p className="mt-1 text-xs">💡 Si el formulario está vacío, usará el email general.</p>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2152,14 +2184,33 @@ function SettingsContent() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email de Contacto
+                Email de Contacto General
               </label>
               <input
                 type="email"
                 value={localSettings.contactEmail}
                 onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                placeholder="contacto@mitienda.com"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Email principal para contacto de la tienda
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email para Formulario de Contacto
+              </label>
+              <input
+                type="email"
+                value={localSettings.contactFormEmail || localSettings.contactEmail}
+                onChange={(e) => handleInputChange('contactFormEmail', e.target.value)}
+                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                placeholder="mensajes@mitienda.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                📧 Los mensajes del formulario de contacto llegarán a esta dirección
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 interface SiteSettings {
   storeName: string;
   contactEmail: string;
+  contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
   shippingCost: number;
@@ -226,7 +227,13 @@ async function saveSettingsToSheet(sheet: any, settings: SiteSettings) {
       key: 'contactEmail',
       value: settings.contactEmail,
       type: 'string',
-      description: 'Email de contacto'
+      description: 'Email de contacto general'
+    },
+    {
+      key: 'contactFormEmail',
+      value: settings.contactFormEmail || settings.contactEmail,
+      type: 'string',
+      description: 'Email para recibir mensajes del formulario de contacto'
     },
     {
       key: 'description',

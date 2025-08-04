@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Search, Menu, User, X, Heart, Home, LogOut, Users, Mail, Settings } from 'lucide-react';
+import { ShoppingCart, Search, Menu, User, X, Heart, Home, LogOut, Users, Mail, Settings, HelpCircle } from 'lucide-react';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -72,6 +72,12 @@ export default function Header() {
               className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
             >
               Nosotros
+            </Link>
+            <Link 
+              href="/ayuda" 
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-colors"
+            >
+              Ayuda
             </Link>
             <Link 
               href="/contacto" 
@@ -224,6 +230,15 @@ export default function Header() {
               >
                 <Users className="w-5 h-5 mr-3" />
                 Nosotros
+              </Link>
+
+              <Link 
+                href="/ayuda" 
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <HelpCircle className="w-5 h-5 mr-3" />
+                Ayuda
               </Link>
 
               <Link 

@@ -50,4 +50,21 @@ export interface TestEmailData {
   customMessage?: string;
 }
 
-export type EmailType = 'welcome' | 'order_confirmation' | 'test';
+export interface OrderStatusUpdateEmailData {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  newStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  items: Array<{
+    productName: string;
+    quantity: number;
+    price: number;
+  }>;
+  total: number;
+  orderDate: string;
+  trackingNumber?: string;
+  estimatedDelivery?: string;
+  cancellationReason?: string;
+}
+
+export type EmailType = 'welcome' | 'order_confirmation' | 'order_status_update' | 'test';

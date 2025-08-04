@@ -6,6 +6,7 @@ import { useAdminStore } from './admin-store';
 export interface SiteSettings {
   storeName: string;
   contactEmail: string;
+  contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
   shippingCost: number;

@@ -506,7 +506,7 @@ export default function MercadoPagoCheckoutPage() {
   // Calcular totales usando configuración del sitio
   const subtotal = total;
   const shipping = total >= freeShippingThreshold ? 0 : shippingCost;
-  const tax = (total >= freeShippingThreshold ? total : total + shipping) * taxRate;
+  const tax = subtotal * taxRate; // IVA solo sobre productos, no sobre envío
   const finalTotal = subtotal + shipping + tax;
 
   if (status === 'loading' || settingsLoading) {

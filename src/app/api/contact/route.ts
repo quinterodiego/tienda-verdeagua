@@ -40,8 +40,23 @@ export async function POST(request: NextRequest) {
       mensaje
     });
 
+    // Obtener la dirección de email configurada para recibir mensajes de contacto
+    let adminEmail = process.env.EMAIL_FROM || 'info@verdeaguapersonalizados.com';
+    
+    try {
+      const configResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/contact/config`);
+      if (configResponse.ok) {
+        const configData = await configResponse.json();
+        if (configData.success && configData.contactFormEmail) {
+          adminEmail = configData.contactFormEmail;
+          console.log('📧 Usando email configurado para contacto:', adminEmail);
+        }
+      }
+    } catch (configError) {
+      console.warn('⚠️ No se pudo obtener configuración de email, usando fallback:', adminEmail);
+    }
+
     // Enviar email al admin
-    const adminEmail = process.env.EMAIL_FROM || 'info@verdeaguapersonalizados.com';
     const result = await sendEmail({
       to: adminEmail,
       subject: `💬 Nuevo mensaje de contacto: ${asunto}`,

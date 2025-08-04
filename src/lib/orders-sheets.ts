@@ -198,6 +198,15 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
       throw new Error('Pedido no encontrado');
     }
 
+    const orderRow = rows[orderIndex];
+    const currentStatus = orderRow[4]; // Estado actual
+    
+    // Si el estado no ha cambiado, no enviamos email
+    if (currentStatus === status) {
+      console.log(`⚠️ El pedido ${orderId} ya tiene el estado ${status}, no se envía email`);
+      return true;
+    }
+
     // La fila en la hoja (considerando que fila 1 son encabezados)
     const rowNumber = orderIndex + 2;
 
@@ -260,6 +269,57 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
         values: [[paymentStatus]],
       },
     });
+
+    // 📧 NUEVO: Enviar email de notificación al cliente
+    try {
+      const { sendOrderStatusUpdateEmail } = await import('@/lib/email');
+      
+      // Parsear los datos del pedido para el email
+      const customerEmail = orderRow[1]; // Columna B
+      const customerName = orderRow[2]; // Columna C
+      const total = parseFloat(orderRow[3]) || 0; // Columna D
+      const itemsJson = orderRow[5] || '[]'; // Columna F
+      const orderDate = new Date(orderRow[9] || Date.now()).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      let items = [];
+      try {
+        items = JSON.parse(itemsJson);
+      } catch (error) {
+        console.error('Error al parsear items del pedido:', error);
+        items = [];
+      }
+
+      // Preparar datos para el email
+      const emailData = {
+        orderId,
+        customerName,
+        customerEmail,
+        newStatus: status,
+        items: items.map((item: any) => ({
+          productName: item.productName || item.name || 'Producto',
+          quantity: item.quantity || 1,
+          price: item.price || 0
+        })),
+        total,
+        orderDate,
+        trackingNumber: undefined, // TODO: Implementar tracking
+        estimatedDelivery: undefined, // TODO: Implementar fecha estimada
+        cancellationReason: status === 'cancelled' ? 'Pedido cancelado' : undefined
+      };
+
+      console.log(`📧 Enviando email de notificación a ${customerEmail} para pedido ${orderId} - Estado: ${status}`);
+      
+      await sendOrderStatusUpdateEmail(emailData);
+      console.log(`✅ Email de notificación enviado exitosamente`);
+      
+    } catch (emailError) {
+      console.error('❌ Error al enviar email de notificación:', emailError);
+      // No fallar la actualización del pedido si el email falla
+    }
 
     console.log(`✅ Pedido ${orderId} actualizado a estado: ${status}, paymentStatus: ${paymentStatus}, paymentType: ${paymentType || 'no especificado'}`);
     return true;

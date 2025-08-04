@@ -70,6 +70,7 @@ export interface AdminProduct {
 export interface StoreSettings {
   storeName: string;
   contactEmail: string;
+  contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
   shippingCost: number;

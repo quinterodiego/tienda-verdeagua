@@ -4,7 +4,8 @@ import type {
   SendEmailParams, 
   OrderEmailData, 
   WelcomeEmailData,
-  TestEmailData 
+  TestEmailData,
+  OrderStatusUpdateEmailData 
 } from '@/types/email';
 
 // Configuración del transportador de email
@@ -816,6 +817,347 @@ export async function sendTestEmail(data: TestEmailData) {
   const template = createTestEmail(data);
   return sendEmail({
     to: data.recipientEmail,
+    subject: template.subject,
+    html: template.html,
+  });
+}
+
+// Template para notificaciones de cambio de estado
+export function createOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
+  const { orderId, customerName, customerEmail, newStatus, items, total, orderDate, trackingNumber, estimatedDelivery, cancellationReason } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const logoUrl = process.env.EMAIL_LOGO_URL || `${baseUrl}/logo.png`;
+  
+  // Configuración específica para cada estado
+  const statusConfig = {
+    pending: {
+      title: '⏳ Tu pedido está pendiente',
+      message: 'Estamos verificando tu pago y la disponibilidad de productos.',
+      description: 'Tu pedido está siendo procesado. Te notificaremos cuando esté confirmado.',
+      color: '#f59e0b',
+      bgColor: '#fef3c7',
+      actionText: 'No necesitas hacer nada por ahora. Te contactaremos si necesitamos información adicional.',
+    },
+    confirmed: {
+      title: '✅ ¡Tu pedido ha sido confirmado!',
+      message: 'Tu pago ha sido verificado y tu pedido está confirmado.',
+      description: 'Estamos preparando tu pedido para comenzar el proceso de producción.',
+      color: '#3b82f6',
+      bgColor: '#dbeafe',
+      actionText: 'Pronto comenzaremos a procesar tu pedido. Te notificaremos cuando esté listo.',
+    },
+    processing: {
+      title: '📦 Tu pedido está siendo procesado',
+      message: '¡Buenas noticias! Estamos preparando tu pedido.',
+      description: 'Nuestro equipo está empaquetando cuidadosamente tus productos.',
+      color: '#14b8a6',
+      bgColor: '#ccfbf1',
+      actionText: 'Tu pedido estará listo para envío muy pronto. Te notificaremos cuando sea despachado.',
+    },
+    shipped: {
+      title: '🚚 ¡Tu pedido está en camino!',
+      message: 'Tu pedido ha sido enviado y está en camino hacia ti.',
+      description: trackingNumber ? `Código de seguimiento: ${trackingNumber}` : 'Pronto recibirás el código de seguimiento.',
+      color: '#8b5cf6',
+      bgColor: '#ede9fe',
+      actionText: trackingNumber ? 'Puedes rastrear tu envío con el código proporcionado.' : 'Te enviaremos el código de seguimiento pronto.',
+    },
+    delivered: {
+      title: '🎉 ¡Tu pedido ha sido entregado!',
+      message: '¡Esperamos que disfrutes tus productos!',
+      description: 'Tu pedido ha sido entregado exitosamente. ¡Gracias por tu compra!',
+      color: '#10b981',
+      bgColor: '#d1fae5',
+      actionText: '¿Te gustó tu experiencia? Nos encantaría conocer tu opinión.',
+    },
+    cancelled: {
+      title: '❌ Tu pedido ha sido cancelado',
+      message: cancellationReason || 'Tu pedido ha sido cancelado.',
+      description: 'Si este cancelamiento fue inesperado, no dudes en contactarnos.',
+      color: '#ef4444',
+      bgColor: '#fee2e2',
+      actionText: 'Si tienes preguntas sobre esta cancelación, contáctanos y te ayudaremos.',
+    }
+  };
+
+  const config = statusConfig[newStatus];
+  
+  const itemsHtml = items.map(item => `
+    <tr style="border-bottom: 1px solid #e2e8f0;">
+      <td style="padding: 12px 8px; font-weight: 500; color: #2d3748;">${item.productName}</td>
+      <td style="padding: 12px 8px; text-align: center; color: #4a5568;">${item.quantity}</td>
+      <td style="padding: 12px 8px; text-align: right; color: #2d3748; font-weight: 500;">$${item.price.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Actualización de Pedido #${orderId}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #2d3748; background-color: #f7fafc; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+          background: linear-gradient(135deg, #ffffff, #f8fffe); 
+          color: #2d3748; 
+          padding: 30px 40px; 
+          text-align: center;
+          border-bottom: 3px solid #68c3b7;
+        }
+        .logo { margin-bottom: 20px; }
+        .logo img { max-width: 200px; height: auto; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 300; color: #2d3748; }
+        .status-badge {
+          display: inline-block;
+          background: ${config.color};
+          color: white;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 500;
+          margin-top: 10px;
+        }
+        .content { padding: 40px; background-color: white; }
+        .status-section {
+          background: ${config.bgColor};
+          border: 1px solid ${config.color};
+          border-radius: 12px;
+          padding: 25px;
+          margin-bottom: 30px;
+          text-align: center;
+        }
+        .status-section h2 { 
+          color: ${config.color}; 
+          font-size: 24px; 
+          margin-bottom: 15px;
+          font-weight: 600;
+        }
+        .status-section p { 
+          color: #4a5568; 
+          font-size: 16px; 
+          margin-bottom: 10px;
+        }
+        .order-details { 
+          background-color: #f8f9fa; 
+          padding: 25px; 
+          border-radius: 12px; 
+          margin: 25px 0;
+        }
+        .order-details h3 { 
+          color: #2d3748; 
+          font-size: 20px; 
+          margin-bottom: 20px;
+          font-weight: 600;
+        }
+        .order-info { 
+          display: flex; 
+          flex-wrap: wrap; 
+          gap: 20px; 
+          margin-bottom: 20px;
+        }
+        .order-info-item { 
+          flex: 1; 
+          min-width: 200px;
+        }
+        .order-info-label { 
+          font-weight: 600; 
+          color: #4a5568; 
+          font-size: 14px; 
+          margin-bottom: 5px;
+        }
+        .order-info-value { 
+          color: #2d3748; 
+          font-size: 16px; 
+          font-weight: 500;
+        }
+        .items-table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-top: 20px;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .items-table th { 
+          background: #68c3b7; 
+          color: white; 
+          font-weight: 600; 
+          padding: 15px 10px; 
+          text-align: left;
+        }
+        .items-table th:last-child { text-align: right; }
+        .total-row { background-color: #f1f5f9; font-weight: bold; }
+        .total-row td { padding: 15px 10px !important; }
+        .action-section {
+          background: #f8fffe;
+          border: 1px solid #68c3b7;
+          border-radius: 12px;
+          padding: 20px;
+          margin: 25px 0;
+          text-align: center;
+        }
+        .action-section h4 { 
+          color: #68c3b7; 
+          font-size: 18px; 
+          margin-bottom: 10px;
+          font-weight: 600;
+        }
+        .track-button {
+          display: inline-block;
+          background: #68c3b7;
+          color: white;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: 500;
+          margin-top: 15px;
+        }
+        .footer { 
+          background-color: #2d3748; 
+          color: white; 
+          text-align: center; 
+          padding: 30px 40px;
+        }
+        .footer-logo { margin-bottom: 15px; }
+        .footer-logo img { max-width: 150px; height: auto; filter: brightness(0) invert(1); }
+        .footer p { margin: 8px 0; font-size: 14px; color: #a0aec0; }
+        @media only screen and (max-width: 600px) {
+          .email-container { margin: 0 10px; }
+          .content { padding: 30px 20px; }
+          .header { padding: 25px 20px; }
+          .order-details { padding: 20px; }
+          .order-info { display: block; }
+          .order-info-item { display: block; width: 100%; margin-bottom: 15px; }
+          .footer { padding: 25px 20px; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <h1>Actualización de Pedido</h1>
+          <div class="status-badge">Pedido #${orderId}</div>
+        </div>
+        
+        <div class="content">
+          <div class="status-section">
+            <h2>${config.title}</h2>
+            <p><strong>${config.message}</strong></p>
+            <p>${config.description}</p>
+          </div>
+
+          <div class="order-details">
+            <h3>📋 Resumen del Pedido</h3>
+            <div class="order-info">
+              <div class="order-info-item">
+                <div class="order-info-label">Número de Pedido:</div>
+                <div class="order-info-value">#${orderId}</div>
+              </div>
+              <div class="order-info-item">
+                <div class="order-info-label">Cliente:</div>
+                <div class="order-info-value">${customerName}</div>
+              </div>
+              <div class="order-info-item">
+                <div class="order-info-label">Fecha del Pedido:</div>
+                <div class="order-info-value">${orderDate}</div>
+              </div>
+              <div class="order-info-item">
+                <div class="order-info-label">Estado Actual:</div>
+                <div class="order-info-value" style="color: ${config.color}; font-weight: 600;">
+                  ${getStatusDisplayName(newStatus)}
+                </div>
+              </div>
+            </div>
+            
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="text-align: center;">Cantidad</th>
+                  <th style="text-align: right;">Precio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                <tr class="total-row">
+                  <td colspan="2"><strong>Total del Pedido:</strong></td>
+                  <td style="text-align: right;"><strong>$${total.toFixed(2)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          ${trackingNumber ? `
+          <div class="action-section">
+            <h4>📦 Información de Seguimiento</h4>
+            <p><strong>Código de seguimiento:</strong> ${trackingNumber}</p>
+            ${estimatedDelivery ? `<p><strong>Entrega estimada:</strong> ${estimatedDelivery}</p>` : ''}
+            <a href="/mis-pedidos" class="track-button">Ver Detalles del Pedido</a>
+          </div>
+          ` : ''}
+
+          <div class="action-section">
+            <h4>💬 ¿Qué sigue ahora?</h4>
+            <p>${config.actionText}</p>
+            <a href="/mis-pedidos" class="track-button">Ver Mis Pedidos</a>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+            <p style="margin: 0; color: #4a5568;">¿Tienes alguna pregunta sobre tu pedido?</p>
+            <p style="margin: 5px 0 0 0;">
+              <a href="/contacto" style="color: #68c3b7; text-decoration: none; font-weight: 500;">
+                Contáctanos aquí
+              </a>
+            </p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <div class="footer-logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <p><strong>Verde Agua Personalizados</strong></p>
+          <p>Tu tienda online de productos personalizados</p>
+          <p style="margin-top: 20px; font-size: 12px;">Este email fue enviado a ${customerEmail}</p>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">© 2025 Verde Agua Personalizados. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return {
+    subject: `${getStatusDisplayName(newStatus)} - Pedido #${orderId} - Verde Agua Personalizados`,
+    html,
+  };
+}
+
+// Función helper para obtener el nombre del estado en español
+function getStatusDisplayName(status: string): string {
+  const statusNames: Record<string, string> = {
+    pending: 'Pendiente',
+    confirmed: 'Confirmado',
+    processing: 'Procesando',
+    shipped: 'Enviado',
+    delivered: 'Entregado',
+    cancelled: 'Cancelado'
+  };
+  return statusNames[status] || status;
+}
+
+// Función para enviar notificación de cambio de estado
+export async function sendOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
+  const template = createOrderStatusUpdateEmail(data);
+  return sendEmail({
+    to: data.customerEmail,
     subject: template.subject,
     html: template.html,
   });

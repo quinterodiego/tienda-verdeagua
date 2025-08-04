@@ -25,7 +25,7 @@ export function usePaymentMethods() {
       loading: true,
       shippingCost: 9.99,
       freeShippingThreshold: 50,
-      taxRate: 0.1,
+      taxRate: 0.21, // IVA 21% como decimal
       currency: 'ARS',
     };
   }
@@ -75,7 +75,7 @@ export function usePaymentMethods() {
     // Configuración de costos para mostrar en UI
     shippingCost: settings?.shippingCost ?? 9.99,
     freeShippingThreshold: settings?.freeShippingThreshold ?? 50,
-    taxRate: settings?.taxRate ?? 0.1,
+    taxRate: (settings?.taxRate ?? 21) / 100, // Convertir porcentaje a decimal (21% = 0.21)
     currency: settings?.currency ?? 'ARS',
   };
 }
