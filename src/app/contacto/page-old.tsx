@@ -363,6 +363,76 @@ export default function ContactoPage() {
               * Campos obligatorios. Nos comprometemos a responder en menos de 24 horas.
             </p>
           </div>
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  placeholder="tu@email.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="asunto" className="block text-sm font-medium text-gray-700 mb-2">
+                  Asunto *
+                </label>
+                <select
+                  id="asunto"
+                  name="asunto"
+                  required
+                  value={formData.asunto}
+                  onChange={handleChange}
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                >
+                  <option value="">Selecciona un asunto</option>
+                  <option value="consulta-producto">Consulta sobre producto</option>
+                  <option value="pedido-personalizado">Pedido personalizado</option>
+                  <option value="problema-pedido">Problema con mi pedido</option>
+                  <option value="sugerencia">Sugerencia</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="mensaje" className="block text-sm font-medium text-gray-700 mb-2">
+                  Mensaje *
+                </label>
+                <textarea
+                  id="mensaje"
+                  name="mensaje"
+                  required
+                  rows={5}
+                  value={formData.mensaje}
+                  onChange={handleChange}
+                  className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  placeholder="Cuéntanos en qué podemos ayudarte..."
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#68c3b7] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#5ab3a7] transition-colors flex items-center justify-center space-x-2"
+              >
+                <Send className="w-5 h-5" />
+                <span>Enviar mensaje</span>
+              </button>
+            </form>
+
+            <p className="text-sm text-gray-500 mt-4">
+              * Campos obligatorios. Nos comprometemos a responder en menos de 24 horas.
+            </p>
+          </div>
         </div>
       </section>
 
