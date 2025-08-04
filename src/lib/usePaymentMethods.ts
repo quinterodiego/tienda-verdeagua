@@ -16,16 +16,27 @@ export function usePaymentMethods() {
   console.log('🔍 usePaymentMethods - Settings:', settings);
   console.log('🔍 usePaymentMethods - Loading:', loading);
 
-  // Mientras se carga, no mostrar métodos de pago para evitar estado inconsistente
+  // Mientras se carga, no retornar métodos para evitar estado inconsistente
+  if (loading) {
+    return {
+      paymentMethods: [],
+      availablePaymentMethods: [],
+      hasAvailablePaymentMethods: false,
+      loading: true,
+      shippingCost: 9.99,
+      freeShippingThreshold: 50,
+      taxRate: 0.1,
+      currency: 'ARS',
+    };
+  }
+
   // Una vez cargado, usar la configuración real o valores por defecto si es la primera vez
   const getMercadoPagoAvailable = () => {
-    if (loading) return false;
     if (!settings) return true; // Primera vez, mostrar por defecto
     return settings.paymentMethods?.mercadopago ?? true;
   };
 
   const getCashOnPickupAvailable = () => {
-    if (loading) return false;
     if (!settings) return true; // Primera vez, mostrar por defecto
     return settings.paymentMethods?.cashOnPickup ?? true;
   };
@@ -60,7 +71,7 @@ export function usePaymentMethods() {
     paymentMethods,
     availablePaymentMethods,
     hasAvailablePaymentMethods,
-    loading,
+    loading: false,
     // Configuración de costos para mostrar en UI
     shippingCost: settings?.shippingCost ?? 9.99,
     freeShippingThreshold: settings?.freeShippingThreshold ?? 50,

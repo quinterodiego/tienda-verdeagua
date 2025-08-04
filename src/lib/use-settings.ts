@@ -38,10 +38,15 @@ export function useSettings() {
       setLoading(true);
       setError(null);
       
+      console.log('🔍 useSettings - Iniciando carga de configuración...');
+      
       const response = await fetch('/api/admin/settings');
       const data = await response.json();
       
+      console.log('🔍 useSettings - Respuesta de API:', data);
+      
       if (data.success && data.settings) {
+        console.log('🔍 useSettings - Configuración cargada exitosamente:', data.settings);
         setSettings(data.settings);
         // Sincronizar con el store local
         updateStoreSettings(data.settings);
@@ -49,13 +54,15 @@ export function useSettings() {
         throw new Error(data.error || 'Error al cargar configuración');
       }
     } catch (err) {
-      console.error('Error cargando configuración:', err);
+      console.error('🚨 useSettings - Error cargando configuración:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       
       // Fallback al store local si hay error
       const localSettings = useAdminStore.getState().settings;
+      console.log('🔍 useSettings - Fallback a settings locales:', localSettings);
       setSettings(localSettings);
     } finally {
+      console.log('🔍 useSettings - Finalizando carga, setting loading = false');
       setLoading(false);
     }
   };

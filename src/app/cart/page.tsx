@@ -111,10 +111,8 @@ export default function CartPage() {
                           <p className="text-gray-600 text-sm">
                             {item.product.category}
                           </p>
-                          <p className="font-bold text-lg text-gray-600">
-                                                      <p className="text-lg font-bold text-gray-900">
+                          <p className="text-lg font-bold text-gray-900">
                             {formatCurrency(item.product.price)}
-                          </p>
                           </p>
                           
                           {/* Alerta de stock individual */}
@@ -183,7 +181,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-semibol text-gray-600">Gratis</span>
+                  <span className="font-semibold text-gray-600">Gratis</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
