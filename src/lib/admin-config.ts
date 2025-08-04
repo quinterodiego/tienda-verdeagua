@@ -3,6 +3,7 @@ import { User, UserRole } from '@/types';
 // Lista de emails de administradores predeterminados (fallback)
 export const ADMIN_EMAILS = [
   'd86webs@gmail.com',
+  'sebastianperez6@hotmail.com',
   // Agrega más emails de administradores aquí:
   // 'otro-admin@example.com',
   // 'admin@empresa.com',

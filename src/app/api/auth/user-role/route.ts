@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fallback: verificar si es admin por email
-    const adminEmails = ['d86webs@gmail.com'];
+    const adminEmails = ['d86webs@gmail.com', 'sebastianperez6@hotmail.com'];
     const isAdminByEmail = adminEmails.includes(session.user.email);
     
     return NextResponse.json({
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     
     // En caso de error, devolver info básica
     const session = await getServerSession(authOptions);
-    const adminEmails = ['d86webs@gmail.com'];
+    const adminEmails = ['d86webs@gmail.com', 'sebastianperez6@hotmail.com'];
     const isAdminByEmail = session?.user?.email ? adminEmails.includes(session.user.email) : false;
     
     return NextResponse.json({

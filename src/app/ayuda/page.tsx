@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function AyudaPage() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'estados-pedido': true, // Expandir por defecto la sección de estados
+    'estados-pedido': false, // Expandir por defecto la sección de estados
   });
 
   const toggleSection = (sectionId: string) => {
@@ -28,7 +28,7 @@ export default function AyudaPage() {
         </div>
 
         {/* Navegación rápida */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        {/* <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Navegación rápida</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             <button
@@ -36,24 +36,24 @@ export default function AyudaPage() {
               className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Package className="w-5 h-5 text-[#68c3b7] mr-3" />
-              <span className="text-sm font-medium">Estados del Pedido</span>
+              <span className="text-sm font-medium text-gray-600">Estados del Pedido</span>
             </button>
             <button
               onClick={() => toggleSection('pagos')}
               className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <CreditCard className="w-5 h-5 text-[#68c3b7] mr-3" />
-              <span className="text-sm font-medium">Pagos y Facturación</span>
+              <span className="text-sm font-medium text-gray-600">Pagos y Facturación</span>
             </button>
             <button
               onClick={() => toggleSection('envios')}
               className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Truck className="w-5 h-5 text-[#68c3b7] mr-3" />
-              <span className="text-sm font-medium">Envíos y Entregas</span>
+              <span className="text-sm font-medium text-gray-600">Envíos y Entregas</span>
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Contenido de ayuda */}
         <div className="space-y-6">

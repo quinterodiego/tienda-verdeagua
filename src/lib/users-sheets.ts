@@ -8,6 +8,7 @@ import { withQuotaHandling } from './quota-handler';
 // Lista de emails de administradores predeterminados
 const DEFAULT_ADMIN_EMAILS = [
   'd86webs@gmail.com',
+  'sebastianperez6@hotmail.com',
   // Agrega más emails de administradores aquí
 ];
 
