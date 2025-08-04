@@ -1037,6 +1037,7 @@ export default function MercadoPagoCheckoutPage() {
                   <div className="flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" />
                     Compra garantizada
+                  </div>
                 </div>
               </div>
             </div>
