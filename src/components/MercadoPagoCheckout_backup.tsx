@@ -4,17 +4,6 @@ import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/currency';
 import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle } from 'lucide-react';
 import CashOnPickupButton from '@/components/CashOnPickupButton';
-
-// Componente para el ícono de MercadoPago
-const MercadoPagoIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <Image 
-    src="/mercadopago-icon.svg" 
-    alt="MercadoPago" 
-    width={20} 
-    height={20} 
-    className={className}
-  />
-);
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
@@ -96,9 +85,9 @@ export default function MercadoPagoCheckoutPage() {
 
   const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
 
-  // Configuración desde settings - Sin cargos por envío
-  const shippingCost = 0; // Sin costo de envío
-  const freeShippingThreshold = 0; // Sin umbral de envío gratis
+  // Configuración desde settings
+  const shippingCost = 1500; // Valor por defecto
+  const freeShippingThreshold = 15000; // Valor por defecto
 
   // Prellenar formulario con datos de la sesión
   useEffect(() => {
@@ -198,7 +187,7 @@ export default function MercadoPagoCheckoutPage() {
           quantity: item.quantity,
           image: item.product.image
         })),
-        total: subtotal, // Sin cargos por envío
+        total: subtotal + shipping,
         paymentMethod: 'cash_on_pickup',
         paymentStatus: 'pending'
       };
@@ -295,7 +284,16 @@ export default function MercadoPagoCheckoutPage() {
         currency_id: 'ARS'
       }));
 
-      // Sin cargos por envío - se remueve esta sección
+      // Agregar envío si corresponde
+      if (shipping > 0) {
+        mpItems.push({
+          id: 'shipping',
+          title: 'Envío',
+          quantity: 1,
+          unit_price: shipping,
+          currency_id: 'ARS'
+        });
+      }
 
       const preferenceData = {
         items: mpItems,
@@ -313,7 +311,7 @@ export default function MercadoPagoCheckoutPage() {
             zipCode: form.zipCode,
             phone: form.phone,
           },
-          total: subtotal // Sin cargos por envío
+          total: subtotal + shipping
         }
       };
 
@@ -407,9 +405,10 @@ export default function MercadoPagoCheckoutPage() {
     }
   };
 
-  // Cálculos de totales - Sin cargos por envío
+  // Cálculos de totales
   const subtotal = total;
-  const totalWithShipping = subtotal; // Igual al subtotal sin envío
+  const shipping = total >= freeShippingThreshold ? 0 : shippingCost;
+  const totalWithShipping = subtotal + shipping;
 
   if (status === 'loading' || settingsLoading) {
     return (
@@ -480,7 +479,7 @@ export default function MercadoPagoCheckoutPage() {
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <MercadoPagoIcon className="w-5 h-5 mr-2" />
+                      <CreditCard className="w-5 h-5 mr-2 text-blue-600" />
                       <div>
                         <div className="font-medium">MercadoPago</div>
                         <div className="text-sm text-gray-600">Tarjetas de crédito/débito, transferencia bancaria</div>
@@ -503,7 +502,7 @@ export default function MercadoPagoCheckoutPage() {
                       <Truck className="w-5 h-5 mr-2 text-green-600" />
                       <div>
                         <div className="font-medium">Pago al Retirar</div>
-                        <div className="text-sm text-gray-600">Efectivo al momento del retiro</div>
+                        <div className="text-sm text-gray-600">Efectivo al momento del retiro - Sin envío</div>
                       </div>
                     </div>
                   </label>
@@ -725,19 +724,42 @@ export default function MercadoPagoCheckoutPage() {
                   <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 
-                {/* Sin cargos por envío - se elimina esta sección */}
+                {selectedPaymentMethod !== 'cash_on_pickup' && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">
+                      Envío {total >= freeShippingThreshold && '(Gratis)'}
+                    </span>
+                    <span className="font-medium">
+                      {shipping > 0 ? formatCurrency(shipping) : 'Gratis'}
+                    </span>
+                  </div>
+                )}
+
+                {selectedPaymentMethod === 'cash_on_pickup' && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Envío (Retiro en tienda)</span>
+                    <span className="font-medium">Gratis</span>
+                  </div>
+                )}
                 
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span>
-                      {formatCurrency(subtotal)}
+                      {formatCurrency(selectedPaymentMethod === 'cash_on_pickup' ? subtotal : totalWithShipping)}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Sin mensaje de envío gratis - se elimina esta sección */}
+              {/* Mensaje de envío gratis */}
+              {selectedPaymentMethod !== 'cash_on_pickup' && total < freeShippingThreshold && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 Agrega {formatCurrency(freeShippingThreshold - total)} más para obtener envío gratis
+                  </p>
+                </div>
+              )}
 
               {/* Botón de Pago */}
               <div className="mt-6">
@@ -754,7 +776,7 @@ export default function MercadoPagoCheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <MercadoPagoIcon className="w-4 h-4 mr-2" />
+                        <Shield className="w-4 h-4 mr-2" />
                         Pagar con MercadoPago
                       </>
                     )}
