@@ -293,8 +293,8 @@ export default function MercadoPagoCheckoutPage() {
       
       addNotification('¡Pedido confirmado! Te contactaremos para coordinar el retiro.', 'success');
       
-      // Redirigir a página de éxito
-      router.push(`/checkout/success?order_id=${orderResult.orderId}&payment_method=cash_on_pickup`);
+      // Redirigir a la página de mis pedidos para pagos al retirar
+      router.push('/mis-pedidos');
       
     } catch (error) {
       console.error('Error al procesar el pedido:', error);
