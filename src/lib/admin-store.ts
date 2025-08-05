@@ -31,6 +31,7 @@ export interface Order {
     phone: string;
   };
   trackingNumber?: string;
+  shippingUrl?: string;
   estimatedDelivery?: string;
   notes?: string;
 }
@@ -73,9 +74,6 @@ export interface StoreSettings {
   contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
-  shippingCost: number;
-  freeShippingThreshold: number;
-  taxRate: number;
   notifications: {
     newOrders: boolean;
     lowStock: boolean;
@@ -85,6 +83,11 @@ export interface StoreSettings {
     mercadopago: boolean;
     cashOnPickup: boolean;
   };
+  shipping: {
+    trackingUrl?: string; // URL de la empresa de paquetería para tracking
+    trackingUrlPlaceholder?: string; // Placeholder para mostrar cómo usar la URL
+  };
+  lastUpdated?: string;
 }
 
 interface AdminState {
@@ -316,9 +319,6 @@ const initialSettings: StoreSettings = {
   contactEmail: 'contact@techstore.com',
   description: 'La mejor tienda de tecnología online',
   currency: 'ARS',
-  shippingCost: 15,
-  freeShippingThreshold: 100,
-  taxRate: 21,
   notifications: {
     newOrders: true,
     lowStock: true,
@@ -327,6 +327,10 @@ const initialSettings: StoreSettings = {
   paymentMethods: {
     mercadopago: true,
     cashOnPickup: true
+  },
+  shipping: {
+    trackingUrl: '',
+    trackingUrlPlaceholder: ''
   }
 };
 

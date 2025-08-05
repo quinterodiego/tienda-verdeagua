@@ -9,9 +9,6 @@ export interface SiteSettings {
   contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
-  shippingCost: number;
-  freeShippingThreshold: number;
-  taxRate: number;
   notifications: {
     newOrders: boolean;
     lowStock: boolean;
@@ -20,6 +17,10 @@ export interface SiteSettings {
   paymentMethods: {
     mercadopago: boolean;
     cashOnPickup: boolean;
+  };
+  shipping: {
+    trackingUrl?: string; // URL de la empresa de paquetería para tracking
+    trackingUrlPlaceholder?: string; // Placeholder para mostrar cómo usar la URL
   };
   lastUpdated?: string;
 }

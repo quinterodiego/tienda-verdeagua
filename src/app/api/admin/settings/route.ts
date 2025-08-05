@@ -6,9 +6,6 @@ interface SiteSettings {
   contactFormEmail?: string; // Nuevo campo para mensajes de contacto
   description: string;
   currency: string;
-  shippingCost: number;
-  freeShippingThreshold: number;
-  taxRate: number;
   notifications: {
     newOrders: boolean;
     lowStock: boolean;
@@ -17,6 +14,10 @@ interface SiteSettings {
   paymentMethods: {
     mercadopago: boolean;
     cashOnPickup: boolean;
+  };
+  shipping: {
+    trackingUrl?: string; // URL de la empresa de paquetería para tracking
+    trackingUrlPlaceholder?: string; // Placeholder para mostrar cómo usar la URL
   };
   lastUpdated?: string;
 }
@@ -70,9 +71,6 @@ export async function GET() {
         contactEmail: 'contact@techstore.com',
         description: 'La mejor tienda de tecnología online',
         currency: 'ARS',
-        shippingCost: 15,
-        freeShippingThreshold: 100,
-        taxRate: 21,
         notifications: {
           newOrders: true,
           lowStock: true,
@@ -81,6 +79,10 @@ export async function GET() {
         paymentMethods: {
           mercadopago: true,
           cashOnPickup: true
+        },
+        shipping: {
+          trackingUrl: '',
+          trackingUrlPlaceholder: ''
         },
         lastUpdated: new Date().toISOString()
       };
@@ -248,24 +250,6 @@ async function saveSettingsToSheet(sheet: any, settings: SiteSettings) {
       description: 'Moneda por defecto'
     },
     {
-      key: 'shippingCost',
-      value: settings.shippingCost.toString(),
-      type: 'number',
-      description: 'Costo de envío estándar'
-    },
-    {
-      key: 'freeShippingThreshold',
-      value: settings.freeShippingThreshold.toString(),
-      type: 'number',
-      description: 'Monto mínimo para envío gratis'
-    },
-    {
-      key: 'taxRate',
-      value: settings.taxRate.toString(),
-      type: 'number',
-      description: 'Tasa de impuesto (%)'
-    },
-    {
       key: 'notifications',
       value: JSON.stringify(settings.notifications),
       type: 'object',
@@ -276,6 +260,12 @@ async function saveSettingsToSheet(sheet: any, settings: SiteSettings) {
       value: JSON.stringify(settings.paymentMethods),
       type: 'object',
       description: 'Métodos de pago habilitados'
+    },
+    {
+      key: 'shipping',
+      value: JSON.stringify(settings.shipping),
+      type: 'object',
+      description: 'Configuración de envíos y seguimiento'
     },
     {
       key: 'lastUpdated',

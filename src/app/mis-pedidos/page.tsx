@@ -4,10 +4,12 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/lib/currency';
-import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle, Copy, ExternalLink, Globe } from 'lucide-react';
 import { Order } from '@/types';
 import OrderDetailModal from '@/components/OrderDetailModal';
 import Image from 'next/image';
+import { useSettings } from '@/lib/use-settings';
+import { generateTrackingUrl } from '@/lib/tracking-utils';
 
 // Función para obtener el color del estado
 const getStatusColor = (status: Order['status']) => {
@@ -76,6 +78,7 @@ export default function MisPedidosPage() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | undefined>(undefined);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const { settings } = useSettings();
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -296,6 +299,74 @@ export default function MisPedidosPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Información de tracking si está disponible */}
+                  {order.trackingNumber && (order.status === 'shipped' || order.status === 'delivered') && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                            <Truck className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-blue-900">
+                              {order.status === 'delivered' ? 'Pedido entregado' : 'Número de seguimiento'}
+                            </h4>
+                            <p className="text-sm text-blue-700 font-mono">{order.trackingNumber}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.trackingNumber || '');
+                              // Aquí podrías mostrar un toast de confirmación
+                            }}
+                            className="flex items-center space-x-1 px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded-md hover:bg-blue-100 transition-colors"
+                            title="Copiar número de tracking"
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>Copiar</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const trackingUrl = settings?.shipping?.trackingUrl;
+                              
+                              if (trackingUrl && trackingUrl.includes('{tracking}') && order.trackingNumber) {
+                                const fullUrl = generateTrackingUrl(trackingUrl, order.trackingNumber);
+                                window.open(fullUrl, '_blank');
+                              } else {
+                                // Fallback a Google
+                                const searchUrl = `https://www.google.com/search?q=rastrear+${encodeURIComponent(order.trackingNumber || '')}`;
+                                window.open(searchUrl, '_blank');
+                              }
+                            }}
+                            className="flex items-center space-x-1 px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded-md hover:bg-blue-100 transition-colors"
+                            title={settings?.shipping?.trackingUrl ? 
+                              `Abrir en ${settings.shipping.trackingUrlPlaceholder || 'sitio de seguimiento'}` : 
+                              'Buscar en Google'
+                            }
+                          >
+                            {settings?.shipping?.trackingUrl ? (
+                              <>
+                                <Globe className="w-3 h-3" />
+                                <span>Rastrear</span>
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Buscar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      {order.status === 'shipped' && (
+                        <p className="mt-2 text-xs text-blue-600">
+                          💡 Usa este número para rastrear tu pedido en el sitio web de la empresa de envíos
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Información adicional para pedidos cancelados */}
                   {order.status === 'cancelled' && (

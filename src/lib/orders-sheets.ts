@@ -94,7 +94,7 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:K`, // Cambiado de A2:J a A2:K para incluir paymentMethod
+      range: `${SHEET_NAMES.ORDERS}!A2:L`, // Expandido a L para incluir tracking number
     });
 
     const rows = response.data.values || [];
@@ -156,6 +156,7 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
             paymentId: row[7] || undefined,
             paymentStatus: row[8] as Order['paymentStatus'] || 'pending',
             paymentMethod: row[10] as Order['paymentMethod'] || 'mercadopago',
+            trackingNumber: row[11] || undefined, // Nueva columna para tracking number
             shippingAddress: {
               firstName: firstName,
               lastName: lastName,
@@ -336,7 +337,7 @@ export async function getAllOrdersFromSheets(): Promise<Order[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:K`, // Cambiado de A2:J a A2:K
+      range: `${SHEET_NAMES.ORDERS}!A2:L`, // Expandido a L para incluir tracking number
     });
 
     const rows = response.data.values || [];
@@ -366,6 +367,7 @@ export async function getAllOrdersFromSheets(): Promise<Order[]> {
           paymentId: row[7] || undefined,
           paymentStatus: row[8] as Order['paymentStatus'] || 'pending',
           paymentMethod: row[10] as Order['paymentMethod'] || 'mercadopago',
+          trackingNumber: row[11] || undefined, // Nueva columna para tracking number
           shippingAddress: {
             firstName: '',
             lastName: '',
@@ -396,7 +398,7 @@ export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A2:K`,
+      range: `${SHEET_NAMES.ORDERS}!A2:L`, // Expandido a L para incluir tracking number
     });
 
     const rows = response.data.values || [];
@@ -441,6 +443,7 @@ export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
           paymentId: row[7] || undefined,
           paymentStatus: row[8] || 'pending',
           paymentMethod: row[10] || 'mercadopago',
+          trackingNumber: row[11] || undefined, // Nueva columna para tracking number
           shippingAddress: {
             firstName: '',
             lastName: '',
@@ -461,5 +464,158 @@ export async function getAllOrdersFromSheetsForAdmin(): Promise<any[]> {
   } catch (error) {
     console.error('Error al obtener pedidos para admin:', error);
     return [];
+  }
+}
+
+// Función para actualizar el número de tracking y URL de envío de un pedido
+export async function updateOrderTrackingInSheets(
+  orderId: string, 
+  trackingNumber: string,
+  shippingUrl?: string
+): Promise<{ success: boolean; error?: string; customerEmail?: string; customerName?: string }> {
+  try {
+    console.log('📦 Actualizando tracking en Sheets para pedido:', orderId);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Primero obtener los datos actuales para encontrar el pedido
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!A:Z`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length === 0) {
+      return { success: false, error: 'No hay datos en la hoja de pedidos' };
+    }
+
+    const headers = rows[0];
+    const orderRows = rows.slice(1);
+    
+    // Buscar el índice de las columnas necesarias
+    const idColumnIndex = headers.indexOf('ID');
+    const emailColumnIndex = headers.indexOf('Email Usuario');
+    const nameColumnIndex = headers.indexOf('Nombre Usuario');
+    let trackingColumnIndex = headers.indexOf('Número de Seguimiento');
+    let shippingUrlColumnIndex = headers.indexOf('URL de Envío');
+    
+    if (idColumnIndex === -1) {
+      return { success: false, error: 'Columna ID no encontrada' };
+    }
+
+    // Si no existen las columnas, agregarlas
+    let headersUpdated = false;
+    
+    if (trackingColumnIndex === -1) {
+      console.log('➕ Agregando columna de tracking...');
+      const paymentTypeIndex = headers.indexOf('Tipo de Pago');
+      if (paymentTypeIndex !== -1) {
+        headers.splice(paymentTypeIndex + 1, 0, 'Número de Seguimiento');
+        trackingColumnIndex = paymentTypeIndex + 1;
+      } else {
+        headers.push('Número de Seguimiento');
+        trackingColumnIndex = headers.length - 1;
+      }
+      headersUpdated = true;
+    }
+    
+    if (shippingUrlColumnIndex === -1) {
+      console.log('➕ Agregando columna de URL de envío...');
+      // Agregar después de la columna de tracking
+      headers.splice(trackingColumnIndex + 1, 0, 'URL de Envío');
+      shippingUrlColumnIndex = trackingColumnIndex + 1;
+      headersUpdated = true;
+    }
+    
+    if (headersUpdated) {
+      // Actualizar headers
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAMES.ORDERS}!1:1`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: [headers],
+        },
+      });
+    }
+
+    // Buscar la fila del pedido
+    const orderRowIndex = orderRows.findIndex((row: any[]) => row[idColumnIndex] === orderId);
+    
+    if (orderRowIndex === -1) {
+      return { success: false, error: 'Pedido no encontrado' };
+    }
+
+    const actualRowIndex = orderRowIndex + 2; // +1 para headers, +1 para índice basado en 1
+    const orderRow = orderRows[orderRowIndex];
+    
+    // Asegurar que la fila tenga suficientes columnas
+    while (orderRow.length <= Math.max(trackingColumnIndex, shippingUrlColumnIndex)) {
+      orderRow.push('');
+    }
+    
+    // Actualizar el tracking number y URL de envío
+    orderRow[trackingColumnIndex] = trackingNumber;
+    if (shippingUrl) {
+      orderRow[shippingUrlColumnIndex] = shippingUrl;
+    }
+    
+    // Actualizar la fila en Google Sheets
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!${actualRowIndex}:${actualRowIndex}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [orderRow],
+      },
+    });
+    
+    console.log('✅ Tracking y URL de envío actualizados exitosamente');
+    
+    return { 
+      success: true,
+      customerEmail: orderRow[emailColumnIndex] || '',
+      customerName: orderRow[nameColumnIndex] || ''
+    };
+
+  } catch (error) {
+    console.error('❌ Error actualizando tracking:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    };
+  }
+}
+
+// Función para obtener el tracking number de un pedido
+export async function getOrderTrackingFromSheets(orderId: string): Promise<string | null> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!A:Z`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length === 0) return null;
+
+    const headers = rows[0];
+    const orderRows = rows.slice(1);
+    
+    const idColumnIndex = headers.indexOf('ID');
+    const trackingColumnIndex = headers.indexOf('Número de Seguimiento');
+    
+    if (idColumnIndex === -1 || trackingColumnIndex === -1) return null;
+    
+    const orderRow = orderRows.find((row: any[]) => row[idColumnIndex] === orderId);
+    
+    if (!orderRow) return null;
+    
+    return orderRow[trackingColumnIndex] || null;
+
+  } catch (error) {
+    console.error('Error obteniendo tracking:', error);
+    return null;
   }
 }

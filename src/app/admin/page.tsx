@@ -561,11 +561,30 @@ export default function AdminPage() {
         isOpen={orderModal.isOpen}
         onClose={() => setOrderModal({ isOpen: false })}
         order={orderModal.order}
-        onUpdateStatus={(orderId, status) => {
-          const { updateOrderStatus } = useAdminStore.getState();
-          updateOrderStatus(orderId, status);
-          addNotification(`Estado del pedido actualizado a: ${status}`, 'success');
-          setOrderModal({ isOpen: false });
+        onUpdateStatus={async (orderId, status) => {
+          try {
+            const response = await fetch('/api/admin/orders/status', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ orderId, status }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al actualizar estado del pedido');
+            }
+
+            const result = await response.json();
+            addNotification(`Estado del pedido actualizado a: ${status}`, 'success');
+            
+            // Recargar datos y cerrar modal
+            await loadSheetsData();
+            setOrderModal({ isOpen: false });
+          } catch (error) {
+            console.error('Error al actualizar estado:', error);
+            addNotification('Error al actualizar el estado del pedido', 'error');
+          }
         }}
       />
 
@@ -1364,7 +1383,7 @@ function OrdersContent({
   onOpenOrderModal 
 }: OrdersContentProps) {
   const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
-  const [searchTerm, setSearchTerm] = useState('ORD-1754141616846'); // Pre-poblado para debug
+  const [searchTerm, setSearchTerm] = useState(''); // Pre-poblado para debug
 
   // Debug: Buscar orden específica
   useEffect(() => {
@@ -2268,53 +2287,6 @@ function SettingsContent() {
               >
                 {localSettings.paymentMethods.cashOnPickup ? 'Activo' : 'Inactivo'}
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Shipping Settings */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración de Envíos</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Costo de Envío Estándar ($)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={localSettings.shippingCost}
-                onChange={(e) => handleInputChange('shippingCost', parseFloat(e.target.value) || 0)}
-                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Envío Gratis Desde ($)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={localSettings.freeShippingThreshold}
-                onChange={(e) => handleInputChange('freeShippingThreshold', parseFloat(e.target.value) || 0)}
-                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tasa de Impuesto (%)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={localSettings.taxRate}
-                onChange={(e) => handleInputChange('taxRate', parseFloat(e.target.value) || 0)}
-                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-              />
             </div>
           </div>
         </div>

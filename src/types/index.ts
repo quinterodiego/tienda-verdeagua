@@ -85,6 +85,7 @@ export interface Order {
     phone: string;
   };
   trackingNumber?: string;
+  shippingUrl?: string;
   estimatedDelivery?: Date;
   notes?: string;
 }
@@ -94,6 +95,7 @@ export interface OrderStatusUpdate {
   status: Order['status'];
   notes?: string;
   trackingNumber?: string;
+  shippingUrl?: string;
   estimatedDelivery?: Date;
 }
 

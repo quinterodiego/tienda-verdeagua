@@ -3,12 +3,13 @@
 import { X, Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Order } from '@/lib/admin-store';
 import { useState } from 'react';
+import TrackingManager from './TrackingManager';
 
 interface OrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   order?: Order;
-  onUpdateStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateStatus: (orderId: string, status: Order['status']) => Promise<void>;
 }
 
 const statusInfo = {
@@ -31,12 +32,21 @@ const statusOptions: Array<{ value: Order['status']; label: string }> = [
 
 export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: OrderModalProps) {
   const [selectedStatus, setSelectedStatus] = useState(order?.status || 'pending');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   if (!isOpen || !order) return null;
 
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = async () => {
     if (selectedStatus !== order.status) {
-      onUpdateStatus(order.id, selectedStatus);
+      setIsUpdating(true);
+      try {
+        await onUpdateStatus(order.id, selectedStatus);
+        // El modal se cerrará desde el componente padre después de recargar datos
+      } catch (error) {
+        console.error('Error al actualizar estado:', error);
+      } finally {
+        setIsUpdating(false);
+      }
     }
   };
 
@@ -160,6 +170,23 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
               )}
             </div>
           </div>
+
+          {/* Tracking de Envío */}
+          <TrackingManager
+            orderId={order.id}
+            currentTracking={order.trackingNumber}
+            currentShippingUrl={order.shippingUrl}
+            paymentMethod={order.paymentMethod}
+            paymentStatus={order.paymentStatus}
+            customerEmail={order.customerEmail}
+            customerName={order.customerName}
+            onUpdate={(success, message) => {
+              if (success) {
+                // Aquí podrías actualizar el estado local del pedido si es necesario
+                console.log('Tracking actualizado:', message);
+              }
+            }}
+          />
 
           {/* Dirección de envío */}
           {order.shippingAddress && (
@@ -301,14 +328,21 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
               </div>
               <button
                 onClick={handleStatusUpdate}
-                disabled={selectedStatus === order.status}
+                disabled={selectedStatus === order.status || isUpdating}
                 className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  selectedStatus === order.status
+                  selectedStatus === order.status || isUpdating
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-[#68c3b7] text-white hover:bg-[#64b7ac]'
                 }`}
               >
-                Actualizar Estado
+                {isUpdating ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Actualizando...
+                  </div>
+                ) : (
+                  'Actualizar Estado'
+                )}
               </button>
             </div>
           </div>
