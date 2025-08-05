@@ -2,19 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/currency';
-import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle } from 'lucide-react';
+import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle, PackageCheck } from 'lucide-react';
 import CashOnPickupButton from '@/components/CashOnPickupButton';
-
-// Componente para el ícono de MercadoPago
-const MercadoPagoIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <Image 
-    src="/mercadopago-icon.svg" 
-    alt="MercadoPago" 
-    width={20} 
-    height={20} 
-    className={className}
-  />
-);
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
@@ -23,6 +12,17 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSettings } from '@/lib/use-settings';
 import { usePaymentMethods } from '@/lib/usePaymentMethods';
+
+// Componente para el ícono de MercadoPago - Actualizado
+const MercadoPagoIcon = ({ className = "w-16 h-16" }: { className?: string }) => (
+  <Image 
+    src="/mercadopago-icon-vertical.svg" 
+    alt="MercadoPago" 
+    width={64} 
+    height={64} 
+    className={className}
+  />
+);
 
 interface CheckoutForm {
   // Información personal
@@ -480,7 +480,7 @@ export default function MercadoPagoCheckoutPage() {
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <MercadoPagoIcon className="w-5 h-5 mr-2" />
+                      <MercadoPagoIcon className="w-16 h-16 mr-4" />
                       <div>
                         <div className="font-medium">MercadoPago</div>
                         <div className="text-sm text-gray-600">Tarjetas de crédito/débito, transferencia bancaria</div>
@@ -500,7 +500,7 @@ export default function MercadoPagoCheckoutPage() {
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <Truck className="w-5 h-5 mr-2 text-green-600" />
+                      <PackageCheck className="w-8 h-8 mr-4 text-green-600" />
                       <div>
                         <div className="font-medium">Pago al Retirar</div>
                         <div className="text-sm text-gray-600">Efectivo al momento del retiro</div>
@@ -745,7 +745,7 @@ export default function MercadoPagoCheckoutPage() {
                   <button
                     onClick={handleMercadoPagoPayment}
                     disabled={isCreatingPreference || isRedirectingToPayment}
-                    className="w-full bg-[#68c3b7] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#64b7ac] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-green-600 text-white py-1 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isCreatingPreference || isRedirectingToPayment ? (
                       <>
@@ -754,7 +754,7 @@ export default function MercadoPagoCheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <MercadoPagoIcon className="w-4 h-4 mr-2" />
+                        <MercadoPagoIcon className="w-12 h-12 mr-2" />
                         Pagar con MercadoPago
                       </>
                     )}
@@ -772,7 +772,7 @@ export default function MercadoPagoCheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <Truck className="w-4 h-4 mr-2" />
+                        <PackageCheck className="w-8 h-8 mr-2" />
                         Confirmar Pedido (Pago al Retirar)
                       </>
                     )}
