@@ -3,15 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useStore } from '@/lib/store';
-import { useNotification } from '@/components/NotificationProvider';
+import { useCartStore, useNotifications } from '@/lib/store';
 
 export default function CashOnPickupButton() {
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
-  const { items, clearCart, subtotal } = useStore();
-  const { addNotification } = useNotification();
+  const { items, clearCart, total } = useCartStore();
+  const addNotification = useNotifications((state) => state.addNotification);
 
   const handleCashOnPickupOrder = async () => {
     console.log('💰 Iniciando proceso de pago al retirar simplificado');
@@ -40,7 +39,7 @@ export default function CashOnPickupButton() {
           quantity: item.quantity,
           image: item.product.image
         })),
-        total: subtotal,
+        total: total,
         paymentMethod: 'cash_on_pickup',
         paymentStatus: 'pending'
       };
