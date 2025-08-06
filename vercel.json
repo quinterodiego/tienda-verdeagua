@@ -1,1 +1,13 @@
-{"framework":"nextjs","functions":{"src/app/api/**/*.ts":{"maxDuration":30}}}
+{
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    },
+    "src/app/producto/[id]/page.tsx": {
+      "maxDuration": 15
+    }
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
+}

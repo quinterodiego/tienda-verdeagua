@@ -2,31 +2,29 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { generateProductMetadata } from '@/lib/metadata';
 import ProductDetailClient from '@/components/ProductDetailClient';
+import { products } from '@/data/products';
+import { getProductByIdWithFallback } from '@/lib/products-fallback';
 
 // Función para obtener producto del servidor
 async function getProduct(id: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/products`, {
-      next: { revalidate: 300 }, // Cache por 5 minutos
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Error al cargar productos');
-    }
-    
-    const data = await response.json();
-    const products = data.products || [];
-    const product = products.find((p: any) => p.id === id);
-    
-    return product || null;
+    // Usar la nueva función con fallback robusto
+    const product = await getProductByIdWithFallback(id, false);
+    return product;
   } catch (error) {
     console.error('Error fetching product:', error);
-    return null;
+    // Como último recurso, usar datos locales directamente
+    const product = products.find(p => p.id === id);
+    return product || null;
   }
+}
+
+// Generar rutas estáticas para mejor rendimiento en Vercel
+export async function generateStaticParams() {
+  // Generar rutas para todos los productos locales
+  return products.map((product) => ({
+    id: product.id,
+  }));
 }
 
 // Generar metadata dinámica

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getProductsFromSheets } from '@/lib/products-sheets';
+import { getProductsWithFallback } from '@/lib/products-fallback';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,13 +29,13 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 API Request - shouldIncludeInactive: ${shouldIncludeInactive}, isAdmin: ${isAdmin}, includeInactive: ${includeInactive}`);
 
-    // Obtener productos con fallback a productos estáticos si hay error
+    // Obtener productos con fallback robusto
     let products = [];
     try {
       // CAMBIO CRÍTICO: Usar el parámetro correcto para el filtrado
       // shouldIncludeInactive define si incluir productos inactivos según permisos
-      products = await getProductsFromSheets(shouldIncludeInactive);
-      console.log(`📊 Productos obtenidos de Google Sheets: ${products.length}`);
+      products = await getProductsWithFallback(shouldIncludeInactive);
+      console.log(`📊 Productos obtenidos: ${products.length}`);
       
       // VERIFICAR si realmente obtuvo los productos correctos según permisos
       const statusCount: Record<string, number> = {};
@@ -43,12 +43,12 @@ export async function GET(request: NextRequest) {
         const status = p.status || 'no-status';
         statusCount[status] = (statusCount[status] || 0) + 1;
       });
-      console.log(`🔍 Productos de Google Sheets por estado:`, statusCount);
+      console.log(`🔍 Productos por estado:`, statusCount);
       
     } catch (error) {
-      console.error('❌ Error al obtener productos desde Google Sheets, usando fallback:', error);
+      console.error('❌ Error crítico al obtener productos:', error);
       
-      // Fallback a productos estáticos del archivo de datos
+      // Como último recurso, usar productos locales directamente
       const { products: staticProducts } = await import('@/data/products');
       const mappedProducts = staticProducts.map(p => ({ 
         ...p, 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         ? mappedProducts
         : mappedProducts.filter(p => p.status === 'active');
         
-      console.log(`📊 Productos obtenidos de fallback (${shouldIncludeInactive ? 'todos' : 'solo activos'}): ${products.length}`);
+      console.log(`📊 Productos obtenidos de fallback de emergencia (${shouldIncludeInactive ? 'todos' : 'solo activos'}): ${products.length}`);
     }
 
     // Asegurar que todos los productos tengan un status válido
