@@ -130,6 +130,13 @@ export async function GET(request: NextRequest) {
         totalBeforeFiltering: products.length,
         finalCount: filteredProducts.length
       }
+    }, {
+      headers: {
+        'Cache-Control': shouldIncludeInactive 
+          ? 'no-cache, no-store, must-revalidate' // Admin data - no cache
+          : 'public, s-maxage=300, stale-while-revalidate=600', // Public data - 5min cache
+        'Content-Type': 'application/json',
+      }
     });
 
   } catch (error) {

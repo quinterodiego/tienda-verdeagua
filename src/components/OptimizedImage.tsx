@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface OptimizedImageProps {
   src: string;
@@ -13,6 +13,9 @@ interface OptimizedImageProps {
   transformation?: 'card' | 'thumbnail' | 'gallery' | 'hero' | 'mobile';
   priority?: boolean;
   sizes?: string;
+  quality?: number;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
 // Transformaciones para diferentes usos
@@ -33,10 +36,44 @@ export default function OptimizedImage({
   className = '',
   transformation = 'card',
   priority = false,
-  sizes
+  sizes,
+  quality = 85,
+  onLoad,
+  onError,
 }: OptimizedImageProps) {
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInView, setIsInView] = useState(priority);
+  const imgRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (priority || isInView) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '100px', // Cargar 100px antes de que sea visible
+        threshold: 0.1,
+      }
+    );
+
+    const currentRef = imgRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [priority, isInView]);
   
   // Generar URL optimizada para Cloudinary
   const getOptimizedSrc = (originalSrc: string, transform: string) => {
@@ -59,35 +96,42 @@ export default function OptimizedImage({
 
   const handleLoad = () => {
     setIsLoading(false);
+    onLoad?.();
   };
 
   const handleError = () => {
     setIsError(true);
     setIsLoading(false);
+    onError?.();
   };
-
-  const imageProps = {
-    src: isError ? fallbackSrc : optimizedSrc,
-    alt,
-    className: `${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`,
-    onLoad: handleLoad,
-    onError: handleError,
-    placeholder: 'blur' as const,
-    blurDataURL,
-    priority,
-    sizes: sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-  };
-
-  if (fill) {
-    return <Image {...imageProps} fill />;
-  }
 
   return (
-    <Image
-      {...imageProps}
-      width={width || 300}
-      height={height || 300}
-    />
+    <div
+      ref={imgRef}
+      className={`relative overflow-hidden ${fill ? 'w-full h-full' : ''}`}
+    >
+      {/* Loading shimmer */}
+      {isLoading && !isError && (
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-shimmer" />
+      )}
+
+      {/* Render image only when in view or priority */}
+      {(isInView || priority) && (
+        <Image
+          src={isError ? fallbackSrc : optimizedSrc}
+          alt={alt}
+          className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+          onLoad={handleLoad}
+          onError={handleError}
+          placeholder="blur"
+          blurDataURL={blurDataURL}
+          priority={priority}
+          quality={quality}
+          sizes={sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
+          {...(fill ? { fill: true } : { width: width || 300, height: height || 300 })}
+        />
+      )}
+    </div>
   );
 }
 

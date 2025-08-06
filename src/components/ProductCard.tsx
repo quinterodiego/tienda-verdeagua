@@ -5,7 +5,7 @@ import { Product } from '@/types';
 import { Star, ShoppingCart, Heart, ImageIcon } from 'lucide-react';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
-import Image from 'next/image';
+import OptimizedImage from './OptimizedImage';
 import Link from 'next/link';
 
 // Función para generar placeholder blur data URL
@@ -111,37 +111,30 @@ export default function ProductCard({ product, priority = false, size = 'medium'
   return (
     <Link 
       href={`/producto/${product.id}`}
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 block h-full"
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group"
     >
       <div className="flex flex-col h-full">
         <div className="relative aspect-square overflow-hidden">
           {/* Indicador de carga */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-gray-400" />
+              <ImageIcon className="w-8 h-8 text-gray-400 animate-pulse" />
             </div>
           )}
           
-          {/* Componente Image optimizado */}
-          <Image
+          {/* Componente OptimizedImage */}
+          <OptimizedImage
             src={imageError ? '/placeholder-image.svg' : imageUrl}
             alt={product.name}
             width={currentSize.width}
             height={currentSize.height}
-            className={`${currentSize.className} object-cover transition-opacity duration-300 ${
-              imageLoading ? 'opacity-0' : 'opacity-100'
-            }`}
+            className={`${currentSize.className} object-cover transition-transform duration-700 group-hover:scale-105`}
             sizes={currentSize.sizes}
             priority={priority}
-            loading={priority ? 'eager' : 'lazy'}
-            placeholder="blur"
-            blurDataURL={generateBlurDataURL(currentSize.width, currentSize.height)}
             quality={85}
+            transformation="card"
             onLoad={handleImageLoad}
             onError={handleImageError}
-            style={{
-              objectFit: 'cover',
-            }}
           />
           
           {/* Overlay de error si la imagen falla */}
@@ -169,18 +162,18 @@ export default function ProductCard({ product, priority = false, size = 'medium'
           </button> */}
         </div>
         
-        <div className="p-4 flex flex-col flex-grow">
+        <div className="p-3 sm:p-4 flex flex-col flex-grow">
           <div className="mb-2">
             <span className="text-xs text-[#68c3b7] font-medium uppercase tracking-wide">
               {product.category}
             </span>
           </div>
           
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem]">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] sm:min-h-[3.5rem] leading-tight">
             {product.name}
           </h3>
           
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2 min-h-[2.5rem] flex-grow">
+          <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] flex-grow leading-relaxed">
             {product.description}
           </p>
 
@@ -226,8 +219,8 @@ export default function ProductCard({ product, priority = false, size = 'medium'
           </div> */}
           
           <div className="flex items-center justify-between mt-3">
-            <div>
-              <span className="text-2xl font-bold text-gray-900">
+            <div className="transition-transform duration-500 group-hover:scale-[1.01]">
+              <span className="text-lg sm:text-2xl font-bold text-gray-900">
                 {formatCurrency(product.price)}
               </span>
               <p className="text-xs text-gray-500">
@@ -242,10 +235,11 @@ export default function ProductCard({ product, priority = false, size = 'medium'
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              className="bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-2 sm:px-4 py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 transition-all duration-500 text-sm touch-manipulation transform hover:scale-105 hover:shadow-md active:scale-95"
             >
-              <ShoppingCart className="w-4 h-4" />
-              <span>Agregar</span>
+              <ShoppingCart className="w-4 h-4 transition-transform duration-500 hover:rotate-6" />
+              <span className="hidden sm:inline">Agregar</span>
+              <span className="sm:hidden">+</span>
             </button>
           </div>
         </div>

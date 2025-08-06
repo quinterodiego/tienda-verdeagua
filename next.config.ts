@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
     // ⚠️ Solo para deployment inicial - arreglar después  
     ignoreBuildErrors: true,
   },
+  // Performance optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Experimental features for performance
+  experimental: {
+    optimizeCss: true,
+  },
   images: {
     remotePatterns: [
       {

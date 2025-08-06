@@ -7,6 +7,7 @@ import AuthProvider from "@/components/AuthProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
+import { ResourcePreloader } from "@/components/Preloader";
 import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
 
 const poppins = Poppins({
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <NotificationProvider>
           <AuthProvider>
+            <ResourcePreloader />
             <StructuredData />
             <Header />
             <main className="flex-1">

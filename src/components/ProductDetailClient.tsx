@@ -8,6 +8,8 @@ import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Heart, Share } from 'lucide
 import Image from 'next/image';
 import Link from 'next/link';
 import Notification from '@/components/Notification';
+import { ProductDetailSkeleton } from '@/components/LoadingSkeletons';
+import { LoadingButton } from '@/components/LoadingComponents';
 import { Product } from '@/types';
 
 interface ProductDetailClientProps {
@@ -25,6 +27,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(!initialProduct);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // Solo cargar desde API si no hay producto inicial
   useEffect(() => {
@@ -72,14 +75,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }, [params.id, initialProduct]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#68c3b7] mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando producto...</p>
-        </div>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (error || !product) {
@@ -99,9 +95,16 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     );
   }
 
-  const handleAddToCart = () => {
-    addItem(product, quantity);
-    setShowNotification(true);
+  const handleAddToCart = async () => {
+    setIsAddingToCart(true);
+    try {
+      // Simular un pequeño delay para mostrar el loading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      addItem(product, quantity);
+      setShowNotification(true);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const incrementQuantity = () => {
@@ -139,18 +142,18 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         type="success"
       />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Breadcrumb y botón de volver */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 touch-manipulation"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver
           </button>
           
-          <nav className="text-sm text-gray-600">
+          <nav className="text-sm text-gray-600 hidden sm:block">
             <Link href="/" className="hover:text-gray-900">
               Inicio
             </Link>
@@ -159,38 +162,41 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
           </nav>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           {/* Galería de imágenes */}
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             {/* Imagen principal */}
             <div className="relative aspect-square bg-white rounded-lg overflow-hidden shadow-lg group">
               <Image
                 src={productImages[selectedImage]}
                 alt={product.name}
                 fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover transition-all duration-500 ease-out group-hover:scale-110"
                 priority
               />
               
-              {/* Indicador de zoom */}
-              <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Indicador de zoom con animación */}
+              <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-xs opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                 {selectedImage + 1} / {productImages.length}
               </div>
+              
+              {/* Overlay sutil */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
               {/* Navegación con flechas si hay múltiples imágenes */}
               {productImages.length > 1 && (
                 <>
                   <button
                     onClick={() => setSelectedImage(selectedImage > 0 ? selectedImage - 1 : productImages.length - 1)}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setSelectedImage(selectedImage < productImages.length - 1 ? selectedImage + 1 : 0)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity rotate-180"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg rotate-180"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
                 </>
               )}
@@ -203,41 +209,45 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`relative aspect-square bg-white rounded-lg overflow-hidden border-2 transition-all duration-200 hover:shadow-md ${
+                    className={`relative aspect-square bg-white rounded-lg overflow-hidden border-2 transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${
                       selectedImage === index 
-                        ? 'border-[#68c3b7] shadow-lg ring-2 ring-[#68c3b7] ring-opacity-30' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#68c3b7] shadow-xl ring-4 ring-[#68c3b7] ring-opacity-30 scale-105' 
+                        : 'border-gray-200 hover:border-[#68c3b7] hover:border-opacity-50'
                     }`}
                   >
                     <Image
                       src={image}
                       alt={`${product.name} vista ${index + 1}`}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-300 hover:scale-110"
                     />
                     {selectedImage === index && (
-                      <div className="absolute inset-0 bg-[#68c3b7] bg-opacity-20"></div>
+                      <div className="absolute inset-0 bg-[#68c3b7] bg-opacity-10 animate-pulse"></div>
                     )}
+                    {/* Número de imagen */}
+                    <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {index + 1}
+                    </div>
                   </button>
                 ))}
               </div>
             )}
             
             {/* Información adicional de imágenes */}
-            {productImages.length > 1 && (
+            {/* {productImages.length > 1 && (
               <div className="text-center">
                 <p className="text-sm text-gray-500">
                   {productImages.length} imagen{productImages.length !== 1 ? 'es' : ''} disponible{productImages.length !== 1 ? 's' : ''}
                 </p>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Información del producto */}
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             {/* Categoría */}
-            <div>
-              <span className="text-sm text-[#68c3b7] font-medium uppercase tracking-wide">
+            <div className="transform transition-all duration-300 hover:scale-105">
+              <span className="text-sm text-[#68c3b7] font-medium uppercase tracking-wide bg-[#68c3b7] bg-opacity-10 px-3 py-1 rounded-full">
                 {product.category}
               </span>
             </div>
@@ -249,12 +259,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
             {/* Rating y reviews */}
             {product.rating && (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-5 h-5 ${
+                      className={`w-5 h-5 transition-all duration-300 hover:scale-125 ${
                         i < Math.floor(product.rating!) 
                           ? 'text-yellow-400 fill-current' 
                           : 'text-gray-300'
@@ -272,16 +282,21 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             )}
 
             {/* Precio */}
-            <div className="border-t border-b py-6">
+            <div className="border-t border-b py-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <div className="flex items-center space-x-4">
-                <span className="text-4xl font-bold text-gray-900">
+                <span className="text-4xl font-bold text-gray-900 cursor-default">
                   {formatCurrency(product.price)}
                 </span>
+                {product.originalPrice && (
+                  <span className="text-lg text-gray-500 line-through">
+                    {formatCurrency(product.originalPrice)}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Descripción */}
-            <div>
+            <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Descripción</h3>
               <p className="text-gray-600 leading-relaxed">
                 {product.description}
@@ -290,7 +305,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
             {/* Información adicional para productos personalizados */}
             {((product as any).medidas || (product as any).color) && (
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg animate-fade-in transform transition-all duration-300 hover:scale-105 hover:shadow-md" style={{ animationDelay: '0.6s' }}>
                 <h4 className="font-medium text-gray-900 mb-2">Especificaciones</h4>
                 <div className="space-y-1">
                   {(product as any).medidas && (
@@ -308,7 +323,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             )}
 
             {/* Stock */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 animate-fade-in transform transition-all duration-300 hover:scale-105" style={{ animationDelay: '0.7s' }}>
               <span className="text-sm text-gray-600">Stock disponible:</span>
               <span className={`text-sm font-medium ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {product.stock > 0 ? `${product.stock} unidades` : 'Agotado'}
@@ -317,21 +332,21 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
             {/* Selector de cantidad y botón de compra */}
             {product.stock > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.8s' }}>
                 <div className="flex items-center space-x-4">
                   <span className="text-sm font-medium text-gray-900">Cantidad:</span>
-                  <div className="flex items-center border border-gray-300 rounded-lg">
+                  <div className="flex items-center border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
                     <button
                       onClick={decrementQuantity}
-                      className="p-2 hover:bg-gray-100 transition-colors"
+                      className="p-3 hover:bg-gray-100 transition-all duration-300 touch-manipulation transform hover:scale-110 disabled:opacity-50 disabled:transform-none"
                       disabled={quantity <= 1}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="px-4 py-2 text-center min-w-[60px]">{quantity}</span>
+                    <span className="px-4 py-2 text-center min-w-[60px] text-lg font-semibold">{quantity}</span>
                     <button
                       onClick={incrementQuantity}
-                      className="p-2 hover:bg-gray-100 transition-colors"
+                      className="p-3 hover:bg-gray-100 transition-all duration-300 touch-manipulation transform hover:scale-110 disabled:opacity-50 disabled:transform-none"
                       disabled={quantity >= product.stock}
                     >
                       <Plus className="w-4 h-4" />
@@ -339,24 +354,26 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   </div>
                 </div>
 
-                <button
+                <LoadingButton
                   onClick={handleAddToCart}
-                  className="w-full bg-[#68c3b7] hover:bg-[#64b7ac] text-white py-3 px-6 rounded-lg flex items-center justify-center space-x-2 transition-colors text-lg font-medium"
+                  isLoading={isAddingToCart}
+                  disabled={product.stock === 0}
+                  className="w-full bg-[#68c3b7] hover:bg-[#64b7ac] text-white py-4 px-6 rounded-lg flex items-center justify-center space-x-2 transition-all duration-300 text-lg font-medium touch-manipulation transform hover:scale-105 hover:shadow-lg active:scale-95"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                   <span>Agregar al carrito</span>
-                </button>
+                </LoadingButton>
               </div>
             )}
 
             {/* Botones adicionales */}
-            <div className="flex space-x-4 pt-4">
-              <button className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors">
+            <div className="flex space-x-4 pt-4 animate-fade-in" style={{ animationDelay: '0.9s' }}>
+              {/* <button className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors">
                 <Heart className="w-5 h-5" />
                 <span>Agregar a favoritos</span>
-              </button>
-              <button className="flex items-center space-x-2 text-gray-600 hover:text-[#68c3b7] transition-colors">
-                <Share className="w-5 h-5" />
+              </button> */}
+              <button className="flex items-center space-x-2 text-gray-600 hover:text-[#68c3b7] transition-all duration-300 transform hover:scale-105 hover:bg-gray-50 px-3 py-2 rounded-lg">
+                <Share className="w-5 h-5 transition-transform duration-300 hover:scale-110" />
                 <span>Compartir</span>
               </button>
             </div>
@@ -364,7 +381,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         </div>
 
         {/* Productos relacionados */}
-        {allProducts.length > 0 && (
+        {/* {allProducts.length > 0 && (
           <div className="mt-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-8">Productos relacionados</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -395,7 +412,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 ))}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

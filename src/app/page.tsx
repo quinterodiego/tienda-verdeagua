@@ -7,6 +7,7 @@ import CategoryFilter from '@/components/CategoryFilter';
 import SearchFilters from '@/components/SearchFilters';
 import ActiveFilters from '@/components/ActiveFilters';
 import ClientOnly from '@/components/ClientOnly';
+import { ProductGridSkeleton } from '@/components/LoadingSkeletons';
 import { useSearch } from '@/lib/useSearch';
 import { Product } from '@/types';
 
@@ -16,6 +17,7 @@ function HomeContent() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Cargar productos desde Google Sheets
@@ -62,13 +64,23 @@ function HomeContent() {
     }
   }, [searchParams, updateFilter]);
 
-  // Aplicar filtro de categoría adicional
+  // Aplicar filtro de categoría adicional con loading state
   const finalFilteredProducts = useMemo(() => {
+    let result;
     if (selectedCategory === 'Todos') {
-      return filteredProducts;
+      result = filteredProducts;
+    } else {
+      result = filteredProducts.filter(product => product.category === selectedCategory);
     }
-    return filteredProducts.filter(product => product.category === selectedCategory);
+    return result;
   }, [filteredProducts, selectedCategory]);
+
+  // Effect para manejar el loading state de filtros
+  useEffect(() => {
+    setIsFiltering(true);
+    const timer = setTimeout(() => setIsFiltering(false), 300);
+    return () => clearTimeout(timer);
+  }, [filters, selectedCategory]);
 
   // Early loading state before render
   if (isLoading && products.length === 0) {
@@ -139,15 +151,30 @@ function HomeContent() {
           </p>
         </div>
 
-        {/* Loading State - Solo para casos específicos */}
-        {isLoading && products.length > 0 && (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#68c3b7]"></div>
+        {/* Loading State - Skeleton Grid */}
+        {isLoading && (
+          <div className="space-y-8">
+            {/* Filtros skeleton */}
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="w-full lg:w-1/4">
+                <div className="space-y-4">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="space-y-2">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1">
+                <ProductGridSkeleton count={8} />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Error State */}
-        {error && (
+        {error && !isLoading && (
           <div className="min-h-[60vh] flex items-center justify-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-4 text-center">
               <div className="text-red-600 mb-4">
@@ -218,23 +245,30 @@ function HomeContent() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-              {finalFilteredProducts.map((product, index) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product}
-                  priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
-                  size="medium"
-                />
-              ))}
-            </div>
+            {/* Grid de productos o skeleton cuando se está filtrando */}
+            {isFiltering ? (
+              <ProductGridSkeleton count={6} />
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 items-stretch">
+                  {finalFilteredProducts.map((product, index) => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product}
+                      priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
+                      size="medium"
+                    />
+                  ))}
+                </div>
 
-            {finalFilteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">
-                  No se encontraron productos con los filtros aplicados.
-                </p>
-              </div>
+                {finalFilteredProducts.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">
+                      No se encontraron productos con los filtros aplicados.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
