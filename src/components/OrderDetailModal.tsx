@@ -94,43 +94,26 @@ const getStatusDescription = (status: Order['status']) => {
 
 // Función para validar y limpiar URL de imagen
 const getValidImageUrl = (imageUrl: string): string => {
-  console.log('🔍 getValidImageUrl recibió:', imageUrl);
-  
   if (!imageUrl) {
-    console.log('🔍 getValidImageUrl: imagen vacía, usando placeholder');
     return '/placeholder-image.svg';
   }
   
   // Si ya es una URL válida de Cloudinary o externa, usarla tal como está
   if (imageUrl.startsWith('http')) {
-    console.log('🔍 getValidImageUrl: URL externa válida:', imageUrl);
     return imageUrl;
   }
   
   // Si es una ruta relativa, convertirla a absoluta
   if (imageUrl.startsWith('/')) {
-    console.log('🔍 getValidImageUrl: ruta relativa:', imageUrl);
     return imageUrl;
   }
   
   // Si no tiene protocolo, asumir que es un path relativo
-  console.log('🔍 getValidImageUrl: convirtiendo a ruta relativa:', `/${imageUrl}`);
   return `/${imageUrl}`;
 };
 
 export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetailModalProps) {
   if (!isOpen || !order) return null;
-
-  // Debug: imprimir información del pedido
-  console.log('🔍 OrderDetailModal - Pedido completo:', order);
-  console.log('🔍 OrderDetailModal - Items del pedido:', order.items);
-  order.items.forEach((item, index) => {
-    console.log(`🔍 OrderDetailModal - Item ${index}:`, {
-      product: item.product,
-      productImage: item.product.image,
-      quantity: item.quantity
-    });
-  });
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;

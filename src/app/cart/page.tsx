@@ -76,8 +76,8 @@ export default function CartPage() {
           <div className="lg:w-2/3">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Carrito de compras ({items.length} productos)
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
+                  Tú carrito de compras ({items.length} {items.length === 1 ? 'producto' : 'productos'})
                 </h1>
                 <button
                   onClick={clearCart}
@@ -170,7 +170,7 @@ export default function CartPage() {
           {/* Order Summary */}
           <div className="lg:w-1/3">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6">
                 Resumen del pedido
               </h2>
               

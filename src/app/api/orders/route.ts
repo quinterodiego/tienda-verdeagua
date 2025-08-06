@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       const customerInfo = body.customerInfo || {};
       const items = body.items || [];
       const total = body.total || 0;
-      const paymentMethod = body.paymentMethod || 'cash_on_pickup';
+      const paymentMethod = body.paymentMethod || 'Pago al retirar';
       const paymentStatus = body.paymentStatus || 'pending';
       
       // Extraer información del cliente
@@ -90,6 +90,35 @@ export async function POST(request: NextRequest) {
         phone: customerInfo.phone || ''
       };
       
+      // Transformar items para tener la estructura correcta de CartItem
+      console.log('🔄 Transformando items a estructura CartItem...');
+      console.log('📥 Items recibidos:', JSON.stringify(items, null, 2));
+      
+      const transformedItems = items.map((item: any) => {
+        // Si el item ya tiene la estructura { product: {}, quantity: number }
+        if (item.product && typeof item.quantity === 'number') {
+          console.log('✅ Item ya tiene estructura CartItem:', item);
+          return item;
+        }
+        
+        // Si el item tiene estructura plana, transformarlo
+        console.log('🔄 Transformando item de estructura plana a CartItem:', item);
+        return {
+          product: {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image || '',
+            description: '',
+            category: '',
+            stock: 0
+          },
+          quantity: item.quantity || 1
+        };
+      });
+      
+      console.log('✅ Items transformados:', JSON.stringify(transformedItems, null, 2));
+
       // Crear objeto de orden completo
       const orderData = {
         customer: {
@@ -97,9 +126,9 @@ export async function POST(request: NextRequest) {
           name: customerName,
           email: customerEmail,
         },
-        items,
+        items: transformedItems,
         total,
-        status: 'pending',
+        status: 'pending' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
         paymentId: `pay_${Date.now()}`,
@@ -112,18 +141,35 @@ export async function POST(request: NextRequest) {
       
       console.log('📋 Datos formateados para guardar:', orderData);
       
-      // En un entorno real, aquí llamaríamos a saveOrderToSheets(orderData)
-      // Omitido temporalmente para pruebas
+      // Guardar el pedido en Google Sheets
+      console.log('🚀 Llamando a saveOrderToSheets...');
       
-      // Crear identificador único para el pedido
-      const orderId = `ORD-${Date.now()}`;
-      console.log('🔑 ID de pedido generado:', orderId);
+      // MODO DEBUG: Simular guardado exitoso temporalmente
+      if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_CLIENT_EMAIL) {
+        console.log('⚠️ MODO DEBUG: Credenciales de Google Sheets no configuradas, simulando guardado exitoso');
+        const mockOrderId = `ORD-MOCK-${Date.now()}`;
+        
+        return NextResponse.json({
+          success: true,
+          orderId: mockOrderId,
+          message: 'Pedido simulado (Google Sheets no configurado)',
+          debug: true
+        });
+      }
       
-      console.log('✅ Pedido creado exitosamente:', orderId);
+      const orderId = await saveOrderToSheets(orderData);
+      
+      if (!orderId) {
+        console.error('❌ saveOrderToSheets retornó null - Error al guardar');
+        throw new Error('Error al guardar el pedido en Google Sheets');
+      }
+      
+      console.log('✅ Pedido creado exitosamente en Sheets:', orderId);
       
       return NextResponse.json({
         success: true,
-        orderId: orderId
+        orderId: orderId,
+        message: 'Pedido guardado exitosamente en Google Sheets'
       });
     } catch (innerError) {
       console.error('❌ Error al procesar datos del pedido:', innerError);

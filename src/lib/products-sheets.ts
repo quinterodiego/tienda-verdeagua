@@ -69,6 +69,17 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
               return imageField.trim();
             }
           })() : '', // Tomar la primera imagen de la columna H
+          // Agregar array completo de imágenes
+          images: row[7] ? (() => {
+            const imageField = row[7]; // Columna H (índice 7) - imágenes
+            if (imageField.includes('|')) {
+              return imageField.split('|').map((img: string) => img.trim()).filter((img: string) => img);
+            } else if (imageField.includes(',')) {
+              return imageField.split(',').map((img: string) => img.trim()).filter((img: string) => img);
+            } else {
+              return [imageField.trim()].filter((img: string) => img);
+            }
+          })() : [],
           stock: parseInt(row[8]) || 0, // Columna I (índice 8)
           status: productStatus, // Estado detectado automáticamente
           rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe

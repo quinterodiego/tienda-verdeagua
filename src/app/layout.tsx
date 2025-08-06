@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import GlobalNotifications from "@/components/GlobalNotifications";
+import StructuredData from "@/components/StructuredData";
+import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -14,14 +16,11 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Verde Agua Personalizados - Productos Únicos",
-  description: "Tienda online de productos personalizados: agendas, tazas, llaveros, stickers, cuadernos y más. Dale tu toque personal a tus estudios con Verde Agua Personalizados.",
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/favicon.ico',
-  },
-};
+export const metadata: Metadata = createMetadata({
+  title: 'Productos Únicos y Personalizados',
+  description: siteConfig.description,
+  type: 'website'
+});
 
 export default function RootLayout({
   children,
@@ -35,6 +34,7 @@ export default function RootLayout({
       >
         <NotificationProvider>
           <AuthProvider>
+            <StructuredData />
             <Header />
             <main className="flex-1">
               {children}

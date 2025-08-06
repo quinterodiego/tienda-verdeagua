@@ -411,14 +411,18 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           {/* Imágenes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Imágenes *
+              Imágenes del Producto *
             </label>
             {errors.images && <p className="text-red-500 text-xs mb-2">{errors.images}</p>}
             
             <ImageUploader
               images={formData.images.filter(img => img.trim())}
               onImagesChange={(newImages) => setFormData({ ...formData, images: newImages })}
-              maxImages={5}
+              maxImages={8}
+              allowReorder={true}
+              minDimensions={{ width: 400, height: 400 }}
+              maxFileSize={8} // 8MB máximo por imagen
+              className="mb-4"
             />
           </div>
 

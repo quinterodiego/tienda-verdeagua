@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/currency';
 import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle, PackageCheck } from 'lucide-react';
-import CashOnPickupButton from '@/components/CashOnPickupButton';
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
@@ -11,7 +10,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSettings } from '@/lib/use-settings';
-import { usePaymentMethods } from '@/lib/usePaymentMethods';
 
 // Componente para el ícono de MercadoPago - Actualizado
 const MercadoPagoIcon = ({ className = "w-16 h-16" }: { className?: string }) => (
@@ -65,15 +63,9 @@ export default function MercadoPagoCheckoutPage() {
   const router = useRouter();
   const { settings, loading: settingsLoading } = useSettings();
   
-  // Payment methods
-  const { 
-    availablePaymentMethods, 
-    loading: paymentMethodsLoading
-  } = usePaymentMethods();
-
-  // Helper to check if payment methods are available
-  const mercadoPagoEnabled = availablePaymentMethods.some(method => method.id === 'mercadopago');
-  const cashOnPickupEnabled = availablePaymentMethods.some(method => method.id === 'cashOnPickup');
+  // Payment methods - simplified to always be available
+  const mercadoPagoEnabled = true;
+  const cashOnPickupEnabled = true;
 
   // Estados
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
@@ -114,14 +106,12 @@ export default function MercadoPagoCheckoutPage() {
 
   // Establecer método de pago por defecto
   useEffect(() => {
-    if (!paymentMethodsLoading) {
-      if (mercadoPagoEnabled) {
-        setSelectedPaymentMethod('mercadopago');
-      } else if (cashOnPickupEnabled) {
-        setSelectedPaymentMethod('cash_on_pickup');
-      }
+    if (mercadoPagoEnabled) {
+      setSelectedPaymentMethod('mercadopago');
+    } else if (cashOnPickupEnabled) {
+      setSelectedPaymentMethod('cash_on_pickup');
     }
-  }, [mercadoPagoEnabled, cashOnPickupEnabled, paymentMethodsLoading]);
+  }, [mercadoPagoEnabled, cashOnPickupEnabled]);
 
   const validateForm = () => {
     const newErrors: Partial<CheckoutForm> = {};
@@ -171,11 +161,7 @@ export default function MercadoPagoCheckoutPage() {
   };
 
   const handleCashOnPickupOrder = async () => {
-    console.log('💰 Iniciando proceso de pago al retirar');
-    console.log('📊 Estado de sesión:', session);
-    
     if (!validateForm()) {
-      console.log('❌ Formulario inválido');
       addNotification('Por favor, corrige los errores en el formulario', 'error');
       return;
     }
@@ -183,28 +169,14 @@ export default function MercadoPagoCheckoutPage() {
     setIsProcessing(true);
 
     try {
-      console.log('📦 Omitiendo verificación de stock para pruebas...');
-      console.log('🛒 Items en carrito:', items);
-
-      console.log('✅ Omitiendo verificación de stock para pruebas');
-
-      // Crear pedido directamente
+      // Crear pedido directamente con el formato correcto para la API
       const orderData = {
         customerInfo: form,
-        items: items.map(item => ({
-          id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity,
-          image: item.product.image
-        })),
-        total: subtotal, // Sin cargos por envío
-        paymentMethod: 'cash_on_pickup',
+        items: items, // Enviar el formato completo de CartItem[]
+        total: subtotal,
+        paymentMethod: 'Pago al retirar',
         paymentStatus: 'pending'
       };
-
-      console.log('📋 Datos del pedido simplificado:', orderData);
-      console.log('🌐 Enviando solicitud POST a /api/orders...');
 
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -214,31 +186,25 @@ export default function MercadoPagoCheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      console.log('📡 Respuesta del servidor:', {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText
-      });
-
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Error en respuesta del servidor:', errorData);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || 'Error al crear el pedido' };
+        }
+        
         throw new Error(errorData.error || 'Error al crear el pedido');
       }
 
       const result = await response.json();
-      console.log('✅ Pedido creado exitosamente:', result);
 
       addNotification('✅ Pedido creado exitosamente.', 'success');
-      
-      console.log('🛒 Limpiando carrito...');
       clearCart();
-      
-      console.log('➡️ Redirigiendo a /mis-pedidos');
       router.push('/mis-pedidos');
 
     } catch (error) {
-      console.error('❌ Error al procesar pedido al retirar:', error);
       addNotification(
         `Error al procesar pedido: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         'error'
@@ -500,7 +466,7 @@ export default function MercadoPagoCheckoutPage() {
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <PackageCheck className="w-8 h-8 mr-4 text-green-600" />
+                      <PackageCheck className="w-9 h-9 ml-4 mr-8 text-green-600" />
                       <div>
                         <div className="font-medium">Pago al Retirar</div>
                         <div className="text-sm text-gray-600">Efectivo al momento del retiro</div>
@@ -745,7 +711,7 @@ export default function MercadoPagoCheckoutPage() {
                   <button
                     onClick={handleMercadoPagoPayment}
                     disabled={isCreatingPreference || isRedirectingToPayment}
-                    className="w-full bg-green-600 text-white py-1 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-green-600 text-white py-1 px-4 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isCreatingPreference || isRedirectingToPayment ? (
                       <>
@@ -763,7 +729,7 @@ export default function MercadoPagoCheckoutPage() {
                   <button
                     onClick={handleCashOnPickupOrder}
                     disabled={isProcessing}
-                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-green-600 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isProcessing ? (
                       <>

@@ -158,6 +158,11 @@ export default function Footer() {
               </Link>
             </div>
           </div>
+           <div className="flex justify-center items-center mt-4">
+            <div className="text-gray-400 text-sm mt-4 md:mt-0">
+              Desarrollado por <a href="https://coderflix.com.ar" target='_blank' className="hover:text-white transition-colors">CoderFlix</a>  
+            </div>
+           </div>
         </div>
       </div>
     </footer>

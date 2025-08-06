@@ -22,22 +22,19 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
     // Generar ID único para el pedido
     const orderId = `ORD-${Date.now()}`;
     
-    // Convertir items a string JSON para almacenar
-    const itemsJson = JSON.stringify(order.items.map(item => {
-      console.log('🛒 Guardando item en pedido:', {
-        productId: item.product.id,
-        productName: item.product.name,
-        // NO guardamos la imagen, se obtendrá dinámicamente
-      });
-      
-      return {
-        productId: item.product.id,
-        productName: item.product.name,
-        quantity: item.quantity,
-        price: item.product.price,
-        // Removido: image: item.product.image,
-      };
-    }));
+    // Validar que los items tengan la estructura correcta
+    order.items.forEach((item, index) => {
+      if (!item.product) {
+        throw new Error(`Item sin producto en índice ${index}`);
+      }
+    });
+    
+    const itemsJson = JSON.stringify(order.items.map(item => ({
+      productId: item.product.id,
+      productName: item.product.name,
+      quantity: item.quantity,
+      price: item.product.price,
+    })));
 
     // Convertir dirección de envío a string
     const shippingAddressStr = `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}, ${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.phone}`;
@@ -53,36 +50,31 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
       order.paymentId || '',
       order.paymentStatus || 'pending',
       new Date().toISOString(),
-      order.paymentMethod || 'mercadopago',
+      order.paymentMethod || 'Pago al retirar',
     ]];
 
-    await sheets.spreadsheets.values.append({
+    const appendResult = await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.ORDERS}!A:K`, // Cambiado de A:J a A:K para incluir paymentMethod
+      range: `${SHEET_NAMES.ORDERS}!A:K`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
       },
     });
 
-    // ✨ NUEVO: Decrementar stock de productos cuando se confirma un pedido
+    // ✨ Decrementar stock de productos cuando se confirma un pedido
     if (order.status === 'confirmed' || order.status === 'pending') {
       const stockItems = order.items.map(item => ({
         productId: item.product.id,
         quantity: item.quantity
       }));
       
-      const stockUpdated = await decrementProductsStock(stockItems);
-      if (!stockUpdated) {
-        console.warn(`⚠️ No se pudo actualizar el stock para el pedido ${orderId}, pero el pedido se guardó correctamente`);
-      } else {
-        console.log(`✅ Stock actualizado correctamente para el pedido ${orderId}`);
-      }
+      await decrementProductsStock(stockItems);
     }
 
     return orderId;
   } catch (error) {
-    console.error('Error al guardar pedido:', error);
+    console.error('❌ Error al guardar pedido:', error);
     return null;
   }
 }
