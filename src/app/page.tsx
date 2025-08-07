@@ -9,7 +9,6 @@ import ActiveFilters from '@/components/ActiveFilters';
 import ClientOnly from '@/components/ClientOnly';
 import { ProductGridSkeleton } from '@/components/LoadingSkeletons';
 import { useSearch } from '@/lib/useSearch';
-import { useThemeStore } from '@/lib/theme-store';
 import { Product } from '@/types';
 
 function HomeContent() {

@@ -9,7 +9,6 @@ import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
 import { ResourcePreloader } from "@/components/Preloader";
 import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
-import ThemeProvider from "@/components/ThemeProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -30,36 +29,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" style={{ colorScheme: 'light' }}>
       <head>
-        {/* Script de tema eliminado para mantener solo modo claro */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Forzar modo claro siempre
-              document.documentElement.classList.remove('dark');
-              document.documentElement.style.colorScheme = 'light';
-            `
-          }}
-        />
+        {/* Tema claro forzado estáticamente */}
       </head>
       <body
         className={`${poppins.variable} antialiased min-h-screen flex flex-col`}
       >
-        <ThemeProvider>
-          <NotificationProvider>
-            <AuthProvider>
-              <ResourcePreloader />
-              <StructuredData />
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-              <GlobalNotifications />
-            </AuthProvider>
-          </NotificationProvider>
-        </ThemeProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <ResourcePreloader />
+            <StructuredData />
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+            <GlobalNotifications />
+          </AuthProvider>
+        </NotificationProvider>
       </body>
     </html>
   );
