@@ -3,6 +3,37 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Variables de tema por defecto */
+  --color-primary: #68c3b7;
+  --color-secondary: #64b7ac;
+  --color-accent: #5aa69a;
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-border: #e2e8f0;
+}
+
+/* Tema oscuro */
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-border: #334155;
+}
+
+/* Reducir movimiento para usuarios que lo prefieren */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Configuración de la fuente Poppins como predeterminada */
@@ -15,6 +46,9 @@ body {
   font-optical-sizing: auto;
   font-style: normal;
   font-weight: 400;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Cursor pointer para elementos interactivos */

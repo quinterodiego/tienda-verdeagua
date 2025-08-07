@@ -9,6 +9,7 @@ import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
 import { ResourcePreloader } from "@/components/Preloader";
 import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
+import ThemeProvider from "@/components/ThemeProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -30,21 +31,63 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('theme-preferences');
+                  if (stored) {
+                    var theme = JSON.parse(stored).state.theme;
+                    var isDark = false;
+                    
+                    if (theme === 'dark') {
+                      isDark = true;
+                    } else if (theme === 'auto') {
+                      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    }
+                    
+                    if (isDark) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.style.colorScheme = 'dark';
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                      document.documentElement.style.colorScheme = 'light';
+                    }
+                  } else {
+                    // Default to auto mode
+                    var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (isDark) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.style.colorScheme = 'dark';
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error applying theme:', e);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${poppins.variable} antialiased min-h-screen flex flex-col`}
       >
-        <NotificationProvider>
-          <AuthProvider>
-            <ResourcePreloader />
-            <StructuredData />
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-            <GlobalNotifications />
-          </AuthProvider>
-        </NotificationProvider>
+        <ThemeProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <ResourcePreloader />
+              <StructuredData />
+              <Header />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+              <GlobalNotifications />
+            </AuthProvider>
+          </NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
