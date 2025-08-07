@@ -109,11 +109,9 @@ export default function ProductCard({ product, priority = false, size = 'medium'
   };
 
   return (
-    <Link
-      href={`/producto/${product.id}`}
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group"
-    >
-      <div className="flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group">
+      <Link href={`/producto/${product.id}`} className="block h-full w-full">
+        <div className="flex flex-col h-full w-full">
         <div className="relative aspect-square overflow-hidden">
           {/* Indicador de carga */}
           {imageLoading && (
@@ -219,7 +217,7 @@ export default function ProductCard({ product, priority = false, size = 'medium'
           </div> */}
           
           <div className="flex items-center justify-between mt-3">
-            <div className="transition-transform duration-500 group-hover:scale-[1.01]">
+            <div className="flex-1 transition-transform duration-500 group-hover:scale-[1.01]">
               <span className="text-lg sm:text-2xl font-bold text-gray-900">
                 {formatCurrency(product.price)}
               </span>
@@ -232,18 +230,25 @@ export default function ProductCard({ product, priority = false, size = 'medium'
               </p>
             </div>
             
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="bg-[#68c3b7] hover:bg-[#64b7ac] disabled:bg-gray-400 text-white px-2 sm:px-4 py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 transition-all duration-500 text-sm touch-manipulation transform hover:scale-105 hover:shadow-md active:scale-95"
-            >
-              <ShoppingCart className="w-4 h-4 transition-transform duration-500 hover:rotate-6" />
-              <span className="hidden sm:inline">Agregar</span>
-              <span className="sm:hidden">+</span>
-            </button>
+            <div className="flex-shrink-0 ml-3">
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock === 0}
+                className={`${
+                  product.stock === 0 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-[#68c3b7] hover:bg-[#64b7ac] transform hover:scale-105 hover:shadow-md active:scale-95'
+                } text-white px-2 sm:px-4 py-2 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 transition-all duration-500 text-sm touch-manipulation w-[70px] sm:w-[100px] h-[40px]`}
+              >
+                <ShoppingCart className={`w-4 h-4 ${product.stock > 0 ? 'transition-transform duration-500 hover:rotate-6' : ''}`} />
+                <span className="hidden sm:inline">Agregar</span>
+                <span className="sm:hidden">+</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Link>
+        </div>
+      </Link>
+    </div>
   );
 }
