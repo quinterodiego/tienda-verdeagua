@@ -16,18 +16,18 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-16">
+      <div className="min-h-screen bg-gray-50 py-8 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-8">
               Tu carrito está vacío
             </h1>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">
               Agrega algunos productos para comenzar tu compra
             </p>
             <Link
               href="/"
-              className="bg-[#68c3b7] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors"
+              className="inline-block bg-[#68c3b7] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors text-sm sm:text-base"
             >
               Continuar comprando
             </Link>
@@ -38,7 +38,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen bg-gray-50 py-8 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Alerta de stock insuficiente */}
         {!stockLoading && !allSufficient && stockChecks.length > 0 && (
@@ -71,17 +71,20 @@ export default function CartPage() {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:w-2/3">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-                  Tú carrito de compras ({items.length} {items.length === 1 ? 'producto' : 'productos'})
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-3 sm:space-y-0">
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+                  Tú carrito de compras
+                  <span className="block sm:inline text-base font-normal text-gray-600 mt-1 sm:mt-0 sm:ml-2">
+                    ({items.length} {items.length === 1 ? 'producto' : 'productos'})
+                  </span>
                 </h1>
                 <button
                   onClick={clearCart}
-                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  className="text-red-600 hover:text-red-700 text-sm font-medium self-start sm:self-auto"
                 >
                   Vaciar carrito
                 </button>
@@ -93,9 +96,10 @@ export default function CartPage() {
                   const hasStockIssue = stockInfo && !stockInfo.sufficient;
                   
                   return (
-                    <div key={item.product.id} className={`border-b pb-4 ${hasStockIssue ? 'bg-red-50 border-red-200 p-4 rounded-lg' : ''}`}>
-                      <div className="flex items-center space-x-4">
-                        <div className="relative w-20 h-20">
+                    <div key={item.product.id} className={`border-b pb-4 last:border-b-0 ${hasStockIssue ? 'bg-red-50 border-red-200 p-4 rounded-lg' : ''}`}>
+                      {/* Desktop Layout */}
+                      <div className="hidden md:flex items-center space-x-4">
+                        <div className="relative w-20 h-20 flex-shrink-0">
                           <Image
                             src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
                             alt={item.product.name}
@@ -104,8 +108,8 @@ export default function CartPage() {
                           />
                         </div>
                         
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-600">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">
                             {item.product.name}
                           </h3>
                           <p className="text-gray-600 text-sm">
@@ -124,19 +128,19 @@ export default function CartPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="font-semibold px-3 py-1 bg-gray-100 rounded text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                          <span className="flex items-center justify-center font-semibold px-4 py-2 bg-gray-100 rounded text-gray-900 min-w-[3.5rem] h-8">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className={`p-1 rounded-full text-gray-600 ${
+                            className={`flex items-center justify-center w-8 h-8 rounded-full text-gray-600 transition-colors ${
                               hasStockIssue 
                                 ? 'bg-gray-300 cursor-not-allowed' 
                                 : 'bg-gray-100 hover:bg-gray-200'
@@ -148,16 +152,89 @@ export default function CartPage() {
                           </button>
                         </div>
 
-                        <div className="text-right">
-                          <p className="font-bold text-lg text-gray-600">
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-lg text-gray-900">
                             {formatCurrency(item.product.price * item.quantity)}
                           </p>
                           <button
                             onClick={() => removeItem(item.product.id)}
-                            className="text-red-600 hover:text-red-700 mt-2"
+                            className="text-red-600 hover:text-red-700 mt-2 p-1"
                           >
                             <X className="w-5 h-5" />
                           </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile Layout */}
+                      <div className="md:hidden space-y-3">
+                        <div className="flex items-start space-x-3">
+                          <div className="relative w-16 h-16 flex-shrink-0">
+                            <Image
+                              src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
+                              alt={item.product.name}
+                              fill
+                              className="object-cover rounded-md"
+                            />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                              {item.product.name}
+                            </h3>
+                            <p className="text-gray-600 text-xs mt-1">
+                              {item.product.category}
+                            </p>
+                            <p className="text-base font-bold text-gray-900 mt-1">
+                              {formatCurrency(item.product.price)}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => removeItem(item.product.id)}
+                            className="text-red-600 hover:text-red-700 p-1 flex-shrink-0"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Alerta de stock individual móvil */}
+                        {hasStockIssue && (
+                          <div className="flex items-center text-sm text-red-700 bg-red-100 p-2 rounded">
+                            <AlertTriangle className="h-4 w-4 mr-1 flex-shrink-0" />
+                            Solo {stockInfo.availableStock} disponibles
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="flex items-center justify-center font-semibold px-4 py-2 bg-gray-100 rounded text-gray-900 min-w-[3.5rem] h-8">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              className={`flex items-center justify-center w-8 h-8 rounded-full text-gray-600 transition-colors ${
+                                hasStockIssue 
+                                  ? 'bg-gray-300 cursor-not-allowed' 
+                                  : 'bg-gray-100 hover:bg-gray-200'
+                              }`}
+                              disabled={hasStockIssue}
+                              title={hasStockIssue ? 'Stock insuficiente' : 'Agregar uno más'}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-gray-900">
+                              {formatCurrency(item.product.price * item.quantity)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -169,24 +246,24 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:w-1/3">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:sticky lg:top-24">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
                 Resumen del pedido
               </h2>
               
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between">
+              <div className="space-y-3 mb-4 sm:mb-6">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-semibold text-gray-600">{formatCurrency(total)}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(total)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-semibold text-gray-600">Gratis</span>
+                  <span className="font-semibold text-green-600">Gratis</span>
                 </div>
                 <div className="border-t pt-3">
-                  <div className="flex justify-between">
-                    <span className="text-lg font-bold text-gray-600">Total</span>
-                    <span className="text-lg font-bold text-gray-600">{formatCurrency(total)}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-gray-900">Total</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(total)}</span>
                   </div>
                 </div>
               </div>
@@ -196,7 +273,7 @@ export default function CartPage() {
                 <div className="mb-4">
                   <button
                     disabled
-                    className="block w-full bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed mb-2"
+                    className="flex items-center justify-center w-full bg-gray-400 text-white py-3 rounded-lg font-semibold cursor-not-allowed mb-2"
                   >
                     Stock insuficiente
                   </button>
@@ -207,7 +284,7 @@ export default function CartPage() {
               ) : (
                 <Link
                   href="/checkout"
-                  className="block w-full bg-[#68c3b7] text-white py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors mb-4 text-center"
+                  className="flex items-center justify-center w-full bg-[#68c3b7] text-white py-3 rounded-lg font-semibold hover:bg-[#64b7ac] transition-colors mb-4"
                 >
                   Proceder al pago
                 </Link>
@@ -215,7 +292,7 @@ export default function CartPage() {
               
               <Link
                 href="/"
-                className="block text-center text-[#68c3b7] hover:text-[#64b7ac] font-medium"
+                className="flex items-center justify-center text-[#68c3b7] hover:text-[#64b7ac] font-medium"
               >
                 Continuar comprando
               </Link>
