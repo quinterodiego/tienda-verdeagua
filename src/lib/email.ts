@@ -1153,11 +1153,147 @@ function getStatusDisplayName(status: string): string {
   return statusNames[status] || status;
 }
 
-// Función para enviar notificación de cambio de estado
-export async function sendOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
-  const template = createOrderStatusUpdateEmail(data);
+// Template para notificación de pedido al admin/vendedor
+export function createOrderNotificationAdminEmail(data: OrderEmailData) {
+  const { orderId, customerName, customerEmail, items, total, orderDate } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const logoUrl = process.env.EMAIL_LOGO_URL || `${baseUrl}/logo.png`;
+
+  const itemsHtml = items.map(item => `
+    <tr style="border-bottom: 1px solid #e2e8f0;">
+      <td style="padding: 12px 8px; font-weight: 500; color: #2d3748;">${item.productName}</td>
+      <td style="padding: 12px 8px; text-align: center; color: #4a5568;">${item.quantity}</td>
+      <td style="padding: 12px 8px; text-align: right; color: #2d3748; font-weight: 500;">$${item.price.toFixed(2)}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Nuevo Pedido #${orderId} - Verde Agua Personalizados</title>
+      <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fffe; color: #333; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #ffffff, #f8fffe); color: #2d3748; padding: 30px 40px; text-align: center; border-bottom: 3px solid #68c3b7; }
+        .logo { margin-bottom: 20px; }
+        .logo img { max-width: 200px; height: auto; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 400; color: #2d3748; }
+        .order-number { background: rgba(104,195,183,0.1); color: #68c3b7; border: 1px solid #68c3b7; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; margin-top: 10px; display: inline-block; }
+        .content { padding: 40px; background-color: white; }
+        .order-details { background: #f7fafc; padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0; }
+        .order-details h3 { color: #2d3748; margin-top: 0; margin-bottom: 20px; font-size: 18px; font-weight: 500; }
+        .order-info { margin-bottom: 20px; }
+        .order-info-label { font-weight: 500; color: #4a5568; font-size: 14px; }
+        .order-info-value { color: #2d3748; font-size: 16px; margin-top: 2px; }
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .items-table th { 
+          background: #68c3b7; 
+          color: white;
+          padding: 15px 10px; 
+          text-align: left; 
+          font-weight: 500;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .items-table th:nth-child(2) { text-align: center; }
+        .items-table th:nth-child(3) { text-align: right; }
+        .total-row { 
+          background: linear-gradient(135deg, #68c3b7, #4fb3a6);
+          color: white; 
+          font-weight: 600;
+          font-size: 16px;
+        }
+        .total-row td {
+          padding: 20px 10px;
+        }
+        .footer { 
+          background-color: #f7fafc;
+          padding: 30px 40px;
+          text-align: center; 
+          border-top: 1px solid #e2e8f0;
+        }
+        .footer-logo {
+          margin-bottom: 15px;
+        }
+        .footer-logo img {
+          max-width: 120px;
+          height: auto;
+          opacity: 0.7;
+        }
+        .footer p { 
+          color: #718096; 
+          font-size: 14px; 
+          margin: 5px 0;
+        }
+        @media only screen and (max-width: 600px) { .email-container { margin: 0 10px; } .content { padding: 30px 20px; } .header { padding: 25px 20px; } .order-details { padding: 20px; } .footer { padding: 25px 20px; } }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <h1>Nuevo Pedido Recibido</h1>
+          <div class="order-number">Pedido #${orderId}</div>
+        </div>
+        <div class="content">
+          <div class="order-details">
+            <h3>📋 Detalles del Pedido</h3>
+            <div class="order-info">
+              <div class="order-info-label">Cliente:</div>
+              <div class="order-info-value">${customerName} (${customerEmail})</div>
+              <div class="order-info-label">Fecha del Pedido:</div>
+              <div class="order-info-value">${orderDate}</div>
+            </div>
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                  <th>Precio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                <tr class="total-row">
+                  <td colspan="2"><strong>Total del Pedido:</strong></td>
+                  <td style="text-align: right;"><strong>$${total.toFixed(2)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="footer-logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <p><strong>Verde Agua Personalizados</strong></p>
+          <p>Notificación automática de nuevo pedido</p>
+          <p style="margin-top: 20px; font-size: 12px;">Este email fue enviado al administrador</p>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">© 2025 Verde Agua Personalizados. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return {
+    subject: `🛒 Nuevo Pedido #${orderId} - Verde Agua Personalizados`,
+    html,
+  };
+}
+
+// Función para enviar notificación de pedido al admin/vendedor
+export async function sendOrderNotificationToAdmin(data: OrderEmailData) {
+  const template = createOrderNotificationAdminEmail(data);
+  const adminEmail = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM;
   return sendEmail({
-    to: data.customerEmail,
+    to: adminEmail,
     subject: template.subject,
     html: template.html,
   });
