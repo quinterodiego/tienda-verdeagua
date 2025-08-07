@@ -32,42 +32,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        {/* Script de tema eliminado para mantener solo modo claro */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
-                try {
-                  var stored = localStorage.getItem('theme-preferences');
-                  if (stored) {
-                    var theme = JSON.parse(stored).state.theme;
-                    var isDark = false;
-                    
-                    if (theme === 'dark') {
-                      isDark = true;
-                    } else if (theme === 'auto') {
-                      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    }
-                    
-                    if (isDark) {
-                      document.documentElement.classList.add('dark');
-                      document.documentElement.style.colorScheme = 'dark';
-                    } else {
-                      document.documentElement.classList.remove('dark');
-                      document.documentElement.style.colorScheme = 'light';
-                    }
-                  } else {
-                    // Default to auto mode
-                    var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (isDark) {
-                      document.documentElement.classList.add('dark');
-                      document.documentElement.style.colorScheme = 'dark';
-                    }
-                  }
-                } catch (e) {
-                  console.error('Error applying theme:', e);
-                }
-              })();
-            `,
+              // Forzar modo claro siempre
+              document.documentElement.classList.remove('dark');
+              document.documentElement.style.colorScheme = 'light';
+            `
           }}
         />
       </head>

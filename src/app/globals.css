@@ -15,7 +15,8 @@
   --color-border: #e2e8f0;
 }
 
-/* Tema oscuro */
+/* Tema oscuro - DESHABILITADO para mantener solo modo claro */
+/*
 .dark {
   --background: #0f172a;
   --foreground: #f1f5f9;
@@ -25,6 +26,7 @@
   --color-text-secondary: #94a3b8;
   --color-border: #334155;
 }
+*/
 
 /* Reducir movimiento para usuarios que lo prefieren */
 .reduce-motion *,

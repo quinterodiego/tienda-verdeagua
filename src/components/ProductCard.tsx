@@ -111,14 +111,14 @@ export default function ProductCard({ product, priority = false, size = 'medium'
   return (
     <Link
       href={`/producto/${product.id}`}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group"
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group"
     >
       <div className="flex flex-col h-full">
         <div className="relative aspect-square overflow-hidden">
           {/* Indicador de carga */}
           {imageLoading && (
-            <div className="absolute inset-0 bg-gray-100 dark:bg-gray-700 animate-pulse flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-500 animate-pulse" />
+            <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+              <ImageIcon className="w-8 h-8 text-gray-400 animate-pulse" />
             </div>
           )}
           
@@ -169,11 +169,11 @@ export default function ProductCard({ product, priority = false, size = 'medium'
             </span>
           </div>
           
-          <h3 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 min-h-[2.5rem] sm:min-h-[3.5rem] leading-tight">
+          <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem] sm:min-h-[3.5rem] leading-tight">
             {product.name}
           </h3>
           
-          <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mb-3 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] flex-grow leading-relaxed">
+          <p className="text-gray-600 text-xs sm:text-sm mb-3 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] flex-grow leading-relaxed">
             {product.description}
           </p>
 
@@ -220,7 +220,7 @@ export default function ProductCard({ product, priority = false, size = 'medium'
           
           <div className="flex items-center justify-between mt-3">
             <div className="transition-transform duration-500 group-hover:scale-[1.01]">
-              <span className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+              <span className="text-lg sm:text-2xl font-bold text-gray-900">
                 {formatCurrency(product.price)}
               </span>
               <p className="text-xs text-gray-500">

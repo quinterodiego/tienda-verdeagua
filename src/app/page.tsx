@@ -86,9 +86,9 @@ function HomeContent() {
   // Early loading state before render
   if (isLoading && products.length === 0) {
     return (
-      <div className="bg-gray-50 dark:bg-gray-900 flex flex-col h-full min-h-screen transition-colors duration-300">
+      <div className="bg-gray-50 flex flex-col h-full min-h-screen">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 text-white flex-shrink-0">
+        <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <div className="text-center">
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -110,9 +110,9 @@ function HomeContent() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 flex flex-col h-full transition-colors duration-300">
+    <div className="bg-gray-50 flex flex-col h-full">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-[var(--color-primary)] to-purple-500 text-white flex-shrink-0">
+      <section className="bg-gradient-to-r from-[#68c3b7] to-purple-500 text-white flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">

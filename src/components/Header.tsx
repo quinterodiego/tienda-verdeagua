@@ -7,9 +7,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ClientOnly from './ClientOnly';
-import { LoadingSpinner } from './LoadingComponents';
 import Image from 'next/image';
-import SimpleThemeToggle from './SimpleThemeToggle';
 
 export default function Header() {
   const { itemCount } = useCartStore();
@@ -227,9 +225,6 @@ export default function Header() {
                 )}
               </ClientOnly>
             </Link>
-
-            {/* Theme Toggle Button */}
-            <SimpleThemeToggle />
 
             {/* Mobile menu button */}
             <button 
