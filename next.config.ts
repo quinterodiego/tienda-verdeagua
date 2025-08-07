@@ -14,10 +14,6 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Experimental features for performance
-  experimental: {
-    optimizeCss: true,
-  },
   images: {
     remotePatterns: [
       {
