@@ -111,25 +111,17 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4">
               <a 
-                href="#" 
-                className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
-                aria-label="Facebook"
+                href="https://www.instagram.com/verde_agua.personalizados?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                target='_blank'
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white hover:bg-gray-300 transition-colors"
               >
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a 
-                href="#" 
-                className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center hover:bg-pink-700 transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a 
-                href="#" 
-                className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4" />
+                <Image
+                  src="/instagram.png"
+                  alt="Instagram"
+                  width={30}
+                  height={30}
+                  className="object-contain relative z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 drop-shadow-md"
+                />
               </a>
             </div>
           </div>

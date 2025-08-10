@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Phone, Mail, Send, MessageCircle, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 interface FormData {
   nombre: string;
@@ -197,11 +198,12 @@ export default function ContactoPage() {
                     {siteSettings?.whatsapp?.phone 
                       ? formatPhoneNumber(siteSettings.whatsapp.phone)
                       : '+54 11 5176-2371'
-                    }<br />
+                    }
+                    {/* <br />
                     WhatsApp: {siteSettings?.whatsapp?.phone 
                       ? formatPhoneNumber(siteSettings.whatsapp.phone)
                       : '+54 9 11 5176-2371'
-                    }
+                    } */}
                   </p>
                 </div>
               </div>
@@ -224,22 +226,17 @@ export default function ContactoPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Síguenos en redes</h3>
               <div className="flex space-x-4">
                 <a 
-                  href="#" 
-                  className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white hover:bg-blue-700 transition-colors"
+                  href="https://www.instagram.com/verde_agua.personalizados?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                  target='_blank'
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white hover:bg-gray-300 transition-colors"
                 >
-                  f
-                </a>
-                <a 
-                  href="#" 
-                  className="w-10 h-10 bg-pink-600 rounded-lg flex items-center justify-center text-white hover:bg-pink-700 transition-colors"
-                >
-                  📷
-                </a>
-                <a 
-                  href="#" 
-                  className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center text-white hover:bg-green-700 transition-colors"
-                >
-                  <MessageCircle className="w-5 h-5" />
+                  <Image
+                    src="/instagram.png"
+                    alt="Instagram"
+                    width={60}
+                    height={60}
+                    className="object-contain relative z-10 w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 drop-shadow-md"
+                  />
                 </a>
               </div>
             </div>
