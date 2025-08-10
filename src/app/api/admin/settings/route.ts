@@ -19,6 +19,12 @@ interface SiteSettings {
     trackingUrl?: string; // URL de la empresa de paquetería para tracking
     trackingUrlPlaceholder?: string; // Placeholder para mostrar cómo usar la URL
   };
+  whatsapp?: {
+    enabled: boolean;
+    phone: string;
+    welcomeMessage: string;
+    chatMessage: string;
+  };
   lastUpdated?: string;
 }
 
@@ -83,6 +89,12 @@ export async function GET() {
         shipping: {
           trackingUrl: '',
           trackingUrlPlaceholder: ''
+        },
+        whatsapp: {
+          enabled: true,
+          phone: '5491234567890',
+          welcomeMessage: '¡Hola! 👋 ¿Tienes alguna consulta sobre nuestros productos personalizados?',
+          chatMessage: '¡Hola! Me interesa conocer más sobre los productos personalizados de Verde Agua.'
         },
         lastUpdated: new Date().toISOString()
       };
@@ -266,6 +278,12 @@ async function saveSettingsToSheet(sheet: any, settings: SiteSettings) {
       value: JSON.stringify(settings.shipping),
       type: 'object',
       description: 'Configuración de envíos y seguimiento'
+    },
+    {
+      key: 'whatsapp',
+      value: JSON.stringify(settings.whatsapp),
+      type: 'object',
+      description: 'Configuración de WhatsApp para contacto'
     },
     {
       key: 'lastUpdated',

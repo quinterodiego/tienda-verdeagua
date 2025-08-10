@@ -22,6 +22,12 @@ export interface SiteSettings {
     trackingUrl?: string; // URL de la empresa de paquetería para tracking
     trackingUrlPlaceholder?: string; // Placeholder para mostrar cómo usar la URL
   };
+  whatsapp?: {
+    enabled: boolean;
+    phone: string;
+    welcomeMessage: string;
+    chatMessage: string;
+  };
   lastUpdated?: string;
 }
 

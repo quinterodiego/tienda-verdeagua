@@ -9,6 +9,7 @@ import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
 import { ResourcePreloader } from "@/components/Preloader";
 import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -46,6 +47,7 @@ export default function RootLayout({
             </main>
             <Footer />
             <GlobalNotifications />
+            <WhatsAppFloat />
           </AuthProvider>
         </NotificationProvider>
       </body>

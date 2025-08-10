@@ -190,7 +190,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">info@verdeaguapersonalizados.com</span>
+                <span className="text-sm">verdeaguapersonalizados@gmail.com</span>
               </div>
             </div>
           </div>
