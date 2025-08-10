@@ -25,8 +25,6 @@ export function useWhatsAppConfig(): WhatsAppConfig {
 
     const loadConfig = async () => {
       try {
-        console.log('🔍 WhatsApp Hook: Iniciando carga de configuración...');
-        
         // Usar timestamp para evitar cache
         const response = await fetch(`/api/admin/settings?_t=${Date.now()}`, {
           cache: 'no-cache',
@@ -41,11 +39,9 @@ export function useWhatsAppConfig(): WhatsAppConfig {
         }
         
         const data = await response.json();
-        console.log('🔍 WhatsApp Hook: Respuesta completa:', data);
         
         if (data.success && data.settings && data.settings.whatsapp && isMounted) {
           const whatsappSettings = data.settings.whatsapp;
-          console.log('🔍 WhatsApp Hook: Configuración WhatsApp encontrada:', whatsappSettings);
           
           const newConfig: WhatsAppConfig = {
             phoneNumber: whatsappSettings.phone || defaultConfig.phoneNumber,
@@ -55,13 +51,10 @@ export function useWhatsAppConfig(): WhatsAppConfig {
             isEnabled: whatsappSettings.enabled !== false
           };
           
-          console.log('🔍 WhatsApp Hook: APLICANDO nueva configuración:', newConfig);
           setConfig(newConfig);
-        } else {
-          console.log('🚨 WhatsApp Hook: No se encontró configuración válida, usando defaults');
         }
       } catch (error) {
-        console.error('🚨 WhatsApp Hook: Error cargando configuración:', error);
+        console.error('Error cargando configuración de WhatsApp:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);

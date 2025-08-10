@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, Mail, Send, MessageCircle, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface FormData {
@@ -18,6 +18,14 @@ interface FormErrors {
   mensaje?: string;
 }
 
+interface SiteSettings {
+  contactEmail?: string;
+  whatsapp?: {
+    enabled: boolean;
+    phone: string;
+  };
+}
+
 export default function ContactoPage() {
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
@@ -31,6 +39,37 @@ export default function ContactoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
+  // Cargar configuración del sitio
+  useEffect(() => {
+    const loadSiteSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.settings) {
+            setSiteSettings(data.settings);
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar configuración del sitio:', error);
+      }
+    };
+
+    loadSiteSettings();
+  }, []);
+
+  // Función para formatear el número de teléfono
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return '';
+    // Si empieza con 549, formatear como +54 9 11 xxxx-xxxx
+    if (phone.startsWith('549')) {
+      return `+${phone.slice(0, 2)} ${phone.slice(2, 3)} ${phone.slice(3, 5)} ${phone.slice(5, 9)}-${phone.slice(9)}`;
+    }
+    // Formato genérico
+    return `+${phone.slice(0, 2)} ${phone.slice(2, 4)} ${phone.slice(4, 8)}-${phone.slice(8)}`;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -155,8 +194,14 @@ export default function ContactoPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Teléfono</h3>
                   <p className="text-gray-600">
-                    +54 11 1234-5678<br />
-                    WhatsApp: +54 9 11 1234-5678
+                    {siteSettings?.whatsapp?.phone 
+                      ? formatPhoneNumber(siteSettings.whatsapp.phone)
+                      : '+54 11 5176-2371'
+                    }<br />
+                    WhatsApp: {siteSettings?.whatsapp?.phone 
+                      ? formatPhoneNumber(siteSettings.whatsapp.phone)
+                      : '+54 9 11 5176-2371'
+                    }
                   </p>
                 </div>
               </div>
@@ -168,8 +213,7 @@ export default function ContactoPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
                   <p className="text-gray-600">
-                    info@verdeaguapersonalizados.com<br />
-                    ventas@verdeaguapersonalizados.com
+                    {siteSettings?.contactEmail || 'verdeaguapersonalizados@gmail.com'}
                   </p>
                 </div>
               </div>

@@ -6,13 +6,51 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Category } from '@/types';
 
+interface SiteSettings {
+  contactEmail?: string;
+  whatsapp?: {
+    enabled: boolean;
+    phone: string;
+  };
+}
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  // Detectar cuando estamos en el cliente
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Cargar configuración del sitio
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const loadSiteSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.settings) {
+            setSiteSettings(data.settings);
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar configuración del sitio:', error);
+      }
+    };
+
+    loadSiteSettings();
+  }, [isClient]);
 
   // Cargar categorías dinámicamente desde Google Sheets
   useEffect(() => {
+    if (!isClient) return;
+    
     const loadCategories = async () => {
       try {
         setCategoriesLoading(true);
@@ -35,7 +73,18 @@ export default function Footer() {
     };
 
     loadCategories();
-  }, []);
+  }, [isClient]);
+
+  // Función para formatear el número de teléfono
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return '';
+    // Si empieza con 549, formatear como +54 9 11 xxxx-xxxx
+    if (phone.startsWith('549')) {
+      return `+${phone.slice(0, 2)} ${phone.slice(2, 3)} ${phone.slice(3, 5)} ${phone.slice(5, 9)}-${phone.slice(9)}`;
+    }
+    // Formato genérico
+    return `+${phone.slice(0, 2)} ${phone.slice(2, 4)} ${phone.slice(4, 8)}-${phone.slice(8)}`;
+  };
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -121,7 +170,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-lg mb-4">Categorías</h3>
             <ul className="space-y-2 text-gray-400">
-              {categoriesLoading ? (
+              {!isClient || categoriesLoading ? (
                 // Skeleton loader para categorías
                 <>
                   {[...Array(6)].map((_, index) => (
@@ -186,11 +235,21 @@ export default function Footer() {
             <div className="space-y-3 text-gray-400">
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">+54 11 1234-5678</span>
+                <span className="text-sm">
+                  {isClient && siteSettings?.whatsapp?.phone 
+                    ? formatPhoneNumber(siteSettings.whatsapp.phone)
+                    : '+54 11 5176-2371'
+                  }
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">verdeaguapersonalizados@gmail.com</span>
+                <span className="text-sm">
+                  {isClient && siteSettings?.contactEmail 
+                    ? siteSettings.contactEmail 
+                    : 'verdeaguapersonalizados@gmail.com'
+                  }
+                </span>
               </div>
             </div>
           </div>
