@@ -3,9 +3,39 @@
 import Link from 'next/link';
 import { Mail, Phone, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { Category } from '@/types';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Cargar categorías dinámicamente desde Google Sheets
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          // Filtrar solo las categorías activas y limitar a 6 para el footer
+          const activeCategories = data.categories
+            ?.filter((cat: Category) => cat.isActive)
+            ?.slice(0, 6) || [];
+          setCategories(activeCategories);
+        } else {
+          console.error('Error al cargar categorías:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -79,11 +109,11 @@ export default function Footer() {
                   Carrito
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/favoritos" className="hover:text-white transition-colors">
                   Favoritos
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -91,36 +121,62 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-lg mb-4">Categorías</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="/?category=Agendas" className="hover:text-white transition-colors">
-                  Agendas
-                </Link>
-              </li>
-              <li>
-                <Link href="/?category=Tazas" className="hover:text-white transition-colors">
-                  Tazas
-                </Link>
-              </li>
-              <li>
-                <Link href="/?category=Llaveros" className="hover:text-white transition-colors">
-                  Llaveros
-                </Link>
-              </li>
-              <li>
-                <Link href="/?category=Stickers" className="hover:text-white transition-colors">
-                  Stickers
-                </Link>
-              </li>
-              <li>
-                <Link href="/?category=Cuadernos" className="hover:text-white transition-colors">
-                  Cuadernos
-                </Link>
-              </li>
-              <li>
-                <Link href="/?category=Mochilas" className="hover:text-white transition-colors">
-                  Mochilas
-                </Link>
-              </li>
+              {categoriesLoading ? (
+                // Skeleton loader para categorías
+                <>
+                  {[...Array(6)].map((_, index) => (
+                    <li key={index}>
+                      <div className="h-4 bg-gray-700 rounded animate-pulse"></div>
+                    </li>
+                  ))}
+                </>
+              ) : categories.length > 0 ? (
+                // Mostrar categorías dinámicas desde Google Sheets
+                categories.map((category) => (
+                  <li key={category.id}>
+                    <Link 
+                      href={`/?category=${encodeURIComponent(category.name)}`} 
+                      className="hover:text-white transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                // Fallback a categorías estáticas si no se pueden cargar las dinámicas
+                <>
+                  <li>
+                    <Link href="/?category=Agendas" className="hover:text-white transition-colors">
+                      Agendas
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/?category=Tazas" className="hover:text-white transition-colors">
+                      Tazas
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/?category=Llaveros" className="hover:text-white transition-colors">
+                      Llaveros
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/?category=Stickers" className="hover:text-white transition-colors">
+                      Stickers
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/?category=Cuadernos" className="hover:text-white transition-colors">
+                      Cuadernos
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/?category=Mochilas" className="hover:text-white transition-colors">
+                      Mochilas
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -160,7 +216,7 @@ export default function Footer() {
           </div>
            <div className="flex justify-center items-center mt-4">
             <div className="text-gray-400 text-sm mt-4 md:mt-0">
-              Desarrollado por <a href="https://coderflix.com.ar" target='_blank' className="hover:text-white transition-colors">CoderFlix</a>  
+              Desarrollado por <a href="https://coderflix.com.ar" target='_blank' className="hover:text-white transition-colors font-bold">CoderFlix</a>  
             </div>
            </div>
         </div>
