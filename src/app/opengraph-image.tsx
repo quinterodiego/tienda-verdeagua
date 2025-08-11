@@ -1,7 +1,8 @@
 import { ImageResponse } from 'next/og';
 import { siteConfig } from '@/lib/metadata';
 
-export const runtime = 'edge';
+// Comentado temporalmente para compatibilidad con Vercel
+// export const runtime = 'edge';
 
 export const alt = siteConfig.name;
 export const size = {
