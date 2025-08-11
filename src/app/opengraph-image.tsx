@@ -34,6 +34,10 @@ export default async function OGImage() {
             padding: '40px 60px',
             marginBottom: '40px',
             boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <div
@@ -42,6 +46,7 @@ export default async function OGImage() {
               fontWeight: 'bold',
               color: '#68c3b7',
               textAlign: 'center',
+              display: 'flex',
             }}
           >
             Verde Agua
@@ -52,6 +57,7 @@ export default async function OGImage() {
               color: '#64748b',
               textAlign: 'center',
               marginTop: '10px',
+              display: 'flex',
             }}
           >
             Personalizados
@@ -67,6 +73,7 @@ export default async function OGImage() {
             maxWidth: '800px',
             lineHeight: '1.3',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            display: 'flex',
           }}
         >
           Productos únicos y personalizados para cada momento especial
@@ -78,24 +85,67 @@ export default async function OGImage() {
             display: 'flex',
             marginTop: '40px',
             gap: '30px',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {['Agendas', 'Tazas', 'Llaveros', 'Stickers'].map((item) => (
-            <div
-              key={item}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '25px',
-                fontSize: '18px',
-                fontWeight: '600',
-                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-              }}
-            >
-              {item}
-            </div>
-          ))}
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '25px',
+              fontSize: '18px',
+              fontWeight: '600',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              display: 'flex',
+            }}
+          >
+            Agendas
+          </div>
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '25px',
+              fontSize: '18px',
+              fontWeight: '600',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              display: 'flex',
+            }}
+          >
+            Tazas
+          </div>
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '25px',
+              fontSize: '18px',
+              fontWeight: '600',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              display: 'flex',
+            }}
+          >
+            Llaveros
+          </div>
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '25px',
+              fontSize: '18px',
+              fontWeight: '600',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              display: 'flex',
+            }}
+          >
+            Stickers
+          </div>
         </div>
       </div>
     ),
