@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendOrderStatusUpdateEmail } from '@/lib/email';
+// import { sendOrderStatusUpdateEmail } from '@/lib/email';
 import { isAdminUser } from '@/lib/admin-config';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -15,6 +15,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Temporalmente deshabilitado para evitar errores de build
+    return NextResponse.json(
+      { error: 'Función temporalmente deshabilitada para mantenimiento.' },
+      { status: 503 }
+    );
+
+    /*
     const body = await request.json();
     const { 
       orderId, 
@@ -82,6 +89,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString()
       }
     });
+    */
 
   } catch (error) {
     console.error('❌ Error al enviar email de prueba:', error);
