@@ -23,7 +23,7 @@ export default function WhatsAppFloat() {
   return (
     <>
       {/* Botón flotante principal */}
-      <div className="fixed bottom-16 right-4 z-[9999] max-w-none">
+      <div className="fixed bottom-8 right-4 z-[9999] max-w-none">
         <div className="relative">
           {/* Animación de pulso de fondo */}
           <div className="absolute inset-0 rounded-full bg-green-400 opacity-30"></div>
