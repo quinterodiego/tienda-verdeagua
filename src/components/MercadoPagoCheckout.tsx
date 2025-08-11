@@ -261,29 +261,16 @@ export default function MercadoPagoCheckoutPage() {
         currency_id: 'ARS'
       }));
 
-      // Sin cargos por envío - se remueve esta sección
+      // Generar un orderId único
+      const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
       const preferenceData = {
         items: mpItems,
-        customerInfo: form,
-        orderData: {
-          customerName: `${form.firstName} ${form.lastName}`,
-          customerEmail: form.email,
-          items: items,
-          shippingAddress: {
-            firstName: form.firstName,
-            lastName: form.lastName,
-            address: form.address,
-            city: form.city,
-            state: form.state,
-            zipCode: form.zipCode,
-            phone: form.phone,
-          },
-          total: subtotal // Sin cargos por envío
-        }
+        orderId: orderId,
+        customerInfo: form
       };
 
-      const response = await fetch('/api/mercadopago/create-preference', {
+      const response = await fetch('/api/mercadopago/preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -291,78 +278,61 @@ export default function MercadoPagoCheckoutPage() {
         body: JSON.stringify(preferenceData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        
-        // Manejar diferentes tipos de respuesta del servidor
-        if (errorData.mode) {
-          const modeMessages = {
-            'test': '⚠️ Modo TEST: Los pagos no serán reales',
-            'sandbox': '⚠️ Modo SANDBOX: Ambiente de pruebas',
-            'production': '✅ Modo PRODUCCIÓN: Pagos reales'
-          };
-          
-          addNotification(modeMessages[errorData.mode as keyof typeof modeMessages] || errorData.message, 'warning');
-        } else {
-          addNotification('✅ Procesando pago real con MercadoPago', 'success');
-        }
-
-        if (errorData.preference_id) {
-          setPreferenceId(errorData.preference_id);
-          setIsRedirectingToPayment(true);
-          
-          addNotification('Redirigiendo a MercadoPago...', 'success');
-          
-          // Limpiar carrito antes del redirect
-          setTimeout(() => {
-            clearCart();
-          }, 100);
-
-          // Crear orden temporal para rastreo
-          const orderData = {
-            preferenceId: errorData.preference_id,
-            items: items,
-            formData: form,
-            paymentMethod: 'mercadopago',
-            total: total
-          };
-
-          await fetch('/api/orders/pending', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderData),
-          });
-
-          // Redirect a MercadoPago
-          window.location.href = errorData.init_point;
-          return;
-        }
-        
         // Si hay error real, lanzar excepción
-        throw new Error(errorData.error || 'Error al crear preferencia de pago');
+        throw new Error(data.error || 'Error al crear preferencia de pago');
       }
 
-      const data = await response.json();
-      setPreferenceId(data.preference_id);
+      // Respuesta exitosa
+      setPreferenceId(data.preferenceId);
       setIsRedirectingToPayment(true);
 
-      // Mostrar mensaje según el modo
-      const modeMessages = {
-        'test': '⚠️ Modo TEST: Los pagos no serán reales',
-        'sandbox': '⚠️ Modo SANDBOX: Ambiente de pruebas', 
-        'production': '✅ Modo PRODUCCIÓN: Pagos reales'
-      };
+      addNotification('Redirigiendo a MercadoPago...', 'success');
 
-      const errorMessage = data.mode 
-        ? modeMessages[data.mode as keyof typeof modeMessages] || data.message
-        : 'Error desconocido';
+      // Limpiar carrito antes del redirect
+      setTimeout(() => {
+        clearCart();
+      }, 100);
 
-      addNotification(`❌ ${errorMessage}`, 'error');
+      // Crear orden temporal para rastreo
+      try {
+        const orderData = {
+          customerInfo: form,
+          items: items,
+          total: subtotal,
+          paymentMethod: 'MercadoPago',
+          paymentStatus: 'pending',
+          preferenceId: data.preferenceId,
+          orderId: orderId
+        };
+
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(orderData),
+        });
+      } catch (orderError) {
+        console.warn('Error al crear orden temporal:', orderError);
+        // No fallar el proceso por esto
+      }
+
+      // Redirect a MercadoPago - usar initPoint o sandboxInitPoint
+      const redirectUrl = data.initPoint || data.sandboxInitPoint;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error('No se recibió URL de redirección de MercadoPago');
+      }
 
     } catch (error) {
-      console.error('Error al crear preferencia:', error);
+      console.error('Error completo al crear preferencia:', error);
+      console.error('Tipo de error:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Error desconocido');
+      
       addNotification(
         `Error al procesar pago: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         'error'

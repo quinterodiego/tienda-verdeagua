@@ -57,25 +57,75 @@ export function ResourcePreloader() {
       document.head.appendChild(link);
     };
 
-    // Preload important images
+    // Preload important images with WebP support
     const preloadImages = (srcs: string[]) => {
       srcs.forEach(src => {
         const link = document.createElement('link');
         link.rel = 'preload';
         link.href = src;
         link.as = 'image';
+        link.type = 'image/webp';
         document.head.appendChild(link);
       });
     };
+
+    // Preconnect to external domains
+    const preconnectDomains = [
+      'https://images.unsplash.com',
+      'https://picsum.photos',
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+      'https://api.mercadopago.com',
+      'https://res.cloudinary.com'
+    ];
+
+    preconnectDomains.forEach(domain => {
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = domain;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    });
+
+    // DNS prefetch for additional domains
+    const dnsPrefetchDomains = [
+      'https://www.google-analytics.com',
+      'https://fonts.googleapis.com'
+    ];
+
+    dnsPrefetchDomains.forEach(domain => {
+      const link = document.createElement('link');
+      link.rel = 'dns-prefetch';
+      link.href = domain;
+      document.head.appendChild(link);
+    });
 
     // Preload hero images and logos
     const criticalImages = [
       '/logo.svg',
       '/hero-bg.jpg',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
+      '/placeholder-image.svg',
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop&fm=webp',
     ];
 
     preloadImages(criticalImages);
+
+    // Preload critical fonts
+    const fontPreloads = [
+      { href: '/fonts/poppins-400.woff2', type: 'font/woff2' },
+      { href: '/fonts/poppins-600.woff2', type: 'font/woff2' }
+    ];
+
+    fontPreloads.forEach(font => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = font.href;
+      link.as = 'font';
+      link.type = font.type;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
+    });
+
   }, []);
 
   return null;

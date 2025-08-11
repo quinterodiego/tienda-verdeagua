@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
-import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Heart, Share } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Share } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import Notification from '@/components/Notification';
-import { ProductDetailSkeleton } from '@/components/LoadingSkeletons';
-import { ThemedButton } from '@/components/ThemedButton';
 import { Product } from '@/types';
+
+// Lazy load components
+const Notification = lazy(() => import('@/components/Notification'));
+const ProductDetailSkeleton = lazy(() => import('@/components/LoadingSkeletons').then(module => ({ default: module.ProductDetailSkeleton })));
+const ThemedButton = lazy(() => import('@/components/ThemedButton').then(module => ({ default: module.ThemedButton })));
 
 interface ProductDetailClientProps {
   initialProduct?: Product;
@@ -75,7 +77,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }, [params.id, initialProduct]);
 
   if (isLoading) {
-    return <ProductDetailSkeleton />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-gray-50 animate-pulse" />}>
+        <ProductDetailSkeleton />
+      </Suspense>
+    );
   }
 
   if (error || !product) {
@@ -95,7 +101,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     );
   }
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     setIsAddingToCart(true);
     try {
       // Simular un pequeño delay para mostrar el loading
@@ -105,22 +111,22 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     } finally {
       setIsAddingToCart(false);
     }
-  };
+  }, [addItem, product, quantity]);
 
-  const incrementQuantity = () => {
+  const incrementQuantity = useCallback(() => {
     if (quantity < product.stock) {
       setQuantity(quantity + 1);
     }
-  };
+  }, [quantity, product.stock]);
 
-  const decrementQuantity = () => {
+  const decrementQuantity = useCallback(() => {
     if (quantity > 1) {
       setQuantity(quantity - 1);
     }
-  };
+  }, [quantity]);
 
-  // Usar las imágenes reales del producto
-  const productImages = (() => {
+  // Usar las imágenes reales del producto con memoización
+  const productImages = useMemo(() => {
     // Si el producto tiene un array de imágenes, usarlo
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       return product.images;
@@ -131,16 +137,42 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
     // Último fallback: placeholder
     return ['/placeholder-image.svg'];
-  })();
+  }, [product.images, product.image]);
+
+  // Preload de imagen principal para mejor performance
+  useEffect(() => {
+    if (productImages.length > 0) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = productImages[0];
+      document.head.appendChild(link);
+      
+      return () => {
+        document.head.removeChild(link);
+      };
+    }
+  }, [productImages]);
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors duration-300">
-      <Notification
-        message={`${product.name} agregado al carrito`}
-        isVisible={showNotification}
-        onClose={() => setShowNotification(false)}
-        type="success"
-      />
+    <div className="min-h-screen bg-gray-50 transition-colors duration-300">{/* Preload hint para imagen principal */}
+      {productImages.length > 0 && (
+        <link
+          rel="preload"
+          as="image"
+          href={productImages[0]}
+          type="image/webp"
+        />
+      )}
+      
+      <Suspense fallback={<div className="animate-pulse bg-gray-200 h-16 rounded"></div>}>
+        <Notification
+          message={`${product.name} agregado al carrito`}
+          isVisible={showNotification}
+          onClose={() => setShowNotification(false)}
+          type="success"
+        />
+      </Suspense>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Breadcrumb y botón de volver */}
@@ -172,7 +204,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 alt={product.name}
                 fill
                 className="object-cover transition-all duration-500 ease-out group-hover:scale-110"
-                priority
+                priority={selectedImage === 0}
+                loading={selectedImage === 0 ? "eager" : "lazy"}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                quality={85}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAhEQACAQIHAQAAAAAAAAAAAAABAgADBAUGITFRYfDR/9oADAMBAAIRAxEAPwCdABmOwqD8KQIGNdPD2iXzZ/9k="
               />
               
               {/* Indicador de zoom con animación */}
@@ -220,6 +257,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       alt={`${product.name} vista ${index + 1}`}
                       fill
                       className="object-cover transition-transform duration-300 hover:scale-110"
+                      loading="lazy"
+                      sizes="(max-width: 768px) 25vw, 12vw"
+                      quality={75}
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAhEQACAQIHAQAAAAAAAAAAAAABAgADBAUGITFRYfDR/9oADAMBAAIRAxEAPwCdABmOwqD8KQIGNdPD2iXzZ/9k="
                     />
                     {selectedImage === index && (
                       <div className="absolute inset-0 bg-[#68c3b7] bg-opacity-10 animate-pulse"></div>
@@ -354,18 +396,24 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   </div>
                 </div>
 
-                <ThemedButton
-                  onClick={handleAddToCart}
-                  isLoading={isAddingToCart}
-                  disabled={product.stock === 0}
-                  variant="primary"
-                  size="lg"
-                  className="w-full"
-                  leftIcon={<ShoppingCart className="w-5 h-5" />}
-                  soundOnClick={true}
-                >
-                  Agregar al carrito
-                </ThemedButton>
+                <Suspense fallback={
+                  <button className="w-full bg-[#68c3b7] text-white py-3 px-4 rounded-lg text-sm font-medium animate-pulse">
+                    Cargando...
+                  </button>
+                }>
+                  <ThemedButton
+                    onClick={handleAddToCart}
+                    isLoading={isAddingToCart}
+                    disabled={product.stock === 0}
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
+                    leftIcon={<ShoppingCart className="w-5 h-5" />}
+                    soundOnClick={true}
+                  >
+                    Agregar al carrito
+                  </ThemedButton>
+                </Suspense>
               </div>
             )}
 
