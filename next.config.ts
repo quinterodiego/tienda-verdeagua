@@ -110,11 +110,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Optimización de bundle - SOLO LUCIDE REACT
+  // Optimización de bundle - SOLO LUCIDE REACT (CSS optimización deshabilitada)
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    // Optimización de CSS
-    optimizeCss: true,
   },
   webpack: (config, { isServer, dev }) => {
     if (!isServer) {
