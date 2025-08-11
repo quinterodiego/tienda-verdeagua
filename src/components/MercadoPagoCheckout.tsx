@@ -287,14 +287,10 @@ export default function MercadoPagoCheckoutPage() {
 
       // Respuesta exitosa
       setPreferenceId(data.preferenceId);
-      setIsRedirectingToPayment(true);
+      setIsCreatingPreference(false); // Terminar la fase de creación
+      setIsRedirectingToPayment(true); // Comenzar la fase de redirección
 
       addNotification('Redirigiendo a MercadoPago...', 'success');
-
-      // Limpiar carrito antes del redirect
-      setTimeout(() => {
-        clearCart();
-      }, 100);
 
       // Crear orden temporal para rastreo
       try {
@@ -320,10 +316,18 @@ export default function MercadoPagoCheckoutPage() {
         // No fallar el proceso por esto
       }
 
+      // Limpiar carrito antes del redirect
+      setTimeout(() => {
+        clearCart();
+      }, 100);
+
       // Redirect a MercadoPago - usar initPoint o sandboxInitPoint
       const redirectUrl = data.initPoint || data.sandboxInitPoint;
       if (redirectUrl) {
-        window.location.href = redirectUrl;
+        // Mantener el spinner visible por un momento antes del redirect
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 500);
       } else {
         throw new Error('No se recibió URL de redirección de MercadoPago');
       }
@@ -705,17 +709,19 @@ export default function MercadoPagoCheckoutPage() {
                   <button
                     onClick={handleMercadoPagoPayment}
                     disabled={isCreatingPreference || isRedirectingToPayment}
-                    className="w-full bg-green-600 text-white py-1 px-4 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-green-600 text-white py-4 px-6 rounded-lg text-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200"
                   >
                     {isCreatingPreference || isRedirectingToPayment ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando...'}
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3"></div>
+                        <span className="font-semibold">
+                          {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando pago...'}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <MercadoPagoIcon className="w-12 h-12 mr-2" />
-                        Pagar con MercadoPago
+                        <MercadoPagoIcon className="w-12 h-12 mr-3" />
+                        <span className="font-semibold">Pagar con MercadoPago</span>
                       </>
                     )}
                   </button>
@@ -749,6 +755,24 @@ export default function MercadoPagoCheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Overlay de carga para MercadoPago */}
+      {(isCreatingPreference || isRedirectingToPayment) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center shadow-2xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando pago...'}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              {isRedirectingToPayment 
+                ? 'Te llevaremos a la plataforma de pago segura de MercadoPago' 
+                : 'Preparando tu orden para el pago'
+              }
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
