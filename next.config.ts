@@ -10,29 +10,16 @@ const nextConfig: NextConfig = {
     // ⚠️ Solo para deployment inicial - arreglar después  
     ignoreBuildErrors: true,
   },
-  // Performance optimizations - AGRESIVAS
+  // Performance optimizations - CORREGIDAS
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-    // Eliminar imports no utilizados
-    removeImports: {
-      test: /\.(js|ts|tsx)$/,
-      matchImports: ['unused-*']
-    }
   },
   
-  // Optimización de bundles MÁS AGRESIVA
+  // Optimización de bundles - SOLO LUCIDE REACT
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
-    'react': {
-      transform: 'react/{{member}}',
-      preventFullImport: true,
-    },
-    'react-dom': {
-      transform: 'react-dom/{{member}}',
-      preventFullImport: true,
-    }
   },
   
   // External packages for server components
@@ -123,9 +110,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Optimización de bundle - EXPERIMENTAL 
+  // Optimización de bundle - SOLO LUCIDE REACT
   experimental: {
-    optimizePackageImports: ['lucide-react', 'react', 'react-dom'],
+    optimizePackageImports: ['lucide-react'],
     // Optimización de CSS
     optimizeCss: true,
   },
