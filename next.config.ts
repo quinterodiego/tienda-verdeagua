@@ -10,16 +10,29 @@ const nextConfig: NextConfig = {
     // ⚠️ Solo para deployment inicial - arreglar después  
     ignoreBuildErrors: true,
   },
-  // Performance optimizations
+  // Performance optimizations - AGRESIVAS
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+    // Eliminar imports no utilizados
+    removeImports: {
+      test: /\.(js|ts|tsx)$/,
+      matchImports: ['unused-*']
+    }
   },
   
-  // Optimización de bundles
+  // Optimización de bundles MÁS AGRESIVA
   modularizeImports: {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
+    'react': {
+      transform: 'react/{{member}}',
+      preventFullImport: true,
+    },
+    'react-dom': {
+      transform: 'react-dom/{{member}}',
+      preventFullImport: true,
+    }
   },
   
   // External packages for server components
@@ -110,9 +123,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Optimización de bundle - Simplificado para compatibilidad
+  // Optimización de bundle - EXPERIMENTAL 
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'react', 'react-dom'],
+    // Optimización de CSS
+    optimizeCss: true,
   },
   webpack: (config, { isServer, dev }) => {
     if (!isServer) {
@@ -162,41 +177,72 @@ const nextConfig: NextConfig = {
     //   }
     // });
 
-    // Optimizaciones de bundle mejoradas para evitar errores de SSR
+    // Optimizaciones de bundle SUPER AGRESIVAS para performance
     if (!dev) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
-          minSize: 20000,
-          maxSize: 200000,
+          minSize: 10000,    // Reducido de 20000
+          maxSize: 100000,   // Reducido de 200000
+          maxInitialRequests: 25, // Aumentado
+          maxAsyncRequests: 30,   // Aumentado
           cacheGroups: {
-            // Framework chunk separado (React, Next.js)
-            framework: {
-              test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
-              name: 'framework',
+            // React core - muy pequeño
+            react: {
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+              name: 'react',
+              chunks: 'all',
+              priority: 50,
+              enforce: true,
+            },
+            // Next.js core
+            nextjs: {
+              test: /[\\/]node_modules[\\/]next[\\/]/,
+              name: 'nextjs',
+              chunks: 'all',
+              priority: 45,
+              enforce: true,
+            },
+            // UI Libraries separadas
+            ui: {
+              test: /[\\/]node_modules[\\/](lucide-react|@headlessui|@heroicons)[\\/]/,
+              name: 'ui',
               chunks: 'all',
               priority: 40,
               enforce: true,
             },
-            // Librerías de terceros
+            // Auth libraries
+            auth: {
+              test: /[\\/]node_modules[\\/](next-auth|@auth)[\\/]/,
+              name: 'auth',
+              chunks: 'all',
+              priority: 35,
+              enforce: true,
+            },
+            // Librerías de terceros más granulares
             vendor: {
               test: /[\\/]node_modules[\\/]/,
               name: 'vendor',
               chunks: 'all',
               priority: 20,
               minChunks: 1,
+              maxSize: 50000, // Máximo 50KB por chunk
             },
-            // Código común de la aplicación
+            // Código común de la aplicación más granular
             common: {
               name: 'common',
               minChunks: 2,
               chunks: 'all',
               priority: 10,
               enforce: true,
+              maxSize: 30000, // Máximo 30KB
             },
           },
         },
+        // Tree shaking más agresivo
+        usedExports: true,
+        sideEffects: false,
       };
     }
     return config;

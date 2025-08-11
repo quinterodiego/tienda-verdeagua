@@ -6,13 +6,21 @@ const { gzip, brotliCompress } = require('zlib');
 const gzipAsync = promisify(gzip);
 const brotliAsync = promisify(brotliCompress);
 
-// Configuración de compresión
+// Configuración de compresión ULTRA AGRESIVA
 const COMPRESSION_OPTIONS = {
-  gzip: { level: 9 },
+  gzip: { 
+    level: 9,
+    chunkSize: 16 * 1024,
+    windowBits: 15,
+    memLevel: 8
+  },
   brotli: { 
     params: {
       [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11,
-      [require('zlib').constants.BROTLI_PARAM_SIZE_HINT]: 0
+      [require('zlib').constants.BROTLI_PARAM_SIZE_HINT]: 0,
+      [require('zlib').constants.BROTLI_PARAM_LGWIN]: 24,
+      [require('zlib').constants.BROTLI_PARAM_LGBLOCK]: 0,
+      [require('zlib').constants.BROTLI_PARAM_MODE]: require('zlib').constants.BROTLI_MODE_TEXT
     }
   }
 };
