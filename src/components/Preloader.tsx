@@ -48,6 +48,9 @@ export function usePreloader() {
 // Component to preload resources
 export function ResourcePreloader() {
   useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     // Preload critical CSS
     const preloadCSS = (href: string) => {
       const link = document.createElement('link');

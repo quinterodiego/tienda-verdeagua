@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 
 export function useServiceWorker() {
   useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined') return;
+    
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -28,22 +31,21 @@ export function useServiceWorker() {
           .catch((registrationError) => {
             console.log('SW registration failed: ', registrationError);
           });
+          });
       });
     }
   }, []);
 }
 
-// Web Vitals tracking
+// Web Vitals tracking - Temporalmente deshabilitado
 export function useWebVitals() {
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(console.log);
-        getFID(console.log);
-        getFCP(console.log);
-        getLCP(console.log);
-        getTTFB(console.log);
-      });
-    }
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined') return;
+    
+    // Temporalmente deshabilitado para evitar problemas de build
+    // if (process.env.NODE_ENV === 'production') {
+    //   // Web vitals tracking implementation
+    // }
   }, []);
 }

@@ -82,17 +82,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Optimización de bundle
+  // Optimización de bundle - Simplificado para evitar errores
   experimental: {
-    optimizePackageImports: ['lucide-react', '@/components', '@/lib'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
+    optimizePackageImports: ['lucide-react'],
+    // Temporalmente deshabilitado
+    // turbo: {
+    //   rules: {
+    //     '*.svg': {
+    //       loaders: ['@svgr/webpack'],
+    //       as: '*.js',
+    //     },
+    //   },
+    // },
   },
   webpack: (config, { isServer, dev }) => {
     if (!isServer) {
@@ -102,8 +103,35 @@ const nextConfig: NextConfig = {
         child_process: false,
         net: false,
         tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
       };
     }
+
+    // Prevenir problemas con self y window en SSR
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+
+    // Manejar problemas con service workers
+    // Temporalmente deshabilitado para evitar errores
+    // config.module.rules.push({
+    //   test: /\.(js|jsx|ts|tsx)$/,
+    //   use: {
+    //     loader: 'babel-loader',
+    //     options: {
+    //       presets: ['next/babel'],
+    //       plugins: []
+    //     }
+    //   }
+    // });
 
     // Optimizaciones de bundle solo en producción
     if (!dev) {

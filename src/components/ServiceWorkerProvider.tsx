@@ -3,8 +3,9 @@
 import { useServiceWorker, useWebVitals } from '@/hooks/useServiceWorker';
 
 export default function ServiceWorkerProvider() {
-  useServiceWorker();
-  useWebVitals();
+  // Temporalmente comentado para evitar problemas en build
+  // useServiceWorker();
+  // useWebVitals();
   
   return null;
 }

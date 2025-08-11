@@ -141,6 +141,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
   // Preload de imagen principal para mejor performance
   useEffect(() => {
+    // Verificar que estamos en el cliente
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     if (productImages.length > 0) {
       const link = document.createElement('link');
       link.rel = 'preload';
@@ -149,22 +152,15 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       document.head.appendChild(link);
       
       return () => {
-        document.head.removeChild(link);
+        if (document.head.contains(link)) {
+          document.head.removeChild(link);
+        }
       };
     }
   }, [productImages]);
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors duration-300">{/* Preload hint para imagen principal */}
-      {productImages.length > 0 && (
-        <link
-          rel="preload"
-          as="image"
-          href={productImages[0]}
-          type="image/webp"
-        />
-      )}
-      
+    <div className="min-h-screen bg-gray-50 transition-colors duration-300">
       <Suspense fallback={<div className="animate-pulse bg-gray-200 h-16 rounded"></div>}>
         <Notification
           message={`${product.name} agregado al carrito`}
