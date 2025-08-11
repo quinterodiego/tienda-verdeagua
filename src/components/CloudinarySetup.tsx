@@ -14,6 +14,9 @@ export default function CloudinarySetup() {
   const [copied, setCopied] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, field: string) => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined' || !navigator?.clipboard) return;
+    
     navigator.clipboard.writeText(text);
     setCopied(field);
     setTimeout(() => setCopied(null), 2000);
