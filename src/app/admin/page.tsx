@@ -44,6 +44,7 @@ import ContactTestPanel from '@/components/admin/ContactTestPanel';
 import EmailTestPanel from '@/components/admin/EmailTestPanel';
 import EmailPreviewPanel from '@/components/admin/EmailPreviewPanel';
 import OrderStatusEmailTestPanel from '@/components/admin/OrderStatusEmailTestPanel';
+import ThemeCustomizer from '@/components/ThemeCustomizer';
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-config';
 import { useSettings } from '@/lib/use-settings';
@@ -2426,6 +2427,21 @@ function SettingsContent() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Theme Customization Section */}
+      <div className="mt-6">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Personalización de Colores</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Personaliza los colores de tu tienda con vista previa en tiempo real
+            </p>
+          </div>
+          <div className="p-6">
+            <ThemeCustomizer />
           </div>
         </div>
       </div>

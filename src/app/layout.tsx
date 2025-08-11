@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
@@ -32,22 +33,24 @@ export default function RootLayout({
   return (
     <html lang="es" style={{ colorScheme: 'light' }}>
       <head>
-        {/* Tema claro forzado estáticamente */}
+        {/* Tema dinámico configurado desde admin */}
       </head>
       <body
         className={`${poppins.variable} antialiased min-h-screen flex flex-col`}
       >
         <NotificationProvider>
           <AuthProvider>
-            <ResourcePreloader />
-            <StructuredData />
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-            <GlobalNotifications />
-            <WhatsAppFloat />
+            <ThemeProvider>
+              <ResourcePreloader />
+              <StructuredData />
+              <Header />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+              <GlobalNotifications />
+              <WhatsAppFloat />
+            </ThemeProvider>
           </AuthProvider>
         </NotificationProvider>
       </body>

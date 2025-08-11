@@ -26,12 +26,12 @@ export default function WhatsAppFloat() {
       <div className="fixed bottom-8 right-4 z-[9999] max-w-none">
         <div className="relative">
           {/* Animación de pulso de fondo */}
-          <div className="absolute inset-0 rounded-full bg-green-400 opacity-30"></div>
+          <div className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-pulse"></div>
           
-          {/* Botón principal */}
+          {/* Botón principal - usando clases del tema */}
           <button
             onClick={handleWhatsAppClick}
-            className="relative bg-green-500 hover:bg-green-600 active:bg-green-700 text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95 touch-manipulation block"
+            className="relative bg-[#25D366] hover:bg-[#20c55a] active:bg-[#1cb552] text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 active:scale-95 touch-manipulation block"
             aria-label="Contactar por WhatsApp"
             style={{ minWidth: '50px', minHeight: '50px' }}
           >

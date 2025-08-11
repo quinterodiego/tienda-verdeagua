@@ -25,6 +25,16 @@ interface SiteSettings {
     welcomeMessage: string;
     chatMessage: string;
   };
+  theme?: {
+    primaryColor: string;      // Color principal (botones, enlaces)
+    secondaryColor: string;    // Color secundario (acentos)
+    accentColor: string;       // Color de acento (destacados)
+    backgroundColor: string;   // Color de fondo
+    textColor: string;         // Color de texto principal
+    mutedTextColor: string;    // Color de texto secundario
+    borderColor: string;       // Color de bordes
+    cardBackgroundColor: string; // Color de fondo de tarjetas
+  };
   lastUpdated?: string;
 }
 
@@ -95,6 +105,16 @@ export async function GET() {
           phone: '5491234567890',
           welcomeMessage: '¡Hola! 👋 ¿Tienes alguna consulta sobre nuestros productos personalizados?',
           chatMessage: '¡Hola! Me interesa conocer más sobre los productos personalizados de Verde Agua.'
+        },
+        theme: {
+          primaryColor: '#059669',      // green-600
+          secondaryColor: '#0d9488',    // teal-600  
+          accentColor: '#dc2626',       // red-600
+          backgroundColor: '#ffffff',   // white
+          textColor: '#111827',         // gray-900
+          mutedTextColor: '#6b7280',    // gray-500
+          borderColor: '#e5e7eb',       // gray-200
+          cardBackgroundColor: '#f9fafb' // gray-50
         },
         lastUpdated: new Date().toISOString()
       };
@@ -284,6 +304,12 @@ async function saveSettingsToSheet(sheet: any, settings: SiteSettings) {
       value: JSON.stringify(settings.whatsapp),
       type: 'object',
       description: 'Configuración de WhatsApp para contacto'
+    },
+    {
+      key: 'theme',
+      value: JSON.stringify(settings.theme),
+      type: 'object',
+      description: 'Configuración de colores y tema del sitio'
     },
     {
       key: 'lastUpdated',
