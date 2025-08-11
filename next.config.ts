@@ -14,6 +14,16 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
+  // Optimización de bundles
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+  },
+  
+  // External packages for server components
+  serverExternalPackages: ['googleapis', 'google-spreadsheet'],
   // PWA and Service Worker
   async headers() {
     return [
@@ -27,6 +37,24 @@ const nextConfig: NextConfig = {
           {
             key: 'Service-Worker-Allowed',
             value: '/',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/favicon.ico',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000',
           },
         ],
       },
@@ -82,18 +110,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Optimización de bundle - Simplificado para evitar errores
+  // Optimización de bundle - Simplificado para compatibilidad
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    // Temporalmente deshabilitado
-    // turbo: {
-    //   rules: {
-    //     '*.svg': {
-    //       loaders: ['@svgr/webpack'],
-    //       as: '*.js',
-    //     },
-    //   },
-    // },
   },
   webpack: (config, { isServer, dev }) => {
     if (!isServer) {
@@ -143,31 +162,43 @@ const nextConfig: NextConfig = {
     //   }
     // });
 
-    // Optimizaciones de bundle solo en producción
-    // Temporalmente deshabilitado para evitar errores de SSR
-    /*
+    // Optimizaciones de bundle mejoradas para evitar errores de SSR
     if (!dev) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
+          minSize: 20000,
+          maxSize: 200000,
           cacheGroups: {
+            // Framework chunk separado (React, Next.js)
+            framework: {
+              test: /[\\/]node_modules[\\/](react|react-dom|next)[\\/]/,
+              name: 'framework',
+              chunks: 'all',
+              priority: 40,
+              enforce: true,
+            },
+            // Librerías de terceros
             vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
+              name: 'vendor',
               chunks: 'all',
+              priority: 20,
+              minChunks: 1,
             },
+            // Código común de la aplicación
             common: {
               name: 'common',
               minChunks: 2,
               chunks: 'all',
+              priority: 10,
               enforce: true,
             },
           },
         },
       };
     }
-    */
     return config;
   },
 };
