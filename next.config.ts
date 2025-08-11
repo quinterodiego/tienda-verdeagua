@@ -120,15 +120,15 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
     };
 
-    // Definir globals para evitar errores de SSR
-    config.plugins.push(
-      new config.webpack.DefinePlugin({
-        'typeof window': JSON.stringify(isServer ? 'undefined' : 'object'),
-        'typeof self': JSON.stringify(isServer ? 'undefined' : 'object'),
-        'typeof document': JSON.stringify(isServer ? 'undefined' : 'object'),
-        'typeof navigator': JSON.stringify(isServer ? 'undefined' : 'object'),
-      })
-    );
+    // Temporalmente comentado el DefinePlugin hasta que se resuelva el error de importación
+    // config.plugins.push(
+    //   new webpack.DefinePlugin({
+    //     'typeof window': JSON.stringify(isServer ? 'undefined' : 'object'),
+    //     'typeof self': JSON.stringify(isServer ? 'undefined' : 'object'),
+    //     'typeof document': JSON.stringify(isServer ? 'undefined' : 'object'),
+    //     'typeof navigator': JSON.stringify(isServer ? 'undefined' : 'object'),
+    //   })
+    // );
 
     // Manejar problemas con service workers
     // Temporalmente deshabilitado para evitar errores
