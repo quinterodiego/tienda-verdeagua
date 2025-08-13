@@ -65,8 +65,22 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
       }
     }
 
-    // Actualizar en Google Sheets
-    const success = await updateOrderInSheets(orderId, orderStatus, paymentId.toString(), paymentType);
+    // ✅ ENVIAR EMAIL DE CONFIRMACIÓN SOLO SI EL PAGO FUE APROBADO
+    if (paymentStatus === 'approved') {
+      try {
+        console.log(`📧 Pago aprobado - Enviando email de confirmación de pedido para ${orderId}`);
+        await sendOrderConfirmationEmailFromWebhook(orderId);
+        console.log(`✅ Email de confirmación enviado exitosamente`);
+      } catch (emailError) {
+        console.error('❌ Error enviando email de confirmación:', emailError);
+        // No fallar la actualización si el email falla
+      }
+    } else {
+      console.log(`⏸️ Pago no aprobado (${paymentStatus}) - NO se envía email de confirmación`);
+    }
+
+    // Actualizar en Google Sheets (sin enviar email automático desde updateOrderInSheets)
+    const success = await updateOrderInSheets(orderId, orderStatus, paymentId.toString(), paymentType, false);
     
     if (!success) {
       console.error(`❌ Error al actualizar el pedido ${orderId} en Google Sheets`);
@@ -75,13 +89,66 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
 
     console.log(`✅ Pedido ${orderId} actualizado exitosamente a estado: ${orderStatus}, tipo de pago: ${paymentType}`);
     
-    // TODO: Enviar notificación por email al cliente
-    // await sendOrderStatusEmail(orderId, orderStatus, paymentStatus);
-    
     return true;
   } catch (error) {
     console.error('❌ Error al actualizar estado del pedido:', error);
     return false;
+  }
+}
+
+// Función para enviar email de confirmación específico desde webhook
+async function sendOrderConfirmationEmailFromWebhook(orderId: string) {
+  try {
+    // Obtener datos del pedido desde Google Sheets
+    const { getAllOrdersFromSheetsForAdmin } = await import('@/lib/orders-sheets');
+    const allOrders = await getAllOrdersFromSheetsForAdmin();
+    
+    // Buscar el pedido específico
+    const orderRow = allOrders.find(row => row[0] === orderId); // Columna A es el ID
+    
+    if (!orderRow) {
+      throw new Error(`Pedido ${orderId} no encontrado`);
+    }
+
+    // Parsear datos del pedido
+    const customerEmail = orderRow[1]; // Columna B
+    const customerName = orderRow[2]; // Columna C  
+    const total = parseFloat(orderRow[3]) || 0; // Columna D
+    const itemsJson = orderRow[5] || '[]'; // Columna F
+    const orderDate = new Date(orderRow[9] || Date.now()).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    });
+
+    let items = [];
+    try {
+      items = JSON.parse(itemsJson);
+    } catch (error) {
+      console.error('Error al parsear items del pedido:', error);
+      items = [];
+    }
+
+    // Enviar email de confirmación
+    const { sendOrderConfirmationEmail } = await import('@/lib/email');
+    
+    await sendOrderConfirmationEmail({
+      orderId,
+      customerName,
+      customerEmail,
+      items: items.map((item: { productName?: string; name?: string; quantity?: number; price?: number }) => ({
+        productName: item.productName || item.name || 'Producto',
+        quantity: item.quantity || 1,
+        price: item.price || 0
+      })),
+      total,
+      orderDate
+    });
+
+    console.log(`✅ Email de confirmación enviado para pedido ${orderId}`);
+  } catch (error) {
+    console.error(`❌ Error enviando email de confirmación para pedido ${orderId}:`, error);
+    throw error;
   }
 }
 
@@ -189,6 +256,6 @@ export async function POST(request: NextRequest) {
 }
 
 // Permitir métodos GET para verificación de MercadoPago
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({ status: 'OK' });
 }

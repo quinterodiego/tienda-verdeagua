@@ -174,7 +174,13 @@ export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[
 }
 
 // Función para actualizar el estado de un pedido
-export async function updateOrderStatus(orderId: string, status: Order['status'], paymentId?: string, paymentType?: string): Promise<boolean> {
+export async function updateOrderStatus(
+  orderId: string, 
+  status: Order['status'], 
+  paymentId?: string, 
+  paymentType?: string,
+  sendEmail: boolean = true
+): Promise<boolean> {
   try {
     const sheets = await getGoogleSheetsAuth();
     
@@ -263,55 +269,19 @@ export async function updateOrderStatus(orderId: string, status: Order['status']
       },
     });
 
-    // 📧 NUEVO: Enviar email de notificación al cliente
-    try {
-      const { sendOrderStatusUpdateEmail } = await import('@/lib/email');
-      
-      // Parsear los datos del pedido para el email
-      const customerEmail = orderRow[1]; // Columna B
-      const customerName = orderRow[2]; // Columna C
-      const total = parseFloat(orderRow[3]) || 0; // Columna D
-      const itemsJson = orderRow[5] || '[]'; // Columna F
-      const orderDate = new Date(orderRow[9] || Date.now()).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-
-      let items = [];
+    // 📧 NUEVO: Enviar email de notificación al cliente (solo si sendEmail es true)
+    if (sendEmail) {
       try {
-        items = JSON.parse(itemsJson);
-      } catch (error) {
-        console.error('Error al parsear items del pedido:', error);
-        items = [];
+        // En lugar de enviar email de cambio de estado, 
+        // desde el webhook ya se enviará el email de confirmación si es necesario
+        console.log(`ℹ️ Actualización de estado a ${status} para pedido ${orderId} - Email será manejado por webhook si aplica`);
+        
+      } catch (emailError) {
+        console.error('❌ Error al enviar email de notificación:', emailError);
+        // No fallar la actualización del pedido si el email falla
       }
-
-      // Preparar datos para el email
-      const emailData = {
-        orderId,
-        customerName,
-        customerEmail,
-        newStatus: status,
-        items: items.map((item: any) => ({
-          productName: item.productName || item.name || 'Producto',
-          quantity: item.quantity || 1,
-          price: item.price || 0
-        })),
-        total,
-        orderDate,
-        trackingNumber: undefined, // TODO: Implementar tracking
-        estimatedDelivery: undefined, // TODO: Implementar fecha estimada
-        cancellationReason: status === 'cancelled' ? 'Pedido cancelado' : undefined
-      };
-
-      console.log(`📧 Enviando email de notificación a ${customerEmail} para pedido ${orderId} - Estado: ${status}`);
-      
-      await sendOrderStatusUpdateEmail(emailData);
-      console.log(`✅ Email de notificación enviado exitosamente`);
-      
-    } catch (emailError) {
-      console.error('❌ Error al enviar email de notificación:', emailError);
-      // No fallar la actualización del pedido si el email falla
+    } else {
+      console.log(`⏸️ Email deshabilitado para actualización de pedido ${orderId} a estado ${status}`);
     }
 
     console.log(`✅ Pedido ${orderId} actualizado a estado: ${status}, paymentStatus: ${paymentStatus}, paymentType: ${paymentType || 'no especificado'}`);

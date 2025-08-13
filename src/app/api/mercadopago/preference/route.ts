@@ -7,6 +7,21 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== INICIO - Crear preferencia de MercadoPago ===');
     
+    // Verificar configuración de MercadoPago
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    console.log('MercadoPago Access Token configurado:', accessToken ? 'SÍ' : 'NO');
+    
+    if (!accessToken) {
+      console.error('❌ MERCADOPAGO_ACCESS_TOKEN no configurado');
+      return NextResponse.json(
+        { 
+          error: 'Configuración de MercadoPago incompleta',
+          details: 'MERCADOPAGO_ACCESS_TOKEN no está configurado en las variables de entorno'
+        },
+        { status: 500 }
+      );
+    }
+    
     // Verificar autenticación
     const session = await getServerSession(authOptions);
     console.log('Sesión de usuario:', session?.user?.email || 'No autenticado');
@@ -94,20 +109,59 @@ export async function POST(request: NextRequest) {
 
     // Crear la preferencia en MercadoPago
     console.log('Creando preferencia en MercadoPago...');
-    const preferenceService = getPreferenceService();
-    const preference = await preferenceService.create({
-      body: preferenceData
-    });
+    
+    try {
+      const preferenceService = getPreferenceService();
+      console.log('Servicio de preferencia inicializado');
+      
+      const preference = await preferenceService.create({
+        body: preferenceData
+      });
 
-    console.log('Preferencia creada exitosamente:', preference.id);
-    console.log('Init point:', preference.init_point);
-    console.log('Sandbox init point:', preference.sandbox_init_point);
+      console.log('Preferencia creada exitosamente:', preference.id);
+      console.log('Init point:', preference.init_point);
+      console.log('Sandbox init point:', preference.sandbox_init_point);
 
-    return NextResponse.json({
-      preferenceId: preference.id,
-      initPoint: preference.init_point,
-      sandboxInitPoint: preference.sandbox_init_point,
-    });
+      return NextResponse.json({
+        success: true,
+        preferenceId: preference.id,
+        initPoint: preference.init_point,
+        sandboxInitPoint: preference.sandbox_init_point,
+      });
+      
+    } catch (mpError) {
+      console.error('=== ERROR ESPECÍFICO DE MERCADOPAGO ===');
+      console.error('Error del SDK:', mpError);
+      console.error('Tipo de error:', typeof mpError);
+      
+      if (mpError instanceof Error) {
+        console.error('Mensaje:', mpError.message);
+        console.error('Stack:', mpError.stack);
+      }
+      
+      // Verificar si es un error de autenticación
+      const errorMessage = mpError instanceof Error ? mpError.message : String(mpError);
+      
+      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('authentication')) {
+        return NextResponse.json(
+          { 
+            error: 'Error de autenticación con MercadoPago',
+            details: 'Verifica que MERCADOPAGO_ACCESS_TOKEN sea válido',
+            mpError: errorMessage
+          },
+          { status: 401 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          error: 'Error al crear preferencia en MercadoPago',
+          details: errorMessage,
+          suggestion: 'Verifica las credenciales de MercadoPago en las variables de entorno'
+        },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('=== ERROR EN CREAR PREFERENCIA ===');

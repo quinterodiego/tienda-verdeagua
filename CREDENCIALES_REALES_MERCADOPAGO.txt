@@ -1,0 +1,24 @@
+# ⚠️ REEMPLAZA ESTAS LÍNEAS EN TU .env.local:
+
+# Credenciales de TEST (para desarrollo) 
+# CREDENCIALES DE DEMO - SOLO PARA PRUEBAS RÁPIDAS
+MERCADOPAGO_ACCESS_TOKEN=TEST-TU_ACCESS_TOKEN_REAL_AQUI
+MERCADOPAGO_PUBLIC_KEY=TEST-TU_PUBLIC_KEY_REAL_AQUI  
+NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=TEST-TU_PUBLIC_KEY_REAL_AQUI
+
+# EJEMPLO DE FORMATO REAL:
+# MERCADOPAGO_ACCESS_TOKEN=TEST-2894375349562305-121915-8b8c6e9a5b5e4e4d4c4b4a4938373637-1234567890
+# MERCADOPAGO_PUBLIC_KEY=TEST-7b7c6d5e-4f3a-2b1c-0d9e-8f7a6b5c4d3e
+# NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=TEST-7b7c6d5e-4f3a-2b1c-0d9e-8f7a6b5c4d3e
+
+# ¿Problemas para obtener las credenciales?
+# 1. Asegúrate de estar logueado en mercadopago.com.ar
+# 2. Ve a developers.mercadopago.com.ar
+# 3. Crea una aplicación nueva
+# 4. Ve a "Credenciales" > "Credenciales de prueba"
+# 5. Copia y pega los valores EXACTOS aquí
+
+# ⚠️ IMPORTANTE: 
+# - Los tokens deben empezar con "TEST-"
+# - NO uses las credenciales que pusimos (son de demo)
+# - Una vez que tengas las reales, reinicia el servidor: npm run dev

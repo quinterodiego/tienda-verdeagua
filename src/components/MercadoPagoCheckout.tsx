@@ -220,6 +220,13 @@ export default function MercadoPagoCheckoutPage() {
       return;
     }
 
+    // Verificar que el usuario esté autenticado
+    if (!session || !session.user) {
+      addNotification('Por favor, inicia sesión para proceder con el pago', 'error');
+      router.push('/auth/signin');
+      return;
+    }
+
     setIsCreatingPreference(true);
 
     try {
@@ -283,7 +290,10 @@ export default function MercadoPagoCheckoutPage() {
         }
       };
 
-      const response = await fetch('/api/mercadopago/create-preference', {
+      console.log('=== CREANDO PREFERENCIA MERCADOPAGO ===');
+      console.log('Datos de preferencia:', preferenceData);
+
+      const response = await fetch('/api/mercadopago/preference', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -291,75 +301,98 @@ export default function MercadoPagoCheckoutPage() {
         body: JSON.stringify(preferenceData),
       });
 
+      console.log('Respuesta del servidor - Status:', response.status);
+      console.log('Respuesta del servidor - Headers:', Object.fromEntries(response.headers));
+      
+      // Obtener el texto crudo de la respuesta una sola vez
+      const responseText = await response.text();
+      console.log('Respuesta del servidor - Texto crudo:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('Respuesta del servidor - JSON parseado:', responseData);
+      } catch (parseError) {
+        console.error('Error al parsear JSON:', parseError);
+        console.error('Respuesta no es JSON válido:', responseText);
+        throw new Error(`El servidor devolvió una respuesta inválida: ${responseText.substring(0, 200)}...`);
+      }
+
+      // Verificar si el usuario no está autenticado
+      if (response.status === 401 && responseData.error === 'Usuario no autenticado') {
+        addNotification('Por favor, inicia sesión para proceder con el pago', 'error');
+        router.push('/auth/signin');
+        return;
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
+        // Manejar errores del servidor
+        console.error('Error del servidor - Status:', response.status);
+        console.error('Error del servidor - Response completa:', responseData);
         
-        // Manejar diferentes tipos de respuesta del servidor
-        if (errorData.mode) {
-          const modeMessages = {
-            'test': '⚠️ Modo TEST: Los pagos no serán reales',
-            'sandbox': '⚠️ Modo SANDBOX: Ambiente de pruebas',
-            'production': '✅ Modo PRODUCCIÓN: Pagos reales'
-          };
-          
-          addNotification(modeMessages[errorData.mode as keyof typeof modeMessages] || errorData.message, 'warning');
-        } else {
-          addNotification('✅ Procesando pago real con MercadoPago', 'success');
-        }
-
-        if (errorData.preference_id) {
-          setPreferenceId(errorData.preference_id);
-          setIsRedirectingToPayment(true);
-          
-          addNotification('Redirigiendo a MercadoPago...', 'success');
-          
-          // Limpiar carrito antes del redirect
-          setTimeout(() => {
-            clearCart();
-          }, 100);
-
-          // Crear orden temporal para rastreo
-          const orderData = {
-            preferenceId: errorData.preference_id,
-            items: items,
-            formData: form,
-            paymentMethod: 'mercadopago',
-            total: total
-          };
-
-          await fetch('/api/orders/pending', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderData),
-          });
-
-          // Redirect a MercadoPago
-          window.location.href = errorData.init_point;
+        if (responseData.error) {
+          const errorMessage = typeof responseData.error === 'string' 
+            ? responseData.error 
+            : JSON.stringify(responseData.error);
+          const details = responseData.details ? `: ${responseData.details}` : '';
+          addNotification(`Error al crear el pago: ${errorMessage}${details}`, 'error');
           return;
         }
         
-        // Si hay error real, lanzar excepción
-        throw new Error(errorData.error || 'Error al crear preferencia de pago');
+        // Si no hay campo 'error', usar el mensaje completo de la respuesta
+        const errorMessage = responseData.message || 
+                            responseData.details || 
+                            JSON.stringify(responseData) || 
+                            `Error HTTP ${response.status}`;
+        addNotification(`Error al crear el pago: ${errorMessage}`, 'error');
+        return;
       }
 
-      const data = await response.json();
-      setPreferenceId(data.preference_id);
-      setIsRedirectingToPayment(true);
+      // Verificar que tenemos una respuesta exitosa
+      if (!responseData.success || !responseData.preferenceId) {
+        console.error('Respuesta del servidor incompleta:', responseData);
+        addNotification('El servidor no devolvió los datos necesarios para el pago', 'error');
+        return;
+      }
 
-      // Mostrar mensaje según el modo
-      const modeMessages = {
-        'test': '⚠️ Modo TEST: Los pagos no serán reales',
-        'sandbox': '⚠️ Modo SANDBOX: Ambiente de pruebas', 
-        'production': '✅ Modo PRODUCCIÓN: Pagos reales'
+      console.log('Preferencia creada exitosamente:', responseData.preferenceId);
+      
+      setPreferenceId(responseData.preferenceId);
+      setIsRedirectingToPayment(true);
+      
+      addNotification('Redirigiendo a MercadoPago...', 'success');
+      
+      // Limpiar carrito antes del redirect
+      setTimeout(() => {
+        clearCart();
+      }, 100);
+
+      // Crear orden temporal para rastreo
+      const orderData = {
+        preferenceId: responseData.preferenceId,
+        items: items,
+        formData: form,
+        paymentMethod: 'mercadopago',
+        total: total
       };
 
-      const errorMessage = data.mode 
-        ? modeMessages[data.mode as keyof typeof modeMessages] || data.message
-        : 'Error desconocido';
+      await fetch('/api/orders/pending', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
 
-      addNotification(`❌ ${errorMessage}`, 'error');
+      // Redirect a MercadoPago usando el init_point correcto
+      const redirectUrl = responseData.initPoint || responseData.sandboxInitPoint;
+      if (!redirectUrl) {
+        throw new Error('No se recibió URL de redirección de MercadoPago');
+      }
+      
+      console.log('Redirigiendo a:', redirectUrl);
+      window.location.href = redirectUrl;
+      return;
 
     } catch (error) {
       console.error('Error al crear preferencia:', error);
