@@ -268,26 +268,13 @@ export default function MercadoPagoCheckoutPage() {
         currency_id: 'ARS'
       }));
 
-      // Sin cargos por envío - se remueve esta sección
+      // Generar un orderId único
+      const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
       const preferenceData = {
         items: mpItems,
-        customerInfo: form,
-        orderData: {
-          customerName: `${form.firstName} ${form.lastName}`,
-          customerEmail: form.email,
-          items: items,
-          shippingAddress: {
-            firstName: form.firstName,
-            lastName: form.lastName,
-            address: form.address,
-            city: form.city,
-            state: form.state,
-            zipCode: form.zipCode,
-            phone: form.phone,
-          },
-          total: subtotal // Sin cargos por envío
-        }
+        orderId: orderId,
+        customerInfo: form
       };
 
       console.log('=== CREANDO PREFERENCIA MERCADOPAGO ===');
@@ -395,7 +382,10 @@ export default function MercadoPagoCheckoutPage() {
       return;
 
     } catch (error) {
-      console.error('Error al crear preferencia:', error);
+      console.error('Error completo al crear preferencia:', error);
+      console.error('Tipo de error:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Error desconocido');
+      
       addNotification(
         `Error al procesar pago: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         'error'
@@ -768,17 +758,19 @@ export default function MercadoPagoCheckoutPage() {
                   <button
                     onClick={handleMercadoPagoPayment}
                     disabled={isCreatingPreference || isRedirectingToPayment}
-                    className="w-full bg-green-600 text-white py-1 px-4 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-green-600 text-white py-4 px-6 rounded-lg text-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200"
                   >
                     {isCreatingPreference || isRedirectingToPayment ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando...'}
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3"></div>
+                        <span className="font-semibold">
+                          {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando pago...'}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <MercadoPagoIcon className="w-12 h-12 mr-2" />
-                        Pagar con MercadoPago
+                        <MercadoPagoIcon className="w-12 h-12 mr-3" />
+                        <span className="font-semibold">Pagar con MercadoPago</span>
                       </>
                     )}
                   </button>
@@ -812,6 +804,24 @@ export default function MercadoPagoCheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Overlay de carga para MercadoPago */}
+      {(isCreatingPreference || isRedirectingToPayment) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center shadow-2xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {isRedirectingToPayment ? 'Redirigiendo a MercadoPago...' : 'Procesando pago...'}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              {isRedirectingToPayment 
+                ? 'Te llevaremos a la plataforma de pago segura de MercadoPago' 
+                : 'Preparando tu orden para el pago'
+              }
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

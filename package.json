@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "next build && npm run compress:assets",
+    "build:fast": "next build",
     "build:analyze": "ANALYZE=true npm run build",
-    "build:production": "node scripts/check-production.js && next build",
+    "build:production": "node scripts/check-production.js && next build && npm run compress:assets",
     "start": "next start",
     "start:production": "NODE_ENV=production next start",
     "dev:production": "NODE_ENV=production next dev --turbopack",
     "lint": "next lint",
+    "compress:assets": "node scripts/compress-assets.js",
     "setup-mercadopago": "node scripts/setup-mercadopago.js",
     "setup-production": "node scripts/setup-production-env.js",
     "verify-production": "node scripts/pre-deploy-check.js",
@@ -38,6 +40,7 @@
     "prisma": "^6.12.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "web-vitals": "^5.1.0",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+/* CSS Crítico para Performance */
+.critical-above-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 800px;
+}
+
+.lazy-load-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* Optimización de rendering */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+@supports (scroll-behavior: smooth) {
+  .smooth-scroll {
+    scroll-behavior: smooth;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -423,4 +450,56 @@ body {
   height: 8px;
   border-radius: 4px;
   background: #e5e7eb;
+}
+
+/* Optimizaciones de Performance adicionales */
+img {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 200px;
+}
+
+/* Optimización para animaciones de fade-in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+/* Preconnect hints para dominios externos */
+.external-domain-hint::before {
+  content: "";
+  display: none;
+}
+
+/* Optimización para scroll */
+.scroll-container {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

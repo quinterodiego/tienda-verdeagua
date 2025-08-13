@@ -56,6 +56,9 @@ export default function TestCardsHelper() {
   };
 
   const copyToClipboard = (text: string, fieldName: string) => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined' || !navigator?.clipboard) return;
+    
     navigator.clipboard.writeText(text.replace(/\s/g, ''));
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2000);

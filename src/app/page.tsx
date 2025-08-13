@@ -1,15 +1,22 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
-import ProductCard from '@/components/ProductCard';
-import CategoryFilter from '@/components/CategoryFilter';
-import SearchFilters from '@/components/SearchFilters';
-import ActiveFilters from '@/components/ActiveFilters';
 import ClientOnly from '@/components/ClientOnly';
 import { ProductGridSkeleton } from '@/components/LoadingSkeletons';
 import { useSearch } from '@/lib/useSearch';
 import { Product } from '@/types';
+
+// Lazy load TODOS los componentes para reducir bundle inicial
+const ProductCard = lazy(() => import('@/components/ProductCard'));
+const CategoryFilter = lazy(() => import('@/components/CategoryFilter'));
+const SearchFilters = lazy(() => import('@/components/SearchFilters'));
+const ActiveFilters = lazy(() => import('@/components/ActiveFilters'));
+
+// Fallback ultra-ligero
+const ComponentFallback = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
+);
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -197,11 +204,13 @@ function HomeContent() {
         {/* Content Only When Loaded */}
         {!isLoading && !error && (
           <>
-            <CategoryFilter
-              categories={['Todos', ...new Set(products.map(p => p.category))]}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-            />
+            <Suspense fallback={<ComponentFallback className="h-16 mx-8 mb-4" />}>
+              <CategoryFilter
+                categories={['Todos', ...new Set(products.map(p => p.category))]}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+            </Suspense>
 
             {/* Search Filters */}
             <div className="mb-8">
@@ -232,11 +241,13 @@ function HomeContent() {
               )} */}
 
               {/* Active Filters */}
-              <ActiveFilters
-                filters={filters}
-                onRemoveFilter={removeFilter}
-                onClearAll={clearFilters}
-              />
+              <Suspense fallback={<ComponentFallback className="h-8 mb-4" />}>
+                <ActiveFilters
+                  filters={filters}
+                  onRemoveFilter={removeFilter}
+                  onClearAll={clearFilters}
+                />
+              </Suspense>
 
               {(filters.query || filters.minPrice > 0 || filters.maxPrice < 10000 || filters.rating > 0 || filters.inStock) && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
@@ -252,12 +263,16 @@ function HomeContent() {
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 items-stretch">
                   {finalFilteredProducts.map((product, index) => (
-                    <ProductCard 
-                      key={product.id} 
-                      product={product}
-                      priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
-                      size="medium"
-                    />
+                    <Suspense 
+                      key={product.id}
+                      fallback={<ComponentFallback className="h-80 w-full" />}
+                    >
+                      <ProductCard 
+                        product={product}
+                        priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
+                        size="medium"
+                      />
+                    </Suspense>
                   ))}
                 </div>
 

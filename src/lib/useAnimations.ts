@@ -144,6 +144,9 @@ export function generateStaggerDelay(index: number, baseDelay: number = 100): Re
 // Hook para preload de animaciones críticas
 export function useAnimationPreload() {
   useEffect(() => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    
     // Precargar animaciones críticas en el navegador
     const style = document.createElement('style');
     style.textContent = `
@@ -156,12 +159,14 @@ export function useAnimationPreload() {
 
     // Remover después de que la página esté completamente cargada
     const timer = setTimeout(() => {
-      document.head.removeChild(style);
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      if (document.head.contains(style)) {
+      if (typeof document !== 'undefined' && document.head.contains(style)) {
         document.head.removeChild(style);
       }
     };

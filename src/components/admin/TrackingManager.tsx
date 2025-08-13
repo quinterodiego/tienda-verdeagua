@@ -77,6 +77,9 @@ export default function TrackingManager({
 
   const copyTrackingNumber = () => {
     if (trackingNumber) {
+      // Solo ejecutar en el cliente
+      if (typeof window === 'undefined' || !navigator?.clipboard) return;
+      
       const copyText = shippingUrl 
         ? `${trackingNumber}\n${shippingUrl}` 
         : trackingNumber;

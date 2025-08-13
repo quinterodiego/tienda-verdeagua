@@ -3,14 +3,29 @@
 import { Suspense, lazy } from 'react';
 import { ProductGridSkeleton } from './LoadingSkeletons';
 
-// Lazy load components
+// Lazy load components MÁS AGRESIVO - Sin SSR
 const ProductCard = lazy(() => import('./ProductCard'));
 const CategoryFilter = lazy(() => import('./CategoryFilter'));
 const SearchFilters = lazy(() => import('./SearchFilters'));
+const Header = lazy(() => import('./Header'));
+const Footer = lazy(() => import('./Footer'));
 
-// Fallbacks for different components
+// Lazy components adicionales para reducir bundle inicial
+const MercadoPagoCheckout = lazy(() => import('./MercadoPagoCheckout'));
+const OptimizedImage = lazy(() => import('./OptimizedImage'));
+const Notification = lazy(() => import('./Notification'));
+
+// Fallbacks ultra-ligeros
 const ProductCardFallback = () => (
-  <div className="animate-pulse bg-gray-200 rounded-lg h-80"></div>
+  <div className="animate-pulse bg-gray-200 rounded-lg h-80 w-full"></div>
+);
+
+const HeaderFallback = () => (
+  <div className="h-16 bg-gray-100 animate-pulse w-full"></div>
+);
+
+const FooterFallback = () => (
+  <div className="h-32 bg-gray-100 animate-pulse w-full"></div>
 );
 
 const FiltersFallback = () => (

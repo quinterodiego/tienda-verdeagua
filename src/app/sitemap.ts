@@ -1,22 +1,31 @@
 import { MetadataRoute } from 'next';
 import { siteConfig } from '@/lib/metadata';
+import { products } from '@/data/products';
 
 // Función para obtener productos para el sitemap
 async function getProducts() {
   try {
+    // En build time, usar los productos estáticos directamente
+    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+      return products;
+    }
+    
+    // En runtime, usar la API si está disponible
     const response = await fetch(`${siteConfig.url}/api/products`, {
       next: { revalidate: 86400 } // Cache por 24 horas
     });
     
     if (!response.ok) {
-      throw new Error('Error al cargar productos');
+      // Fallback a productos estáticos si la API falla
+      return products;
     }
     
     const data = await response.json();
-    return data.products || [];
+    return data.products || products;
   } catch (error) {
     console.error('Error fetching products for sitemap:', error);
-    return [];
+    // Fallback a productos estáticos
+    return products;
   }
 }
 
