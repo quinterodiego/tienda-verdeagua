@@ -14,12 +14,12 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // SOLO Lucide React - comprobado que funciona
-  modularizeImports: {
-    'lucide-react': {
-      transform: 'lucide-react/dist/esm/icons/{{member}}',
-    },
-  },
+  // SOLO Lucide React - comprobado que funciona - DESHABILITADO TEMPORALMENTE
+  // modularizeImports: {
+  //   'lucide-react': {
+  //     transform: 'lucide-react/dist/esm/icons/{{member}}',
+  //   },
+  // },
   
   // External packages for server components
   serverExternalPackages: ['googleapis', 'google-spreadsheet'],

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Phone, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import { MailIcon, PhoneIcon, FacebookIcon, InstagramIcon, MessageCircleIcon } from './Icons';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Category } from '@/types';
@@ -226,7 +226,7 @@ export default function Footer() {
             <h3 className="font-semibold text-lg mb-4">Contacto</h3>
             <div className="space-y-3 text-gray-400">
               <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 flex-shrink-0" />
+                <PhoneIcon className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">
                   {isClient && siteSettings?.whatsapp?.phone 
                     ? formatPhoneNumber(siteSettings.whatsapp.phone)
@@ -235,7 +235,7 @@ export default function Footer() {
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 flex-shrink-0" />
+                <MailIcon className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">
                   {isClient && siteSettings?.contactEmail 
                     ? siteSettings.contactEmail 

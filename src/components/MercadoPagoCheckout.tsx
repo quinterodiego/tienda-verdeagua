@@ -317,22 +317,27 @@ export default function MercadoPagoCheckoutPage() {
         console.error('Error del servidor - Status:', response.status);
         console.error('Error del servidor - Response completa:', responseData);
         
-        if (responseData.error) {
-          const errorMessage = typeof responseData.error === 'string' 
-            ? responseData.error 
-            : JSON.stringify(responseData.error);
-          const details = responseData.details ? `: ${responseData.details}` : '';
-          addNotification(`Error al crear el pago: ${errorMessage}${details}`, 'error');
+        if (responseData && typeof responseData === 'object') {
+          if (responseData.error) {
+            const errorMessage = typeof responseData.error === 'string' 
+              ? responseData.error 
+              : JSON.stringify(responseData.error);
+            const details = responseData.details ? `: ${responseData.details}` : '';
+            addNotification(`Error al crear el pago: ${errorMessage}${details}`, 'error');
+            return;
+          }
+          
+          // Si no hay campo 'error', usar el mensaje completo de la respuesta
+          const errorMessage = responseData.message || 
+                              responseData.details || 
+                              `Error HTTP ${response.status} - ${response.statusText}`;
+          addNotification(`Error al crear el pago: ${errorMessage}`, 'error');
+          return;
+        } else {
+          // Si responseData no es un objeto válido
+          addNotification(`Error al crear el pago: HTTP ${response.status} - ${response.statusText}`, 'error');
           return;
         }
-        
-        // Si no hay campo 'error', usar el mensaje completo de la respuesta
-        const errorMessage = responseData.message || 
-                            responseData.details || 
-                            JSON.stringify(responseData) || 
-                            `Error HTTP ${response.status}`;
-        addNotification(`Error al crear el pago: ${errorMessage}`, 'error');
-        return;
       }
 
       // Verificar que tenemos una respuesta exitosa

@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   ShoppingCartIcon, 
+  SearchIcon, 
+  MenuIcon, 
   UserIcon, 
+  XIcon, 
   HeartIcon, 
   HomeIcon, 
   LogOutIcon, 
@@ -15,6 +18,7 @@ import {
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ClientOnly from './ClientOnly';
 import Image from 'next/image';
 
@@ -22,6 +26,8 @@ export default function Header() {
   const { itemCount } = useCartStore();
   const { favorites } = useFavoritesStore();
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -54,7 +60,7 @@ export default function Header() {
     };
 
     fetchUserRole();
-  }, [session?.user?.email, roleLoading]);
+  }, [session?.user?.email]);
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -67,6 +73,13 @@ export default function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="bg-white shadow-md border-b border-gray-300 sticky top-0 z-50">
@@ -229,32 +242,13 @@ export default function Header() {
             {/* Mobile menu button */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-all duration-500 transform hover:scale-105"
             >
-              <div className="w-6 h-6 relative">
-                {/* Línea superior */}
-                <div 
-                  className={`absolute w-6 h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
-                    isMobileMenuOpen 
-                      ? 'top-2.5 rotate-45' 
-                      : 'top-1'
-                  }`}
-                />
-                {/* Línea del medio */}
-                <div 
-                  className={`absolute w-6 h-0.5 bg-gray-700 top-2.5 transition-opacity duration-300 ${
-                    isMobileMenuOpen ? 'opacity-0' : 'opacity-100'
-                  }`}
-                />
-                {/* Línea inferior */}
-                <div 
-                  className={`absolute w-6 h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
-                    isMobileMenuOpen 
-                      ? 'top-2.5 -rotate-45' 
-                      : 'top-4'
-                  }`}
-                />
-              </div>
+              {isMobileMenuOpen ? (
+                <XIcon className="w-5 h-5 transition-transform duration-500 rotate-45" />
+              ) : (
+                <MenuIcon className="w-5 h-5 transition-transform duration-500 hover:rotate-90" />
+              )}
             </button>
           </div>
         </div>

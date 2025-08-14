@@ -28,7 +28,7 @@ import {
   Tag,
   // CreditCard, // Oculto temporalmente
   HelpCircle,
-  Menu,
+  Menu as MenuIcon,
   X,
   Mail
 } from 'lucide-react';
@@ -375,7 +375,7 @@ export default function AdminPage() {
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" />
                 ) : (
-                  <Menu className="h-6 w-6" />
+                  <MenuIcon className="h-6 w-6" />
                 )}
               </button>
               

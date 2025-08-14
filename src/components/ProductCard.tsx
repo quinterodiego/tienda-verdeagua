@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Product } from '@/types';
-import { Star, ShoppingCart, Heart, ImageIcon } from 'lucide-react';
+import { StarIcon, ShoppingCartIcon, HeartIcon, ImageIcon } from './Icons';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
 import OptimizedImage from './OptimizedImage';
@@ -240,7 +240,7 @@ export default function ProductCard({ product, priority = false, size = 'medium'
                     : 'bg-[#68c3b7] hover:bg-[#64b7ac] transform hover:scale-105 hover:shadow-md active:scale-95'
                 } text-white px-2 sm:px-4 py-2 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 transition-all duration-500 text-sm touch-manipulation w-[70px] sm:w-[100px] h-[40px]`}
               >
-                <ShoppingCart className={`w-4 h-4 ${product.stock > 0 ? 'transition-transform duration-500 hover:rotate-6' : ''}`} />
+                <ShoppingCartIcon className={`w-4 h-4 ${product.stock > 0 ? 'transition-transform duration-500 hover:rotate-6' : ''}`} />
                 <span className="hidden sm:inline">Agregar</span>
                 <span className="sm:hidden">+</span>
               </button>

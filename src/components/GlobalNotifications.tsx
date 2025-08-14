@@ -1,7 +1,7 @@
 'use client';
 
 import { useNotification } from './NotificationProvider';
-import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircleIcon, XCircleIcon, InfoIcon, AlertTriangleIcon, XIcon } from './Icons';
 
 export default function GlobalNotifications() {
   const { notifications, removeNotification } = useNotification();
@@ -9,13 +9,13 @@ export default function GlobalNotifications() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 flex-shrink-0" />;
+        return <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />;
       case 'error':
-        return <XCircle className="w-5 h-5 flex-shrink-0" />;
+        return <XCircleIcon className="w-5 h-5 flex-shrink-0" />;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 flex-shrink-0" />;
+        return <AlertTriangleIcon className="w-5 h-5 flex-shrink-0" />;
       default:
-        return <Info className="w-5 h-5 flex-shrink-0" />;
+        return <InfoIcon className="w-5 h-5 flex-shrink-0" />;
     }
   };
 
@@ -45,7 +45,7 @@ export default function GlobalNotifications() {
             onClick={() => removeNotification(notification.id)}
             className="text-white hover:text-gray-200 transition-colors ml-2"
           >
-            <X className="w-4 h-4" />
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
       ))}

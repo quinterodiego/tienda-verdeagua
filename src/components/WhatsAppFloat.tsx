@@ -1,9 +1,9 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
 import { useWhatsAppConfig } from '@/hooks/useWhatsAppConfig';
+import { XIcon } from './Icons';
 
 export default function WhatsAppFloat() {
   const config = useWhatsAppConfig();
@@ -52,7 +52,7 @@ export default function WhatsAppFloat() {
             aria-label="Ocultar WhatsApp"
             title="Ocultar chat"
           >
-            <X className="w-2 h-2" />
+            <XIcon className="w-2 h-2" />
           </button>
         </div>
       </div>

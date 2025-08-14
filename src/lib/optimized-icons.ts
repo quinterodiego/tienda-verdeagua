@@ -3,7 +3,7 @@
 
 // Íconos de navegación y UI básica
 export { 
-  Menu,
+  Menu as MenuIcon,
   X,
   Search,
   User,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { formatCurrency } from '@/lib/currency';
-import { Filter, X, Star } from 'lucide-react';
+import { FilterIcon, XIcon, StarIcon } from './Icons';
 
 interface SearchFiltersProps {
   filters: {
@@ -31,7 +31,7 @@ export default function SearchFilters({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-gray-600" />
+          <FilterIcon className="w-5 h-5 text-gray-600" />
           <h3 className="font-semibold text-gray-900">Filtros</h3>
         </div>
         <div className="flex items-center space-x-2">
@@ -45,7 +45,7 @@ export default function SearchFilters({
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 text-gray-600 hover:text-gray-900"
           >
-            {isOpen ? <X className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+            {isOpen ? <XIcon className="w-4 h-4" /> : <FilterIcon className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function SearchFilters({
                       : 'text-gray-300 hover:text-yellow-400'
                   }`}
                 >
-                  <Star className="w-5 h-5 fill-current" />
+                  <StarIcon className="w-5 h-5 fill-current" />
                 </button>
               ))}
             </div>

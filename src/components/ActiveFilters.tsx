@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { XIcon } from './Icons';
 import { formatCurrency } from '@/lib/currency';
 
 interface FilterChip {
@@ -90,7 +90,7 @@ export default function ActiveFilters({ filters, onRemoveFilter, onClearAll }: A
             onClick={filter.onRemove}
             className="ml-1 hover:bg-[#68c3b7]/30 rounded-full p-1"
           >
-            <X className="w-3 h-3" />
+            <XIcon className="w-3 h-3" />
           </button>
         </div>
       ))}
