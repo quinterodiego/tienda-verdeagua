@@ -4,27 +4,32 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
-  Users, 
-  Package, 
-  ShoppingCart, 
-  BarChart3, 
-  Settings, 
-  ArrowLeft,
-  Eye,
-  AlertTriangle,
-  TrendingUp,
-  DollarSign,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Truck,
-  Tag,
+  UsersIcon as Users, 
+  PackageIcon as Package, 
+  ShoppingCartIcon as ShoppingCart, 
+  BarChart3Icon as BarChart3, 
+  SettingsIcon as Settings, 
+  ArrowLeftIcon as ArrowLeft,
+  EyeIcon as Eye,
+  AlertTriangleIcon as AlertTriangle,
+  TrendingUpIcon as TrendingUp,
+  DollarSignIcon as DollarSign,
+  ClockIcon as Clock,
+  CheckCircleIcon2 as CheckCircle,
+  XCircleIcon2 as XCircle,
+  TruckIcon as Truck,
+  TagIcon as Tag,
   // CreditCard, // Oculto temporalmente
-  HelpCircle,
-  Menu as MenuIcon,
-  X,
-  Mail
-} from 'lucide-react';
+  HelpCircleIcon as HelpCircle,
+  MenuIcon,
+  XIcon as X,
+  MailIcon as Mail,
+  PlusIcon as Plus,
+  SearchIcon as Search,
+  EditIcon as Edit,
+  Trash2Icon as Trash2,
+  ShieldIcon as Shield
+} from '@/components/Icons';
 import Link from 'next/link';
 import { Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
@@ -46,6 +51,26 @@ interface AdminUser extends User {
   isActive: boolean;
   ordersCount: number;
   totalSpent: number;
+}
+
+// Interfaz para items de pedidos
+interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+}
+
+// Interfaz para categorías
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminPage() {
@@ -153,36 +178,48 @@ export default function AdminPage() {
 
   // Funciones para cargar datos desde Google Sheets
   const loadSheetsData = useCallback(async () => {
+    console.log('🔄 Iniciando carga de datos desde Google Sheets...');
     setDataLoading(true);
     try {
       // Cargar productos
+      console.log('📦 Cargando productos...');
       const productsResponse = await fetch('/api/admin/products');
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
+        console.log('✅ Productos cargados:', productsData.products?.length || 0);
         setSheetsProducts(productsData.products || []);
+      } else {
+        console.error('❌ Error al cargar productos:', productsResponse.status);
       }
 
       // Cargar usuarios
+      console.log('👥 Cargando usuarios...');
       const usersResponse = await fetch('/api/admin/users');
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
+        console.log('✅ Usuarios cargados:', usersData.users?.length || 0);
         setSheetsUsers(usersData.users || []);
+      } else {
+        console.error('❌ Error al cargar usuarios:', usersResponse.status);
       }
 
       // Cargar pedidos
+      console.log('🛒 Cargando pedidos...');
       const ordersResponse = await fetch('/api/admin/orders');
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
+        console.log('✅ Pedidos cargados:', ordersData.orders?.length || 0);
         setSheetsOrders(ordersData.orders || []);
       } else {
         console.warn('⚠️ Error al cargar pedidos desde Google Sheets');
       }
 
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      console.error('❌ Error al cargar datos:', error);
       addNotification('Error al cargar datos del sistema', 'error');
     } finally {
       setDataLoading(false);
+      console.log('🏁 Carga de datos completada');
     }
   }, [addNotification]);
 
@@ -266,20 +303,38 @@ export default function AdminPage() {
           />
         );
       case 'products':
+        console.log('🔍 Renderizando ProductsContent con', sheetsProducts.length, 'productos');
         return (
-          <ProductsContent />
+          <ProductsContent 
+            sheetsProducts={sheetsProducts}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
+            onOpenProductModal={(mode, product) => setProductModal({ isOpen: true, mode, product })}
+          />
         );
       case 'categories':
         return (
           <CategoriesContent />
         );
       case 'orders':
+        console.log('🔍 Renderizando OrdersContent con', sheetsOrders.length, 'pedidos');
         return (
-          <OrdersContent />
+          <OrdersContent 
+            sheetsOrders={sheetsOrders}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
+            onOpenOrderModal={(order) => setOrderModal({ isOpen: true, order })}
+          />
         );
       case 'users':
+        console.log('🔍 Renderizando UsersContent con', sheetsUsers.length, 'usuarios');
         return (
-          <UsersContent />
+          <UsersContent 
+            sheetsUsers={sheetsUsers}
+            dataLoading={dataLoading}
+            onReloadData={loadSheetsData}
+            onOpenRoleManager={() => setShowUserRoleManager(true)}
+          />
         );
       // case 'test-payments':
       //   return <MercadoPagoTestPanel />; // Oculto temporalmente
@@ -890,42 +945,1270 @@ function OrderStatusSummary({ orders }: { orders: Order[] }) {
 }
 
 // Placeholder components - se implementarían con el contenido completo
-function ProductsContent() {
+function ProductsContent({ 
+  sheetsProducts,
+  dataLoading,
+  onReloadData,
+  onOpenProductModal 
+}: { 
+  sheetsProducts: AdminProduct[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
+  onOpenProductModal: (mode: 'create' | 'edit', product?: AdminProduct) => void 
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categoriesForFilter, setCategoriesForFilter] = useState<{value: string, label: string}[]>([
+    { value: 'all', label: 'Todas las categorías' }
+  ]);
+  const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+  
+  // Usar sheetsProducts en lugar del store local
+  const products = sheetsProducts;
+
+  // Cargar categorías para el filtro
+  useEffect(() => {
+    const loadCategoriesForFilter = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          const categories = data.categories || [];
+          const categoryOptions = [
+            { value: 'all', label: 'Todas las categorías' },
+            ...categories
+              .filter((cat: Category) => cat.isActive)
+              .map((cat: Category) => ({
+                value: cat.slug,
+                label: cat.name
+              }))
+          ];
+          setCategoriesForFilter(categoryOptions);
+        }
+      } catch (error) {
+        console.error('Error al cargar categorías para filtro:', error);
+      }
+    };
+
+    loadCategoriesForFilter();
+  }, []);
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar "${productName}"? (Esto solo lo marcará como inactivo)`)) {
+      try {
+        const response = await fetch(`/api/admin/products`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: productId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al eliminar producto');
+        }
+
+        addNotification('Producto eliminado exitosamente', 'success');
+        await onReloadData(); // Recargar datos después de eliminar
+      } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        addNotification('Error al eliminar producto', 'error');
+      }
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  const getStockStatus = (stock: number) => {
+    if (stock === 0) return { text: 'Agotado', color: 'text-red-600' };
+    if (stock < 10) return { text: 'Stock crítico', color: 'text-red-600' };
+    if (stock < 20) return { text: 'Stock bajo', color: 'text-yellow-600' };
+    return { text: 'En stock', color: 'text-green-600' };
+  };
+  
   return (
-    <div className="text-center py-12">
-      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestión de Productos</h3>
-      <p className="text-gray-600">Esta funcionalidad está siendo restaurada...</p>
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Productos</h2>
+          <p className="text-gray-600">Administra el catálogo de productos ({products.length} productos)</p>
+        </div>
+        <button 
+          onClick={() => onOpenProductModal('create')}
+          className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] flex items-center transition-colors"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Producto
+        </button>
+      </div>
+
+      {dataLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+          <span className="ml-2 text-gray-600">Cargando productos...</span>
+        </div>
+      )}
+
+      {!dataLoading && (
+        <>
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar productos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="w-full md:w-64">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                >
+                  {categoriesForFilter.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {filteredProducts.length !== products.length && (
+              <div className="mt-4 text-sm text-gray-600">
+                Mostrando {filteredProducts.length} de {products.length} productos
+              </div>
+            )}
+          </div>
+
+          {/* Products Grid */}
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => {
+                const stockStatus = getStockStatus(product.stock);
+                return (
+                  <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="aspect-w-1 aspect-h-1 w-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={product.images?.[0] || '/placeholder-image.jpg'}
+                        alt={product.name}
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          product.isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        {product.description}
+                      </p>
+                      
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-xl font-bold text-[#68c3b7]">
+                          {formatCurrency(product.price)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          SKU: {product.sku || 'N/A'}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-xs font-medium ${stockStatus.color}`}>
+                            {product.stock} en stock
+                          </span>
+                          <span className={`text-xs ${stockStatus.color}`}>
+                            ({stockStatus.text})
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1">
+                          <button 
+                            onClick={() => onOpenProductModal('edit', product)}
+                            className="text-[#68c3b7] hover:text-[#64b7ac] p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                            title="Editar producto"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(product.id, product.name)}
+                            className="text-yellow-600 hover:text-yellow-800 p-2 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                            title="Desactivar producto"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-12 text-center">
+              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron productos</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm || selectedCategory !== 'all' 
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'Comienza agregando tu primer producto'
+                }
+              </p>
+              {!searchTerm && selectedCategory === 'all' && (
+                <button 
+                  onClick={() => onOpenProductModal('create')}
+                  className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] inline-flex items-center"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primer Producto
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
 function CategoriesContent() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categoryModal, setCategoryModal] = useState<{
+    isOpen: boolean;
+    category?: Category | null;
+  }>({ isOpen: false });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterActive, setFilterActive] = useState<boolean | null>(null);
+  const { addNotification } = useNotifications();
+
+  // Cargar categorías
+  const loadCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } else {
+        addNotification('Error al cargar categorías', 'error');
+      }
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+      addNotification('Error al cargar categorías', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [addNotification]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Filtrar categorías
+  const filteredCategories = categories.filter(category => {
+    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         category.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterActive === null || category.isActive === filterActive;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Crear categoría
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleCreateCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const response = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryData),
+      });
+
+      if (response.ok) {
+        addNotification('Categoría creada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al crear categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al crear categoría:', error);
+      addNotification('Error al crear categoría', 'error');
+    }
+  };
+
+  // Actualizar categoría
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
+    try {
+      const response = await fetch('/api/admin/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+
+      if (response.ok) {
+        addNotification('Categoría actualizada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al actualizar categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error);
+      addNotification('Error al actualizar categoría', 'error');
+    }
+  };
+
+  // Eliminar categoría
+  const handleDeleteCategory = async (id: string) => {
+    const category = categories.find(cat => cat.id === id);
+    const categoryName = category?.name || 'esta categoría';
+    
+    const confirmed = window.confirm(
+      `¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?\n\nEsta acción no se puede deshacer.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/categories?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        addNotification('Categoría eliminada exitosamente', 'success');
+        loadCategories();
+      } else {
+        const error = await response.json();
+        addNotification(error.error || 'Error al eliminar categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error al eliminar categoría:', error);
+      addNotification('Error al eliminar categoría', 'error');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center py-12">
-      <Tag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestión de Categorías</h3>
-      <p className="text-gray-600">Esta funcionalidad está siendo restaurada...</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Categorías</h2>
+        <button
+          onClick={() => setCategoryModal({ isOpen: true, category: null })}
+          className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#64b7ac] flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="sm:inline">Nueva Categoría</span>
+        </button>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+        <div className="relative flex-1 max-w-full sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar categorías..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+          />
+        </div>
+        <select
+          value={filterActive === null ? 'all' : filterActive.toString()}
+          onChange={(e) => {
+            const value = e.target.value;
+            setFilterActive(value === 'all' ? null : value === 'true');
+          }}
+          className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600"
+        >
+          <option value="all">Todas</option>
+          <option value="true">Activas</option>
+          <option value="false">Inactivas</option>
+        </select>
+      </div>
+
+      {/* Lista de categorías - Vista Desktop */}
+      <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Slug
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Descripción
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Creada
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCategories.map((category) => (
+                <tr key={category.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <Tag className="w-5 h-5 text-gray-400 mr-3" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {category.name}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
+                      {category.slug}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-600 max-w-xs truncate">
+                      {category.description || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 text-xs font-semibold rounded-full ${
+                      category.isActive
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {category.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {new Date(category.createdAt).toLocaleDateString('es-ES')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setCategoryModal({ isOpen: true, category })}
+                        className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="text-red-600 hover:text-red-900 p-1 rounded"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        {filteredCategories.length === 0 && (
+          <div className="text-center py-12">
+            <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">No hay categorías</p>
+            <p className="text-gray-400">
+              {searchTerm || filterActive !== null 
+                ? 'No se encontraron categorías con los filtros aplicados'
+                : 'Crea tu primera categoría para organizar los productos'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Lista de categorías - Vista Móvil/Tablet */}
+      <div className="lg:hidden space-y-4">
+        {filteredCategories.map((category) => (
+          <div key={category.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center flex-1 min-w-0">
+                <Tag className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {category.name}
+                  </h3>
+                  <div className="text-xs text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
+                    {category.slug}
+                  </div>
+                </div>
+              </div>
+              
+              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 flex-shrink-0 ${
+                category.isActive
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {category.isActive ? 'Activa' : 'Inactiva'}
+              </span>
+            </div>
+
+            {category.description && (
+              <div className="mb-3">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {category.description}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+              <div className="text-xs text-gray-500">
+                Creada: {new Date(category.createdAt).toLocaleDateString('es-ES')}
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCategoryModal({ isOpen: true, category })}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-900 px-2 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="hidden sm:inline">Editar</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteCategory(category.id)}
+                  className="flex items-center gap-1 text-red-600 hover:text-red-900 px-2 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Eliminar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {filteredCategories.length === 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
+            <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">No hay categorías</p>
+            <p className="text-gray-400 px-4">
+              {searchTerm || filterActive !== null 
+                ? 'No se encontraron categorías con los filtros aplicados'
+                : 'Crea tu primera categoría para organizar los productos'
+              }
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function OrdersContent() {
+function OrdersContent({ 
+  sheetsOrders,
+  dataLoading,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onReloadData,
+  onOpenOrderModal 
+}: {
+  sheetsOrders: Order[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
+  onOpenOrderModal: (order: Order) => void;
+}) {
+  const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const statusOptions = [
+    { value: 'all', label: 'Todos los estados' },
+    { value: 'pending', label: 'Pendientes' },
+    { value: 'confirmed', label: 'Confirmados' },
+    { value: 'processing', label: 'Procesando' },
+    { value: 'shipped', label: 'Enviados' },
+    { value: 'delivered', label: 'Entregados' },
+    { value: 'cancelled', label: 'Cancelados' }
+  ];
+
+  const statusInfo = {
+    pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+    confirmed: { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+    processing: { label: 'Procesando', color: 'bg-teal-100 text-teal-800', icon: Package },
+    shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
+    delivered: { label: 'Entregado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+    cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle }
+  };
+
+  const filteredOrders = sheetsOrders.filter((order: Order) => {
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
   return (
-    <div className="text-center py-12">
-      <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestión de Pedidos</h3>
-      <p className="text-gray-600">Esta funcionalidad está siendo restaurada...</p>
+    <div>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Pedidos</h2>
+        <p className="text-gray-600">Administra todos los pedidos de la tienda ({sheetsOrders.length} pedidos)</p>
+      </div>
+
+      {/* Loading State */}
+      {dataLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+          <span className="ml-2 text-gray-600">Cargando pedidos...</span>
+        </div>
+      )}
+
+      {/* Content Only When Loaded */}
+      {!dataLoading && (
+        <>
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por ID, cliente o email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="w-full md:w-64">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                  className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {filteredOrders.length !== sheetsOrders.length && (
+              <div className="mt-4 text-sm text-gray-600">
+                Mostrando {filteredOrders.length} de {sheetsOrders.length} pedidos
+              </div>
+            )}
+          </div>
+
+          {/* Orders Table */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {filteredOrders.length > 0 ? (
+              <>
+                {/* Desktop Table */}
+                <div className="hidden lg:block">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Pedido
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cliente
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Productos
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredOrders.map((order: Order) => {
+                        const currentStatusInfo = statusInfo[order.status];
+                        const StatusIcon = currentStatusInfo.icon;
+                        
+                        return (
+                          <tr key={order.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {order.id}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                                <div className="text-sm text-gray-500">{order.customerEmail}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDate(order.createdAt)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">
+                                {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {order.items.reduce((total: number, item: OrderItem) => total + item.quantity, 0)} unidades
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatCurrency(order.total)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentStatusInfo.color}`}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {currentStatusInfo.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <button 
+                                onClick={() => onOpenOrderModal(order)}
+                                className="text-[#68c3b7] hover:text-[#64b7ac] mr-3"
+                              >
+                                Ver Detalles
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="lg:hidden">
+                  <div className="divide-y divide-gray-200">
+                    {filteredOrders.map((order: Order) => {
+                      const currentStatusInfo = statusInfo[order.status];
+                      const StatusIcon = currentStatusInfo.icon;
+                      
+                      return (
+                        <div key={order.id} className="p-4 hover:bg-gray-50">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="text-sm font-medium text-gray-900">
+                                Pedido #{order.id}
+                              </h3>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatDate(order.createdAt)}
+                              </p>
+                            </div>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${currentStatusInfo.color}`}>
+                              <StatusIcon className="w-3 h-3 mr-1" />
+                              {currentStatusInfo.label}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-500">Cliente:</span>
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                                <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-500">Productos:</span>
+                              <div className="text-right">
+                                <div className="text-sm text-gray-900">
+                                  {order.items.length} producto{order.items.length !== 1 ? 's' : ''}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {order.items.reduce((total: number, item: OrderItem) => total + item.quantity, 0)} unidades
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-500">Total:</span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {formatCurrency(order.total)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-gray-200">
+                            <button 
+                              onClick={() => onOpenOrderModal(order)}
+                              className="w-full text-center text-[#68c3b7] hover:text-[#64b7ac] text-sm font-medium py-2 px-4 rounded-md hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                            >
+                              Ver Detalles
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-12 text-center">
+                <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron pedidos</h3>
+                <p className="text-gray-600">
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'Intenta ajustar los filtros de búsqueda'
+                    : 'Los pedidos aparecerán aquí cuando los clientes hagan compras'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Stats */}
+          {sheetsOrders.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+              {Object.entries(statusInfo).map(([status, info]) => {
+                const count = sheetsOrders.filter((order: Order) => order.status === status).length;
+                const StatusIcon = info.icon;
+                
+                return (
+                  <div key={status} className="bg-white rounded-lg shadow-md p-4 text-center">
+                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${info.color} mb-2`}>
+                      <StatusIcon className="w-4 h-4" />
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900">{count}</div>
+                    <div className="text-xs text-gray-500">{info.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function UsersContent() {
+function UsersContent({ 
+  sheetsUsers,
+  dataLoading,
+  onReloadData,
+  onOpenRoleManager 
+}: {
+  sheetsUsers: AdminUser[];
+  dataLoading: boolean;
+  onReloadData: () => Promise<void>;
+  onOpenRoleManager: () => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const addNotification = useNotifications((state: NotificationsStore) => state.addNotification);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const filteredUsers = sheetsUsers.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: userId,
+          isActive: !currentStatus
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar usuario');
+      }
+
+      await onReloadData();
+      addNotification(
+        `Usuario ${!currentStatus ? 'activado' : 'desactivado'} exitosamente`, 
+        'success'
+      );
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      addNotification('Error al actualizar el usuario', 'error');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
+  if (dataLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#68c3b7]"></div>
+        <span className="ml-2 text-gray-600">Cargando usuarios...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center py-12">
-      <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">Gestión de Usuarios</h3>
-      <p className="text-gray-600">Esta funcionalidad está siendo restaurada...</p>
+    <div>
+      <div className="mb-8">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
+            <p className="text-gray-600">Administra los usuarios registrados ({sheetsUsers.length} usuarios)</p>
+          </div>
+          <button
+            onClick={onOpenRoleManager}
+            className="flex items-center space-x-2 px-4 py-2 bg-[#68c3b7] text-white rounded-lg hover:bg-[#5ab3a7] transition-colors"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Gestionar Roles</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="text-gray-600 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="w-full md:w-48">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
+              className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
+            >
+              <option value="all">Todos los roles</option>
+              <option value="admin">Administradores</option>
+              <option value="user">Usuarios</option>
+            </select>
+          </div>
+        </div>
+        
+        {filteredUsers.length !== sheetsUsers.length && (
+          <div className="mt-4 text-sm text-gray-600">
+            Mostrando {filteredUsers.length} de {sheetsUsers.length} usuarios
+          </div>
+        )}
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {filteredUsers.length > 0 ? (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden lg:block">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rol
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Registro
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actividad
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-[#68c3b7] rounded-full flex items-center justify-center mr-4">
+                            <span className="text-white text-sm font-medium">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm text-gray-500">ID: {user.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.role === 'admin' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(user.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {user.ordersCount} pedidos
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatCurrency(user.totalSpent)} gastados
+                        </div>
+                        {user.lastLogin && (
+                          <div className="text-xs text-gray-400">
+                            Último: {formatDate(user.lastLogin)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                          disabled={isUpdating}
+                          className={`text-sm px-3 py-1 rounded-lg ${
+                            user.isActive
+                              ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                              : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden">
+              <div className="divide-y divide-gray-200">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-12 h-12 bg-[#68c3b7] rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm font-medium">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                              {user.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">{user.email}</p>
+                            <p className="text-xs text-gray-400 mt-1">ID: {user.id}</p>
+                          </div>
+                          <div className="flex flex-col items-end space-y-1">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.role === 'admin' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {user.role === 'admin' ? 'Admin' : 'Usuario'}
+                            </span>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-500">Registro:</span>
+                            <div className="text-gray-900">{formatDate(user.createdAt)}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Pedidos:</span>
+                            <div className="text-gray-900">{user.ordersCount}</div>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Gastado:</span>
+                            <div className="text-gray-900">{formatCurrency(user.totalSpent)}</div>
+                          </div>
+                          {user.lastLogin && (
+                            <div>
+                              <span className="text-gray-500">Último acceso:</span>
+                              <div className="text-gray-900">{formatDate(user.lastLogin)}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-gray-200">
+                          <button 
+                            onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                            disabled={isUpdating}
+                            className={`w-full text-center text-sm font-medium py-2 px-4 rounded-lg transition-colors ${
+                              user.isActive
+                                ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                                : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                            } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'active:bg-gray-200'}`}
+                          >
+                            {isUpdating ? 'Actualizando...' : (user.isActive ? 'Desactivar' : 'Activar')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="p-12 text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron usuarios</h3>
+            <p className="text-gray-600">
+              {searchTerm || roleFilter !== 'all' 
+                ? 'Intenta ajustar los filtros de búsqueda'
+                : 'Los usuarios aparecerán aquí cuando se registren'
+              }
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* User Stats */}
+      {sheetsUsers.length > 0 && (
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-[#68c3b7]">{sheetsUsers.length}</div>
+            <div className="text-sm text-gray-600">Total Usuarios</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {sheetsUsers.filter(u => u.isActive).length}
+            </div>
+            <div className="text-sm text-gray-600">Usuarios Activos</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {sheetsUsers.filter(u => u.role === 'admin').length}
+            </div>
+            <div className="text-sm text-gray-600">Administradores</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-gray-600">
+              {formatCurrency(sheetsUsers.reduce((sum, user) => sum + user.totalSpent, 0))}
+            </div>
+            <div className="text-sm text-gray-600">Ingresos Totales</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
