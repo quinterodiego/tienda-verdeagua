@@ -4,10 +4,10 @@ import { authOptions } from '@/lib/auth';
 import { saveOrderToSheets } from '@/lib/orders-sheets';
 import { Product } from '@/types';
 
-// POST /api/orders/pending - Crear orden pendiente antes del pago
+// POST /api/orders/pending - Crear orden pendiente antes del pago o actualizar existente
 export async function POST(request: NextRequest) {
   try {
-    console.log('📝 Creando orden pendiente...');
+    console.log('📝 Procesando orden pendiente...');
     
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -18,13 +18,48 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📦 Datos recibidos para orden pendiente:', JSON.stringify(body, null, 2));
     
-    const { preferenceId, items, formData, paymentMethod, total } = body;
+    const { preferenceId, items, formData, paymentMethod, total, retryOrderId } = body;
     
     // Validar datos requeridos
     if (!preferenceId || !items || !formData || !total) {
       return NextResponse.json({ 
         error: 'Faltan datos requeridos: preferenceId, items, formData, total' 
       }, { status: 400 });
+    }
+
+    // Si es un reintento, verificar que el pedido existe y pertenece al usuario
+    if (retryOrderId) {
+      console.log(`🔄 Es un reintento de pago para el pedido: ${retryOrderId}`);
+      
+      try {
+        // Importar función para actualizar pedido
+        const { updateOrderForRetry } = await import('@/lib/orders-sheets');
+        
+        const updatedOrder = await updateOrderForRetry(retryOrderId, {
+          preferenceId,
+          items,
+          formData,
+          paymentMethod,
+          total,
+          userEmail: session.user.email
+        });
+
+        if (updatedOrder) {
+          console.log('✅ Pedido actualizado para reintento:', retryOrderId);
+          return NextResponse.json({ 
+            success: true, 
+            orderId: retryOrderId,
+            isRetry: true,
+            message: 'Pedido actualizado para reintento de pago' 
+          });
+        } else {
+          console.log('❌ No se pudo actualizar el pedido para reintento');
+          // Si no se puede actualizar, continuar creando uno nuevo
+        }
+      } catch (error) {
+        console.error('Error al actualizar pedido para reintento:', error);
+        // Si hay error, continuar creando uno nuevo
+      }
     }
 
     // Preparar datos del cliente

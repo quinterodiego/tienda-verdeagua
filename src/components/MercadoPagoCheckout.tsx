@@ -87,6 +87,7 @@ export default function MercadoPagoCheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'mercadopago' | 'cash_on_pickup'>('mercadopago');
+  const [retryOrderId, setRetryOrderId] = useState<string | null>(null);
   
   // Estados del formulario
   const [form, setForm] = useState<CheckoutForm>({
@@ -125,9 +126,17 @@ export default function MercadoPagoCheckoutPage() {
     
     if (isRetry) {
       const retryOrderData = localStorage.getItem('retryPaymentOrder');
+      const savedRetryOrderId = localStorage.getItem('retryOrderId');
+      
       if (retryOrderData) {
         try {
           const orderData = JSON.parse(retryOrderData);
+          
+          // Establecer el ID del pedido para reintento
+          if (savedRetryOrderId) {
+            setRetryOrderId(savedRetryOrderId);
+            console.log('🔄 Configurando reintento para el pedido:', savedRetryOrderId);
+          }
           
           // Cargar los items del carrito
           clearCart();
@@ -161,6 +170,7 @@ export default function MercadoPagoCheckoutPage() {
 
           // Limpiar datos de localStorage después de cargar
           localStorage.removeItem('retryPaymentOrder');
+          // No limpiar retryOrderId todavía, lo necesitaremos al crear la orden
           
           // Mostrar notificación
           addNotification('Reintentando pago del pedido anterior', 'info');
@@ -436,7 +446,8 @@ export default function MercadoPagoCheckoutPage() {
         items: items,
         formData: form,
         paymentMethod: 'mercadopago',
-        total: total
+        total: total,
+        retryOrderId: retryOrderId // Incluir ID del pedido si es un reintento
       };
 
       // ✨ Guardar datos de la orden en el contexto
@@ -448,7 +459,7 @@ export default function MercadoPagoCheckoutPage() {
         total: total
       });
 
-      console.log('💾 Guardando orden pendiente...');
+      console.log('💾 Guardando orden pendiente...', retryOrderId ? `(reintento para ${retryOrderId})` : '(nueva orden)');
       await fetch('/api/orders/pending', {
         method: 'POST',
         headers: {
@@ -456,6 +467,11 @@ export default function MercadoPagoCheckoutPage() {
         },
         body: JSON.stringify(orderData),
       });
+
+      // Limpiar retryOrderId de localStorage después de usar
+      if (retryOrderId) {
+        localStorage.removeItem('retryOrderId');
+      }
 
       // Verificar URL de redirección
       const redirectUrl = responseData.initPoint || responseData.sandboxInitPoint;

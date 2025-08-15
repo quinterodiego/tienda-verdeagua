@@ -587,3 +587,106 @@ export async function getOrderTrackingFromSheets(orderId: string): Promise<strin
     return null;
   }
 }
+
+// Función para actualizar un pedido existente para reintento de pago
+export async function updateOrderForRetry(
+  orderId: string, 
+  updateData: {
+    preferenceId: string;
+    items: any[];
+    formData: any;
+    paymentMethod: string;
+    total: number;
+    userEmail: string;
+  }
+): Promise<boolean> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los pedidos para encontrar el que se va a actualizar
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.ORDERS}!A:Z`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length === 0) return false;
+
+    const headers = rows[0];
+    const orderRows = rows.slice(1);
+    
+    // Encontrar los índices de las columnas importantes
+    const idColumnIndex = headers.indexOf('ID');
+    const emailColumnIndex = headers.indexOf('Email Cliente');
+    const statusColumnIndex = headers.indexOf('Estado');
+    const preferenceIdColumnIndex = headers.indexOf('Preference ID');
+    const itemsColumnIndex = headers.indexOf('Items');
+    const totalColumnIndex = headers.indexOf('Total');
+    const methodColumnIndex = headers.indexOf('Método de Pago');
+    const updatedAtColumnIndex = headers.indexOf('Actualizado');
+    
+    if (idColumnIndex === -1 || emailColumnIndex === -1) {
+      console.error('No se encontraron las columnas necesarias en la hoja');
+      return false;
+    }
+    
+    // Buscar el pedido por ID y verificar que pertenece al usuario
+    const orderRowIndex = orderRows.findIndex((row: any[]) => 
+      row[idColumnIndex] === orderId && row[emailColumnIndex] === updateData.userEmail
+    );
+    
+    if (orderRowIndex === -1) {
+      console.error(`Pedido ${orderId} no encontrado o no pertenece al usuario ${updateData.userEmail}`);
+      return false;
+    }
+    
+    // Verificar que el pedido esté en un estado que permita reintento
+    const currentStatus = orderRows[orderRowIndex][statusColumnIndex];
+    const allowedStatusForRetry = ['payment_pending', 'cancelled', 'rejected', 'failed', undefined, ''];
+    
+    if (!allowedStatusForRetry.includes(currentStatus)) {
+      console.error(`El pedido ${orderId} no se puede reintentar. Estado actual: ${currentStatus}`);
+      return false;
+    }
+    
+    // Preparar los nuevos datos
+    const itemsJson = JSON.stringify(updateData.items.map(item => ({
+      productId: item.product?.id || item.id,
+      productName: item.product?.name || item.name,
+      quantity: item.quantity,
+      price: item.product?.price || item.price,
+    })));
+    
+    // Actualizar el pedido existente
+    const actualRowIndex = orderRowIndex + 2; // +2 porque: +1 para headers, +1 para índice base 1
+    const range = `${SHEET_NAMES.ORDERS}!A${actualRowIndex}:Z${actualRowIndex}`;
+    
+    // Obtener la fila actual para mantener datos que no se actualizan
+    const currentRow = orderRows[orderRowIndex];
+    
+    // Actualizar solo los campos relevantes para el reintento
+    const updatedRow = [...currentRow];
+    if (preferenceIdColumnIndex !== -1) updatedRow[preferenceIdColumnIndex] = updateData.preferenceId;
+    if (itemsColumnIndex !== -1) updatedRow[itemsColumnIndex] = itemsJson;
+    if (totalColumnIndex !== -1) updatedRow[totalColumnIndex] = updateData.total;
+    if (methodColumnIndex !== -1) updatedRow[methodColumnIndex] = updateData.paymentMethod;
+    if (statusColumnIndex !== -1) updatedRow[statusColumnIndex] = 'payment_pending';
+    if (updatedAtColumnIndex !== -1) updatedRow[updatedAtColumnIndex] = new Date().toISOString();
+    
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: range,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [updatedRow]
+      }
+    });
+    
+    console.log(`✅ Pedido ${orderId} actualizado para reintento de pago`);
+    return true;
+    
+  } catch (error) {
+    console.error('Error actualizando pedido para reintento:', error);
+    return false;
+  }
+}
