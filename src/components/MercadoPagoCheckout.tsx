@@ -70,7 +70,7 @@ const generateOrderId = () => {
 };
 
 export default function MercadoPagoCheckoutPage() {
-  const { items, total, clearCart } = useCartStore();
+  const { items, total, clearCart, addItem } = useCartStore();
   const { data: session, status } = useSession();
   const { setProcessingPayment, setRedirectingTo, setOrderData, clearCheckoutState } = useCheckoutContext();
   const addNotification = useNotifications((state) => state.addNotification);
@@ -117,6 +117,61 @@ export default function MercadoPagoCheckoutPage() {
       }));
     }
   }, [session]);
+
+  // Cargar datos de reintento de pago si existen
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isRetry = urlParams.get('retry') === 'true';
+    
+    if (isRetry) {
+      const retryOrderData = localStorage.getItem('retryPaymentOrder');
+      if (retryOrderData) {
+        try {
+          const orderData = JSON.parse(retryOrderData);
+          
+          // Cargar los items del carrito
+          clearCart();
+          orderData.items.forEach((item: { product?: any; id?: string; name?: string; price?: number; image?: string; category?: string; quantity: number }) => {
+            const product = {
+              id: item.product?.id || item.id || '',
+              name: item.product?.name || item.name || '',
+              price: item.product?.price || item.price || 0,
+              image: item.product?.image || item.image || '',
+              category: item.product?.category || item.category || '',
+              description: '',
+              stock: 999
+            };
+            addItem(product, item.quantity);
+          });
+
+          // Cargar datos del formulario si existen
+          if (orderData.formData) {
+            setForm(prev => ({
+              ...prev,
+              email: orderData.formData.email || prev.email,
+              phone: orderData.formData.phone || prev.phone,
+              address: orderData.formData.address || prev.address,
+            }));
+          }
+
+          // Establecer método de pago
+          if (orderData.paymentMethod) {
+            setSelectedPaymentMethod(orderData.paymentMethod);
+          }
+
+          // Limpiar datos de localStorage después de cargar
+          localStorage.removeItem('retryPaymentOrder');
+          
+          // Mostrar notificación
+          addNotification('Reintentando pago del pedido anterior', 'info');
+          
+        } catch (error) {
+          console.error('Error cargando datos de reintento:', error);
+          addNotification('Error al cargar datos del pedido anterior', 'error');
+        }
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Establecer método de pago por defecto
   useEffect(() => {

@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { PackageIcon as Package, CalendarIcon as Calendar, CreditCardIcon as CreditCard, TruckIcon as Truck, CheckCircleIcon as CheckCircle2, ClockIcon as Clock, ExclamationTriangleIcon as AlertCircle } from '@/components/HeroIcons';
+import { PackageIcon as Package, CalendarIcon as Calendar, CreditCardIcon as CreditCard, TruckIcon as Truck, CheckCircleIcon as CheckCircle2, ClockIcon as Clock, ExclamationTriangleIcon as AlertCircle, ChevronDownIcon as ChevronDown, ChevronUpIcon as ChevronUp } from '@/components/HeroIcons';
 import { formatCurrency } from '@/lib/currency';
 import { Order } from '@/types';
+import Image from 'next/image';
 
 // Estados simplificados
 const getStatusColor = (status: string) => {
@@ -16,7 +17,8 @@ const getStatusColor = (status: string) => {
     case 'shipped': return 'text-purple-600 bg-purple-50';
     case 'delivered': return 'text-green-600 bg-green-50';
     case 'cancelled': return 'text-red-600 bg-red-50';
-    default: return 'text-gray-600 bg-gray-50';
+    case 'payment_failed': return 'text-red-600 bg-red-50';
+    default: return 'text-orange-600 bg-orange-50'; // Para estados desconocidos/problemas de pago
   }
 };
 
@@ -28,20 +30,41 @@ const getStatusIcon = (status: string) => {
     case 'shipped': return <Truck className="w-4 h-4" />;
     case 'delivered': return <CheckCircle2 className="w-4 h-4" />;
     case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-    default: return <Clock className="w-4 h-4" />;
+    case 'payment_failed': return <AlertCircle className="w-4 h-4" />;
+    default: return <AlertCircle className="w-4 h-4" />; // Para estados desconocidos
   }
 };
 
 const getStatusText = (status: string) => {
   switch (status) {
-    case 'pending': return 'Pendiente';
+    case 'pending': return 'Pendiente de pago';
     case 'confirmed': return 'Confirmado';
     case 'processing': return 'Procesando';
     case 'shipped': return 'Enviado';
     case 'delivered': return 'Entregado';
     case 'cancelled': return 'Cancelado';
-    default: return 'Desconocido';
+    case 'payment_failed': return 'Pago fallido';
+    default: return 'Problema con el pago';
   }
+};
+
+const getStatusDescription = (status: string) => {
+  switch (status) {
+    case 'pending': return 'El pago está siendo procesado por MercadoPago';
+    case 'confirmed': return 'El pago fue confirmado exitosamente';
+    case 'processing': return 'Tu pedido está siendo preparado';
+    case 'shipped': return 'Tu pedido está en camino';
+    case 'delivered': return 'Tu pedido fue entregado exitosamente';
+    case 'cancelled': return 'El pedido fue cancelado';
+    case 'payment_failed': return 'Hubo un problema al procesar el pago';
+    default: return 'Hubo un problema técnico con el procesamiento del pago. Puedes intentar pagar nuevamente.';
+  }
+};
+
+const shouldShowRetryPayment = (status: string) => {
+  return status === 'payment_failed' || 
+         status === 'cancelled' || 
+         !['pending', 'confirmed', 'processing', 'shipped', 'delivered'].includes(status);
 };
 
 export default function MisPedidosPage() {
@@ -49,6 +72,45 @@ export default function MisPedidosPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const retryPayment = async (order: Order) => {
+    try {
+      // Recrear el pedido en el contexto del checkout
+      const orderData = {
+        items: order.items,
+        total: order.total,
+        formData: {
+          email: session?.user?.email || '',
+          phone: '', // Se podrá llenar en el checkout
+          address: '', // Se podrá llenar en el checkout
+        },
+        paymentMethod: order.paymentMethod || 'mercadopago'
+      };
+
+      // Guardar en localStorage para el checkout
+      localStorage.setItem('retryPaymentOrder', JSON.stringify(orderData));
+      localStorage.setItem('retryOrderId', order.id);
+      
+      // Redirigir al checkout
+      router.push('/checkout?retry=true');
+    } catch (error) {
+      console.error('Error al reintentar pago:', error);
+      alert('Error al preparar el reintento de pago. Por favor, intenta nuevamente.');
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -131,77 +193,136 @@ export default function MisPedidosPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
-                  <div className="flex items-center mb-4 lg:mb-0">
-                    <div className="bg-gray-100 rounded-lg p-3 mr-4">
-                      <Package className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Pedido #{order.id.slice(-8)}
-                      </h3>
-                      <div className="flex items-center text-gray-500 text-sm">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                      {getStatusIcon(order.status)}
-                      <span className="ml-2">{getStatusText(order.status)}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-gray-900">
-                        {formatCurrency(order.total)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.items.length} artículo{order.items.length !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Items Summary */}
-                <div className="border-t pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {order.items.slice(0, 3).map((item, index) => (
-                      <div key={index} className="flex items-center">
-                        <div className="w-12 h-12 bg-gray-200 rounded-lg mr-3 flex items-center justify-center">
-                          <Package className="w-6 h-6 text-gray-400" />
+            {orders.map((order) => {
+              const isExpanded = expandedOrders.has(order.id);
+              
+              return (
+                <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div 
+                    className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => toggleOrderExpansion(order.id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Pedido #{order.id.slice(-8)}
+                          </h3>
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-500" />
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {item.product?.name || 'Producto'}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Cantidad: {item.quantity}
-                          </p>
+                        <div className="flex items-center text-gray-500 text-sm mb-2">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                          {getStatusIcon(order.status)}
+                          <span className="ml-2">{getStatusText(order.status)}</span>
+                        </div>
+                        
+                        {/* Mostrar alerta si hay problema con el pago */}
+                        {shouldShowRetryPayment(order.status) && (
+                          <div className="mt-2 text-sm text-orange-600">
+                            ⚠️ Requiere atención - Haz clic para ver opciones
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-gray-900">
+                          {formatCurrency(order.total)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {order.items.length} artículo{order.items.length !== 1 ? 's' : ''}
                         </div>
                       </div>
-                    ))}
-                    {order.items.length > 3 && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        +{order.items.length - 3} artículo{order.items.length - 3 !== 1 ? 's' : ''} más
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                {order.paymentMethod && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      <span>Método de pago: {order.paymentMethod}</span>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 bg-gray-50">
+                      <div className="p-6">
+                        {/* Estado detallado */}
+                        <div className="mb-6 p-4 bg-white rounded-lg border">
+                          <h4 className="font-semibold text-gray-900 mb-2">Estado del pedido</h4>
+                          <p className="text-sm text-gray-600 mb-3">{getStatusDescription(order.status)}</p>
+                          
+                          {shouldShowRetryPayment(order.status) && (
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  retryPayment(order);
+                                }}
+                                className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#5aa399] transition-colors text-sm font-medium"
+                              >
+                                Reintentar pago
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push('/contacto');
+                                }}
+                                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                              >
+                                Contactar soporte
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <h4 className="font-semibold text-gray-900 mb-4">Productos del pedido</h4>
+                        <div className="space-y-4">
+                          {order.items.map((item, index) => (
+                            <div key={index} className="flex items-center gap-4 bg-white p-4 rounded-lg">
+                              <div className="relative w-16 h-16 flex-shrink-0">
+                                {item.product?.image ? (
+                                  <Image
+                                    src={item.product.image}
+                                    alt={item.product?.name || 'Producto'}
+                                    fill
+                                    className="object-cover rounded-md"
+                                    sizes="64px"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                                    <Package className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900">
+                                  {item.product?.name || 'Producto sin nombre'}
+                                </h5>
+                                <p className="text-sm text-gray-600">
+                                  Cantidad: {item.quantity} × {formatCurrency(item.product?.price || 0)}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-gray-900">
+                                  {formatCurrency((item.product?.price || 0) * item.quantity)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {order.paymentMethod && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              <span>Método de pago: {order.paymentMethod}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
