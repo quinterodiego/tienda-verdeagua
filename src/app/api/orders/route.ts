@@ -26,15 +26,14 @@ export async function GET(request: NextRequest) {
     if (userEmail) {
       // Obtener pedidos de un usuario específico
       orders = await getUserOrdersFromSheets(userEmail);
+      console.log('📦 Pedidos obtenidos para usuario:', userEmail, orders.length);
     } else {
       // Obtener todos los pedidos (solo para admin)
       orders = await getAllOrdersFromSheets();
+      console.log('📦 Todos los pedidos obtenidos:', orders.length);
     }
 
-    return NextResponse.json({
-      success: true,
-      orders: orders
-    });
+    return NextResponse.json(orders);
   } catch (error) {
     console.error('Error al obtener pedidos:', error);
     return NextResponse.json(

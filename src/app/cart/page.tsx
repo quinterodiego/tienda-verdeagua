@@ -1,18 +1,78 @@
 'use client';
 
 import { useCartStore } from '@/lib/store';
+import { useCheckoutContext } from '@/contexts/CheckoutContext';
 import { useStockCheck } from '@/lib/useStockCheck';
 import { formatCurrency } from '@/lib/currency';
 import { MinusIcon as Minus, PlusIcon as Plus, XMarkIcon as X, ExclamationTriangleIcon as AlertTriangle, ArrowPathIcon as RefreshCw } from '@/components/HeroIcons';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeItem, clearCart } = useCartStore();
+  const { isProcessingPayment, redirectingTo, orderData, initializeFromStorage, clearCheckoutState } = useCheckoutContext();
   const { stockChecks, allSufficient, loading: stockLoading, error: stockError, refreshStock } = useStockCheck(items);
 
   // Crear un mapa de stock para fácil acceso
   const stockMap = new Map(stockChecks.map(check => [check.productId, check]));
+
+  // Inicializar estado de checkout al cargar la página
+  useEffect(() => {
+    initializeFromStorage();
+  }, [initializeFromStorage]);
+
+  // Si hay un proceso de pago en curso y el carrito está "vacío"
+  if (items.length === 0 && isProcessingPayment && orderData) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-600 border-t-transparent mx-auto mb-6"></div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+              {redirectingTo === 'mercadopago' ? 'Redirigiendo a MercadoPago...' : 'Procesando tu pago...'}
+            </h1>
+            <p className="text-gray-600 mb-6 text-sm sm:text-base max-w-md mx-auto">
+              {redirectingTo === 'mercadopago' 
+                ? 'Te estamos llevando a la plataforma de pago segura. No cierres esta ventana.'
+                : 'Estamos preparando tu orden para el pago. Este proceso puede tomar unos segundos.'
+              }
+            </p>
+            
+            {/* Mostrar resumen de la orden */}
+            <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de tu orden</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Productos:</span>
+                  <span>{orderData.items.length}</span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Total:</span>
+                  <span>{formatCurrency(orderData.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botón de cancelar (en caso de que algo falle) */}
+            <button
+              onClick={() => {
+                // Restaurar carrito desde orderData
+                clearCart();
+                orderData.items.forEach(item => {
+                  useCartStore.getState().addItem(item.product, item.quantity);
+                });
+                clearCheckoutState();
+              }}
+              className="text-gray-500 hover:text-gray-700 text-sm underline"
+            >
+              Cancelar y restaurar carrito
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

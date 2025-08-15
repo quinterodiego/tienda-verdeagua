@@ -56,20 +56,37 @@ export default function MisPedidosPage() {
       return;
     }
 
-    if (status === 'authenticated') {
-      fetchOrders();
+    if (status === 'authenticated' && session?.user?.email) {
+      fetchOrders(session.user.email);
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (userEmail: string) => {
     try {
-      const response = await fetch('/api/orders');
+      const response = await fetch(`/api/orders?userEmail=${encodeURIComponent(userEmail)}`);
       if (response.ok) {
         const data = await response.json();
-        setOrders(data);
+        console.log('📥 Datos recibidos de la API:', data);
+        
+        // Verificar que data sea un array directamente
+        if (Array.isArray(data)) {
+          // Validar estructura de cada order
+          const validOrders = data.map(order => ({
+            ...order,
+            items: Array.isArray(order.items) ? order.items : []
+          }));
+          setOrders(validOrders);
+        } else {
+          console.warn('⚠️ Los datos recibidos no son un array:', data);
+          setOrders([]);
+        }
+      } else {
+        console.error('❌ Error en respuesta de API:', response.status);
+        setOrders([]);
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('❌ Error fetching orders:', error);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -158,7 +175,7 @@ export default function MisPedidosPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
-                            {item.name}
+                            {item.product?.name || 'Producto'}
                           </p>
                           <p className="text-sm text-gray-500">
                             Cantidad: {item.quantity}

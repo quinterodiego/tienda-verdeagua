@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useCheckoutContext } from '@/contexts/CheckoutContext';
 import { formatCurrency } from '@/lib/currency';
 import { XCircleIcon as XCircle, ArrowPathIcon as RefreshCw, ArrowLeftIcon as ArrowLeft, CreditCardIcon as CreditCard } from '@/components/HeroIcons';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import { useCartStore } from '@/lib/store';
 function FailureContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { clearCheckoutState } = useCheckoutContext();
   const [hasRecoveryData, setHasRecoveryData] = useState(false);
   const [recoveryData, setRecoveryData] = useState<any>(null);
   const { addItem, clearCart } = useCartStore();
@@ -20,6 +22,12 @@ function FailureContent() {
   const error = searchParams.get('error'); // Para errores durante la creación
   const details = searchParams.get('details'); // Detalles del error
   const hasRecovery = searchParams.get('has_recovery'); // Si hay datos para recuperar
+
+  // Limpiar estado de checkout al llegar a failure
+  useEffect(() => {
+    console.log('❌ Llegó a página de fallo, limpiando contexto de checkout');
+    clearCheckoutState();
+  }, [clearCheckoutState]);
 
   // Verificar si hay datos de recuperación en localStorage
   useEffect(() => {

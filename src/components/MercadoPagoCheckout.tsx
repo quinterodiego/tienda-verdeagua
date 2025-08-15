@@ -16,6 +16,7 @@ import {
   LockIcon
 } from '@/components/Icons';
 import { useCartStore } from '@/lib/store';
+import { useCheckoutContext } from '@/contexts/CheckoutContext';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -71,6 +72,7 @@ const generateOrderId = () => {
 export default function MercadoPagoCheckoutPage() {
   const { items, total, clearCart } = useCartStore();
   const { data: session, status } = useSession();
+  const { setProcessingPayment, setRedirectingTo, setOrderData, clearCheckoutState } = useCheckoutContext();
   const addNotification = useNotifications((state) => state.addNotification);
   const router = useRouter();
   const { settings, loading: settingsLoading } = useSettings();
@@ -364,12 +366,11 @@ export default function MercadoPagoCheckoutPage() {
       setPreferenceId(responseData.preferenceId);
       setIsRedirectingToPayment(true);
       
-      addNotification('Redirigiendo a MercadoPago...', 'success');
+      // ✨ Actualizar contexto de checkout
+      setProcessingPayment(true);
+      setRedirectingTo('mercadopago');
       
-      // Limpiar carrito antes del redirect
-      setTimeout(() => {
-        clearCart();
-      }, 100);
+      addNotification('Preparando pago...', 'success');
 
       // Crear orden temporal para rastreo
       const orderData = {
@@ -380,6 +381,16 @@ export default function MercadoPagoCheckoutPage() {
         total: total
       };
 
+      // ✨ Guardar datos de la orden en el contexto
+      setOrderData({
+        preferenceId: responseData.preferenceId,
+        items: items,
+        formData: { ...form } as Record<string, string>,
+        paymentMethod: 'mercadopago',
+        total: total
+      });
+
+      console.log('💾 Guardando orden pendiente...');
       await fetch('/api/orders/pending', {
         method: 'POST',
         headers: {
@@ -388,20 +399,33 @@ export default function MercadoPagoCheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      // Redirect a MercadoPago usando el init_point correcto
+      // Verificar URL de redirección
       const redirectUrl = responseData.initPoint || responseData.sandboxInitPoint;
       if (!redirectUrl) {
         throw new Error('No se recibió URL de redirección de MercadoPago');
       }
       
-      console.log('Redirigiendo a:', redirectUrl);
-      window.location.href = redirectUrl;
+      console.log('🔄 Redirigiendo a MercadoPago:', redirectUrl);
+      addNotification('Redirigiendo a MercadoPago...', 'success');
+      
+      // Pequeño delay para mostrar el mensaje de redirección
+      setTimeout(() => {
+        // Limpiar carrito justo antes de la redirección
+        clearCart();
+        // Redireccionar
+        window.location.href = redirectUrl;
+      }, 1000); // 1 segundo para que el usuario vea el mensaje
+      
       return;
 
     } catch (error) {
       console.error('Error completo al crear preferencia:', error);
       console.error('Tipo de error:', typeof error);
       console.error('Error message:', error instanceof Error ? error.message : 'Error desconocido');
+      
+      // ✨ Limpiar contexto en caso de error
+      clearCheckoutState();
+      setIsRedirectingToPayment(false);
       
       addNotification(
         `Error al procesar pago: ${error instanceof Error ? error.message : 'Error desconocido'}`,
@@ -824,7 +848,7 @@ export default function MercadoPagoCheckoutPage() {
 
       {/* Overlay de carga para MercadoPago */}
       {(isCreatingPreference || isRedirectingToPayment) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-sm mx-4 text-center shadow-2xl">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent mx-auto mb-4"></div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -832,10 +856,18 @@ export default function MercadoPagoCheckoutPage() {
             </h3>
             <p className="text-gray-600 text-sm">
               {isRedirectingToPayment 
-                ? 'Te llevaremos a la plataforma de pago segura de MercadoPago' 
-                : 'Preparando tu orden para el pago'
+                ? '🔄 Preparando redirección segura. No cierres esta ventana.' 
+                : '⏳ Preparando tu orden para el pago'
               }
             </p>
+            {isRedirectingToPayment && (
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-green-600 h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Guardando tu información...</p>
+              </div>
+            )}
           </div>
         </div>
       )}

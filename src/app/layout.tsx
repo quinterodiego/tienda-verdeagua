@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import ThemeProvider from "@/components/ThemeProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
+import { CheckoutProvider } from "@/contexts/CheckoutContext";
 import GlobalNotifications from "@/components/GlobalNotifications";
 import StructuredData from "@/components/StructuredData";
 import { ResourcePreloader } from "@/components/Preloader";
@@ -42,17 +43,19 @@ export default function RootLayout({
         <NotificationProvider>
           <AuthProvider>
             <ThemeProvider>
-              {/* Temporalmente deshabilitado para evitar errores de build */}
-              {/* <ServiceWorkerProvider /> */}
-              <ResourcePreloader />
-              <StructuredData />
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-              <GlobalNotifications />
-              <WhatsAppFloat />
+              <CheckoutProvider>
+                {/* Temporalmente deshabilitado para evitar errores de build */}
+                {/* <ServiceWorkerProvider /> */}
+                <ResourcePreloader />
+                <StructuredData />
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+                <GlobalNotifications />
+                <WhatsAppFloat />
+              </CheckoutProvider>
             </ThemeProvider>
           </AuthProvider>
         </NotificationProvider>

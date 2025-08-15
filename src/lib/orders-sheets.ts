@@ -82,6 +82,12 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
 // Función para obtener pedidos de un usuario
 export async function getUserOrdersFromSheets(userEmail: string): Promise<Order[]> {
   try {
+    // Verificar configuración de Google Sheets
+    if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_CLIENT_EMAIL) {
+      console.log('⚠️ MODO DEBUG: Google Sheets no configurado, devolviendo array vacío');
+      return [];
+    }
+
     const sheets = await getGoogleSheetsAuth();
     
     const response = await sheets.spreadsheets.values.get({
