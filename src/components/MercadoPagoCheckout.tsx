@@ -296,7 +296,10 @@ export default function MercadoPagoCheckoutPage() {
       return;
     }
 
+    // ✨ Establecer estado de procesamiento INMEDIATAMENTE
     setIsCreatingPreference(true);
+    setProcessingPayment(true);
+    setRedirectingTo('mercadopago');
 
     try {
       // Verificar stock antes de crear preferencia
@@ -421,9 +424,9 @@ export default function MercadoPagoCheckoutPage() {
       setPreferenceId(responseData.preferenceId);
       setIsRedirectingToPayment(true);
       
-      // ✨ Actualizar contexto de checkout
-      setProcessingPayment(true);
-      setRedirectingTo('mercadopago');
+      // ✨ El contexto ya fue actualizado al inicio
+      // setProcessingPayment(true); // Ya establecido al inicio
+      // setRedirectingTo('mercadopago'); // Ya establecido al inicio
       
       addNotification('Preparando pago...', 'success');
 
@@ -461,15 +464,16 @@ export default function MercadoPagoCheckoutPage() {
       }
       
       console.log('🔄 Redirigiendo a MercadoPago:', redirectUrl);
-      addNotification('Redirigiendo a MercadoPago...', 'success');
       
-      // Pequeño delay para mostrar el mensaje de redirección
-      setTimeout(() => {
-        // Limpiar carrito justo antes de la redirección
-        clearCart();
-        // Redireccionar
-        window.location.href = redirectUrl;
-      }, 1000); // 1 segundo para que el usuario vea el mensaje
+      // ✨ Mantener el estado de loading hasta la redirección completa
+      setIsRedirectingToPayment(true);
+      // setProcessingPayment(true); // Ya establecido al inicio
+      
+      // ✨ NO limpiar el carrito antes de la redirección
+      // clearCart(); // Mover esto después de la redirección exitosa
+      
+      // Redireccionar inmediatamente sin delay
+      window.location.href = redirectUrl;
       
       return;
 

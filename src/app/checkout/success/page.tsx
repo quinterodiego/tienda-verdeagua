@@ -3,21 +3,24 @@
 import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCheckoutContext } from '@/contexts/CheckoutContext';
+import { useCartStore } from '@/lib/store';
 import { CheckCircleIcon as CheckCircle, PackageIcon as Package, ArrowLeftIcon as ArrowLeft } from '@/components/HeroIcons';
 import Link from 'next/link';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const { clearCheckoutState } = useCheckoutContext();
+  const { clearCart } = useCartStore();
   const orderId = searchParams.get('order_id');
   const paymentId = searchParams.get('payment_id');
   const paymentMethod = searchParams.get('payment_method');
 
-  // Limpiar estado de checkout al llegar a success
+  // Limpiar estado de checkout y carrito al llegar a success
   useEffect(() => {
-    console.log('🎉 Llegó a página de éxito, limpiando contexto de checkout');
+    console.log('🎉 Llegó a página de éxito, limpiando contexto de checkout y carrito');
     clearCheckoutState();
-  }, [clearCheckoutState]);
+    clearCart();
+  }, [clearCheckoutState, clearCart]);
 
   const isCashOnPickup = paymentMethod === 'cash_on_pickup';
 
