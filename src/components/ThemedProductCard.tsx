@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Product } from '@/types';
-import { Star, ShoppingCart, Heart, ImageIcon } from 'lucide-react';
+import { StarIcon, ShoppingCartIcon, HeartIcon, ImageIcon } from '@/components/HeroIcons';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useThemeStore } from '@/lib/theme-store';
 import { formatCurrency } from '@/lib/currency';
@@ -33,8 +33,12 @@ interface ProductCardProps {
 export default function ThemedProductCard({ product, priority = false, size = 'medium' }: ProductCardProps) {
   const { addItem } = useCartStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
-  const { compactMode, showPrices, animations } = useThemeStore();
   const [imageError, setImageError] = useState(false);
+  
+  // Configuración simplificada (valores fijos por ahora)
+  const compactMode = false;
+  const showPrices = true;
+  const animations = true;
   const [imageLoading, setImageLoading] = useState(true);
 
   // Configuración de tamaños según el prop size
@@ -150,7 +154,7 @@ export default function ThemedProductCard({ product, priority = false, size = 'm
           }`}
           title={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
-          <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+          <HeartIcon className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
         </button>
       </div>
 
@@ -188,7 +192,7 @@ export default function ThemedProductCard({ product, priority = false, size = 'm
             <div className="flex items-center mb-3">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
-                  <Star
+                  <StarIcon
                     key={i}
                     className={`w-4 h-4 ${
                       i < Math.floor(product.rating!) 
@@ -253,7 +257,7 @@ export default function ThemedProductCard({ product, priority = false, size = 'm
           `}
           title={product.stock > 0 ? 'Agregar al carrito' : 'Sin stock'}
         >
-          <ShoppingCart className="w-4 h-4 inline mr-2" />
+          <ShoppingCartIcon className="w-4 h-4 inline mr-2" />
           {product.stock > 0 ? 'Agregar al carrito' : 'Sin stock'}
         </button>
       </div>

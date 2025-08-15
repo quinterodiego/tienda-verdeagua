@@ -11,6 +11,7 @@ import StructuredData from "@/components/StructuredData";
 import { ResourcePreloader } from "@/components/Preloader";
 import { generateMetadata as createMetadata, siteConfig } from "@/lib/metadata";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import ApiMonitor from "@/components/ApiMonitor";
 // import ServiceWorkerProvider from "@/components/ServiceWorkerProvider";
 
 const poppins = Poppins({
@@ -53,6 +54,7 @@ export default function RootLayout({
               <Footer />
               <GlobalNotifications />
               <WhatsAppFloat />
+              <ApiMonitor />
             </ThemeProvider>
           </AuthProvider>
         </NotificationProvider>

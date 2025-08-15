@@ -29,7 +29,7 @@ import {
   EditIcon as Edit,
   Trash2Icon as Trash2,
   ShieldIcon as Shield
-} from '@/components/Icons';
+} from '@/components/HeroIcons';
 import Link from 'next/link';
 import { Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta

@@ -1,6 +1,6 @@
 'use client';
 
-import { Sun, Moon } from 'lucide-react';
+import { SunIcon, MoonIcon } from './HeroIcons'
 import { useThemeStore } from '@/lib/theme-store';
 
 interface SimpleThemeToggleProps {
@@ -16,7 +16,7 @@ export default function SimpleThemeToggle({ className = '', showLabel = false }:
     setTheme(newTheme);
   };
 
-  const Icon = isDark ? Sun : Moon;
+  const Icon = isDark ? SunIcon : MoonIcon;
   const label = isDark ? 'Modo claro' : 'Modo oscuro';
 
   if (!isInitialized) {

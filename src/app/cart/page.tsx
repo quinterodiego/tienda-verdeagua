@@ -3,7 +3,7 @@
 import { useCartStore } from '@/lib/store';
 import { useStockCheck } from '@/lib/useStockCheck';
 import { formatCurrency } from '@/lib/currency';
-import { Minus, Plus, X, AlertTriangle, RefreshCw } from 'lucide-react';
+import { MinusIcon as Minus, PlusIcon as Plus, XMarkIcon as X, ExclamationTriangleIcon as AlertTriangle, ArrowPathIcon as RefreshCw } from '@/components/HeroIcons';
 import Image from 'next/image';
 import Link from 'next/link';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircleIcon, XIcon } from '@/components/HeroIcons';
 
 interface NotificationProps {
   message: string;
@@ -36,13 +36,13 @@ export default function Notification({
   return (
     <div className="fixed top-20 right-4 z-50 animate-slide-in">
       <div className={`${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 max-w-sm`}>
-        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+        <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
         <span className="flex-1">{message}</span>
         <button
           onClick={onClose}
           className="text-white hover:text-gray-200 transition-colors"
         >
-          <X className="w-4 h-4" />
+          <XIcon className="w-4 h-4" />
         </button>
       </div>
     </div>

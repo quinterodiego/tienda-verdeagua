@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/currency';
-import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle } from 'lucide-react';
+import { CreditCardIcon as CreditCard, MapPinIcon as MapPin, UserIcon as User, ArrowLeftIcon as ArrowLeft, CheckCircleIcon as CheckCircle, ShieldCheckIcon as Shield, ShieldCheckIcon as Lock, TruckIcon as Truck, ExclamationTriangleIcon as AlertTriangle } from '@/components/HeroIcons';
 import CashOnPickupButton from '@/components/CashOnPickupButton';
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';

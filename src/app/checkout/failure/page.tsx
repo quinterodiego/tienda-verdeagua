@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
-import { XCircle, RefreshCw, ArrowLeft, CreditCard } from 'lucide-react';
+import { XCircleIcon as XCircle, ArrowPathIcon as RefreshCw, ArrowLeftIcon as ArrowLeft, CreditCardIcon as CreditCard } from '@/components/HeroIcons';
 import Link from 'next/link';
 import { useCartStore } from '@/lib/store';
 

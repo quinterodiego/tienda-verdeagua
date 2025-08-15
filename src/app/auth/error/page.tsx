@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { ExclamationTriangleIcon as AlertCircle, ArrowLeftIcon as ArrowLeft } from '@/components/HeroIcons';
 import Link from 'next/link';
 
 const errorMessages: Record<string, string> = {

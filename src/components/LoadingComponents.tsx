@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { LoaderIcon } from '@/components/HeroIcons';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,7 +15,7 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
   };
 
   return (
-    <Loader2 
+    <LoaderIcon
       className={`animate-spin ${sizeClasses[size]} ${className}`}
     />
   );

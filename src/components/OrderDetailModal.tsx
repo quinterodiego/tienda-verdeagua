@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle, MapPin, Phone, User, Mail } from 'lucide-react';
+import { XMarkIcon as X, PackageIcon as Package, CalendarIcon as Calendar, CreditCardIcon as CreditCard, TruckIcon as Truck, CheckCircleIcon as CheckCircle2, ClockIcon as Clock, ExclamationTriangleIcon as AlertCircle, MapPinIcon as MapPin, PhoneIcon as Phone, UserIcon as User, AtSymbolIcon as Mail } from '@/components/HeroIcons';
 import { Order } from '@/types';
 import { formatCurrency } from '@/lib/currency';
 import Image from 'next/image';

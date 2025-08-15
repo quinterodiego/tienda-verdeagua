@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Copy, CheckCircle, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { CreditCardIcon as CreditCard, ClipboardDocumentIcon as Copy, CheckCircleIcon as CheckCircle, XCircleIcon as XCircle, ClockIcon as Clock, ChevronDownIcon as ChevronDown, ChevronUpIcon as ChevronUp } from '@/components/HeroIcons';
 
 interface TestCard {
   card_number: string;

@@ -14,6 +14,7 @@ import {
 } from './Icons';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useIsAdmin } from '@/hooks/useUserRole';
 import Link from 'next/link';
 import ClientOnly from './ClientOnly';
 import Image from 'next/image';
@@ -22,39 +23,10 @@ export default function Header() {
   const { itemCount } = useCartStore();
   const { favorites } = useFavoritesStore();
   const { data: session, status } = useSession();
+  const { isAdmin } = useIsAdmin();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [roleLoading, setRoleLoading] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
-  // Obtener información de rol del usuario desde la API
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (session?.user?.email && !roleLoading) {
-        setRoleLoading(true);
-        try {
-          console.log('🔍 Verificando rol de admin para:', session.user.email);
-          const response = await fetch('/api/auth/user-role');
-          if (response.ok) {
-            const data = await response.json();
-            console.log('📡 Respuesta de API user-role:', data);
-            setIsAdmin(data.isAdmin);
-          } else {
-            console.error('❌ Error en API user-role:', response.status);
-          }
-        } catch (error) {
-          console.error('💥 Error al verificar rol de admin:', error);
-        } finally {
-          setRoleLoading(false);
-        }
-      } else if (!session?.user?.email) {
-        setIsAdmin(false);
-      }
-    };
-
-    fetchUserRole();
-  }, [session?.user?.email, roleLoading]);
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {

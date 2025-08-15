@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Phone, Mail, Send, MessageCircle, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { 
+  PhoneIcon as Phone, 
+  EnvelopeIcon as Mail, 
+  PaperAirplaneIcon as Send, 
+  MessageCircleIcon as MessageCircle, 
+  CheckCircleIcon as CheckCircle, 
+  ExclamationTriangleIcon as AlertCircle,
+  ArrowPathIcon as Loader2 
+} from '@/components/HeroIcons';
 import Image from 'next/image';
 
 interface FormData {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, UserRole } from '@/types';
-import { Shield, Users, Crown, Edit, Save, X } from 'lucide-react';
+import { ShieldCheckIcon as Shield, UserGroupIcon as Users, StarIcon as Crown, PencilIcon as Edit, CheckIcon as Save, XMarkIcon as X } from '@/components/HeroIcons';
 
 interface UserRoleManagerProps {
   onClose: () => void;

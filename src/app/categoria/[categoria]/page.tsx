@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon as ArrowLeft } from '@/components/HeroIcons';
 import { Product } from '@/types';
 
 export default function CategoriaPage() {

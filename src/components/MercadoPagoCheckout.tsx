@@ -2,7 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/currency';
-import { CreditCard, MapPin, User, ArrowLeft, CheckCircle, Shield, Lock, Truck, AlertTriangle, PackageCheck } from 'lucide-react';
+import { 
+  UserIcon,
+  ShoppingCartIcon,
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  ShieldIcon,
+  AlertTriangleIcon,
+  PackageIcon,
+  CreditCardIcon,
+  PackageCheckIcon,
+  MapPinIcon,
+  LockIcon
+} from '@/components/Icons';
 import { useCartStore } from '@/lib/store';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
@@ -445,7 +457,7 @@ export default function MercadoPagoCheckoutPage() {
         {/* Header */}
         <div className="mb-8">
           <Link href="/cart" className="inline-flex items-center text-[#68c3b7] hover:text-[#64b7ac] mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver al carrito
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Finalizar Compra</h1>
@@ -458,7 +470,7 @@ export default function MercadoPagoCheckoutPage() {
             {/* Métodos de Pago */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
+                <CreditCardIcon className="w-5 h-5 mr-2" />
                 Método de Pago
               </h3>
               
@@ -494,7 +506,7 @@ export default function MercadoPagoCheckoutPage() {
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <PackageCheck className="w-9 h-9 ml-4 mr-8 text-green-600" />
+                      <PackageCheckIcon className="w-9 h-9 ml-4 mr-8 text-green-600" />
                       <div>
                         <div className="font-medium">Pago al Retirar</div>
                         <div className="text-sm text-gray-600">Efectivo al momento del retiro</div>
@@ -508,7 +520,7 @@ export default function MercadoPagoCheckoutPage() {
             {/* Información Personal */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="w-5 h-5 mr-2" />
+                <UserIcon className="w-5 h-5 mr-2" />
                 Información Personal
               </h3>
               
@@ -592,7 +604,7 @@ export default function MercadoPagoCheckoutPage() {
             {selectedPaymentMethod !== 'cash_on_pickup' && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <MapPin className="w-5 h-5 mr-2" />
+                  <MapPinIcon className="w-5 h-5 mr-2" />
                   Dirección de Envío
                 </h3>
                 
@@ -792,7 +804,7 @@ export default function MercadoPagoCheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <PackageCheck className="w-8 h-8 mr-2" />
+                        <PackageCheckIcon className="w-8 h-8 mr-2" />
                         Confirmar Pedido (Pago al Retirar)
                       </>
                     )}
@@ -802,7 +814,7 @@ export default function MercadoPagoCheckoutPage() {
 
               {/* Información de seguridad */}
               <div className="mt-4 flex items-center justify-center text-sm text-gray-600">
-                <Lock className="w-4 h-4 mr-1" />
+                <LockIcon className="w-4 h-4 mr-1" />
                 <span>Transacción segura y encriptada</span>
               </div>
             </div>

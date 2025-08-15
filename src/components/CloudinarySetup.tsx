@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react';
+import { CheckCircleIcon as CheckCircle, ArrowTopRightOnSquareIcon as ExternalLink, ClipboardDocumentIcon as Copy, EyeIcon as Eye, EyeSlashIcon as EyeOff } from '@/components/HeroIcons';
 
 export default function CloudinarySetup() {
   const [step, setStep] = useState(1);

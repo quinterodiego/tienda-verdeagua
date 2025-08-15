@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, Award, Heart, Truck } from 'lucide-react';
+import { UserGroupIcon as Users, TrophyIcon as Award, HeartIcon as Heart, TruckIcon as Truck } from '@/components/HeroIcons';
 import Image from 'next/image';
 
 export default function NosotrosPage() {

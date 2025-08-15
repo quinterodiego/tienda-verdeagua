@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Clock, RefreshCw, ArrowLeft } from 'lucide-react';
+import { ClockIcon as Clock, ArrowPathIcon as RefreshCw, ArrowLeftIcon as ArrowLeft } from '@/components/HeroIcons';
 import Link from 'next/link';
 
 function PendingContent() {

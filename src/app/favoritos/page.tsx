@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Heart, ShoppingBag } from 'lucide-react';
+import { HeartIcon as Heart, ShoppingBagIcon as ShoppingBag } from '@/components/HeroIcons';
 import ProductCard from '@/components/ProductCard';
 import { useFavoritesStore } from '@/lib/store';
 import { Product } from '@/types';

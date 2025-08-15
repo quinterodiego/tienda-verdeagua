@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Package, Calendar, CreditCard, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { PackageIcon as Package, CalendarIcon as Calendar, CreditCardIcon as CreditCard, TruckIcon as Truck, CheckCircleIcon as CheckCircle2, ClockIcon as Clock, ExclamationTriangleIcon as AlertCircle } from '@/components/HeroIcons';
 import { formatCurrency } from '@/lib/currency';
 import { Order } from '@/types';
 

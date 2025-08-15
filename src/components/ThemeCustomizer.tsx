@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Save, Eye } from 'lucide-react';
+import { SwatchIcon as Palette, ArrowPathIcon as RotateCcw, CheckIcon as Save, EyeIcon as Eye } from '@/components/HeroIcons';
 import { useTheme } from '@/hooks/useTheme';
 
 interface ThemeColors {

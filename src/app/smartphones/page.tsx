@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon } from '@/components/HeroIcons';
 import { Product } from '@/types';
 
 export default function SmartphonesPage() {
@@ -66,7 +66,7 @@ export default function SmartphonesPage() {
               href="/"
               className="inline-flex items-center mt-4 text-[#68c3b7] hover:text-[#5ab3a7]"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
           </div>
@@ -84,7 +84,7 @@ export default function SmartphonesPage() {
             href="/"
             className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver a todos los productos
           </Link>
           

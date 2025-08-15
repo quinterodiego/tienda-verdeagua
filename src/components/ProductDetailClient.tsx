@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
-import { Star, ShoppingCart, ArrowLeft, Plus, Minus, Share } from 'lucide-react';
+import { StarIcon, ShoppingCartIcon, ArrowLeftIcon, PlusIcon, MinusIcon, ShareIcon } from '@/components/HeroIcons';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/types';
@@ -177,7 +177,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
             onClick={() => router.back()}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4 touch-manipulation"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver
           </button>
           
@@ -223,13 +223,13 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     onClick={() => setSelectedImage(selectedImage > 0 ? selectedImage - 1 : productImages.length - 1)}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeftIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setSelectedImage(selectedImage < productImages.length - 1 ? selectedImage + 1 : 0)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg rotate-180"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeftIcon className="w-5 h-5" />
                   </button>
                 </>
               )}
@@ -300,7 +300,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
               <div className="flex items-center space-x-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
-                    <Star
+                    <StarIcon
                       key={i}
                       className={`w-5 h-5 transition-all duration-300 hover:scale-125 ${
                         i < Math.floor(product.rating!) 
@@ -379,7 +379,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       className="p-3 hover:bg-gray-100 transition-all duration-300 touch-manipulation transform hover:scale-110 disabled:opacity-50 disabled:transform-none"
                       disabled={quantity <= 1}
                     >
-                      <Minus className="w-4 h-4" />
+                      <MinusIcon className="w-4 h-4" />
                     </button>
                     <span className="px-4 py-2 text-center min-w-[60px] text-lg font-semibold text-gray-900">{quantity}</span>
                     <button
@@ -387,7 +387,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       className="p-3 hover:bg-gray-100 transition-all duration-300 touch-manipulation transform hover:scale-110 disabled:opacity-50 disabled:transform-none"
                       disabled={quantity >= product.stock}
                     >
-                      <Plus className="w-4 h-4" />
+                      <PlusIcon className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -404,7 +404,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     variant="primary"
                     size="lg"
                     className="w-full"
-                    leftIcon={<ShoppingCart className="w-5 h-5" />}
+                    leftIcon={<ShoppingCartIcon className="w-5 h-5" />}
                     soundOnClick={true}
                   >
                     Agregar al carrito
@@ -420,7 +420,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 <span>Agregar a favoritos</span>
               </button> */}
               <button className="flex items-center space-x-2 text-gray-600 hover:text-[#68c3b7] transition-all duration-300 transform hover:scale-105 hover:bg-gray-50 px-3 py-2 rounded-lg">
-                <Share className="w-5 h-5 transition-transform duration-300 hover:scale-110" />
+                <ShareIcon className="w-5 h-5 transition-transform duration-300 hover:scale-110" />
                 <span>Compartir</span>
               </button>
             </div>

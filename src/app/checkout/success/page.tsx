@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle, Package, ArrowLeft } from 'lucide-react';
+import { CheckCircleIcon as CheckCircle, PackageIcon as Package, ArrowLeftIcon as ArrowLeft } from '@/components/HeroIcons';
 import Link from 'next/link';
 
 function SuccessContent() {
