@@ -65,12 +65,14 @@ export interface Customer {
   };
 }
 
+export type OrderStatus = 'payment_pending' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
 export interface Order {
   id: string;
   customer: Customer;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: OrderStatus;
   createdAt: Date;
   updatedAt: Date;
   paymentId?: string;
@@ -93,7 +95,7 @@ export interface Order {
 
 export interface OrderStatusUpdate {
   orderId: string;
-  status: Order['status'];
+  status: OrderStatus;
   notes?: string;
   trackingNumber?: string;
   shippingUrl?: string;
@@ -190,8 +192,8 @@ export interface MercadoPagoPayment {
     };
     type: string;
   };
-  metadata: Record<string, any>;
-  order: Record<string, any>;
+  metadata: Record<string, string | number | boolean>;
+  order: Record<string, string | number | boolean>;
   external_reference: string;
   transaction_amount: number;
   transaction_amount_refunded: number;

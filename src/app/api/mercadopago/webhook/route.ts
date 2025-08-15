@@ -15,7 +15,7 @@ async function updateOrderStatus(orderId: string, paymentStatus: string, payment
     });
 
     // Mapear estados de MercadoPago a estados de pedido
-    let orderStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending';
+    let orderStatus: 'payment_pending' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending';
     
     switch (paymentStatus) {
       case 'approved':
