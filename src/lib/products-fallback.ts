@@ -3,7 +3,7 @@ import { products as staticProducts } from '@/data/products';
 
 /**
  * Función para obtener productos con fallback robusto
- * Prioritiza Google Sheets pero usa datos locales como fallback
+ * Prioritiza Google Sheets pero usa datos locales como fallback SOLO en errores críticos
  */
 export async function getProductsWithFallback(includeInactive = false): Promise<Product[]> {
   try {
@@ -19,29 +19,51 @@ export async function getProductsWithFallback(includeInactive = false): Promise<
     
     const products = await Promise.race([productsPromise, timeoutPromise]) as Product[];
     
-    if (products && products.length > 0) {
-      console.log('✅ Productos obtenidos de Google Sheets');
-      return products;
+    // CAMBIO IMPORTANTE: Si Google Sheets está disponible pero vacío, respetar eso
+    // No usar fallback cuando no hay productos en el sheet
+    if (Array.isArray(products)) {
+      console.log(`✅ Productos obtenidos de Google Sheets: ${products.length} productos`);
+      return products; // Incluye arrays vacíos - eso es correcto
     }
     
-    throw new Error('Google Sheets returned empty array');
+    throw new Error('Google Sheets returned invalid data');
     
   } catch (error) {
-    console.log('⚠️ Google Sheets no disponible, usando datos locales:', error);
+    console.log('⚠️ Google Sheets no disponible - ERROR CRÍTICO:', error);
     
-    // Fallback a productos estáticos
-    const mappedProducts: Product[] = staticProducts.map(p => ({ 
-      ...p, 
-      status: (p.status || 'active') as 'active' | 'inactive' | 'pending' | 'draft'
-    }));
+    // SOLO usar fallback en casos de ERROR CRÍTICO (conexión, timeout, etc.)
+    // NO cuando el sheet simplemente está vacío
     
-    // Aplicar el mismo filtrado que en Google Sheets
-    const filteredProducts = includeInactive 
-      ? mappedProducts
-      : mappedProducts.filter(p => p.status === 'active');
+    // Verificar si es un error de conexión real vs sheet vacío
+    const isConnectionError = error instanceof Error && (
+      error.message.includes('Timeout') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('Network') ||
+      error.message.includes('fetch')
+    );
     
-    console.log(`📊 Usando ${filteredProducts.length} productos locales`);
-    return filteredProducts;
+    if (isConnectionError) {
+      console.log('🚨 Error de conexión detectado - usando productos locales como emergencia');
+      
+      // Fallback a productos estáticos SOLO en errores de conexión
+      const mappedProducts: Product[] = staticProducts.map(p => ({ 
+        ...p, 
+        status: (p.status || 'active') as 'active' | 'inactive' | 'pending' | 'draft'
+      }));
+      
+      // Aplicar el mismo filtrado que en Google Sheets
+      const filteredProducts = includeInactive 
+        ? mappedProducts
+        : mappedProducts.filter(p => p.status === 'active');
+      
+      console.log(`📊 Usando ${filteredProducts.length} productos locales de emergencia`);
+      return filteredProducts;
+    } else {
+      console.log('📭 Sheet vacío o error menor - retornando array vacío');
+      // Si no es error de conexión, probablemente el sheet está vacío
+      // Retornar array vacío para mostrar mensaje "No hay productos"
+      return [];
+    }
   }
 }
 

@@ -30,15 +30,26 @@ function HomeContent() {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/products');
+        
+        // 🧪 Para testing: permitir simular sin productos SOLO con parámetro muy específico
+        const isTestEmpty = searchParams.get('debug') === 'empty-products';
+        const apiUrl = isTestEmpty 
+          ? '/api/debug/test-empty-products?test=empty'
+          : '/api/products';
+        
+        const response = await fetch(apiUrl);
         if (!response.ok) {
           throw new Error('Error al cargar productos');
         }
         const data = await response.json();
         
+        console.log('🔍 Respuesta de API:', data);
+        
         // La API retorna un objeto con products dentro
         const productsData = data.products || [];
         setProducts(Array.isArray(productsData) ? productsData : []);
+        
+        console.log(`📊 Productos cargados: ${productsData.length}`);
       } catch (err) {
         console.error('Error al cargar productos:', err);
         setError(err instanceof Error ? err.message : 'Error al cargar productos');
@@ -50,7 +61,7 @@ function HomeContent() {
     };
 
     fetchProducts();
-  }, []);
+  }, [searchParams]);
   
   const {
     filters,
