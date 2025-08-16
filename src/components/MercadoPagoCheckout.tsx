@@ -482,6 +482,15 @@ export default function MercadoPagoCheckoutPage() {
       const pendingResult = await pendingResponse.json();
       console.log('📥 Respuesta de orden pendiente:', pendingResult);
 
+      // Verificar si el pedido se creó o actualizó exitosamente
+      if (!pendingResult.success) {
+        throw new Error(pendingResult.message || 'Error al crear orden pendiente');
+      }
+
+      // ✅ Si el pedido se creó exitosamente, limpiar el carrito
+      console.log('🧹 Limpiando carrito después de crear orden pendiente exitosamente');
+      clearCart();
+
       // Limpiar retryOrderId de localStorage solo si fue exitoso
       if (pendingResult.success && retryOrderId) {
         localStorage.removeItem('retryOrderId');

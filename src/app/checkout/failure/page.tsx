@@ -287,25 +287,45 @@ function FailureContent() {
 
         {/* Botones de acción */}
         <div className="space-y-3">
-          {/* Botón especial de recuperación si hay datos guardados */}
-          {hasRecoveryData && recoveryData && (
+          {/* Si hay un orderId, priorizar ir a Mis Pedidos para reintentar */}
+          {orderId ? (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
               <p className="text-blue-800 text-sm font-medium mb-2">
-                📦 Tus datos fueron guardados automáticamente
+                📋 Tu pedido fue registrado
               </p>
               <p className="text-blue-700 text-xs mb-3">
-                Podemos restaurar tu carrito con {recoveryData.items?.length || 0} producto(s) 
-                por un total de {formatCurrency(recoveryData.total || 0)}
+                Aunque el pago no se completó, tu pedido #{orderId.slice(-8)} está guardado. 
+                Puedes reintentar el pago desde &quot;Mis Pedidos&quot;.
               </p>
               <button
-                onClick={handleRecoverCart}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded text-sm transition-colors"
+                onClick={() => router.push('/mis-pedidos')}
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                🔄 Restaurar mi carrito y reintentar
+                Ir a Mis Pedidos y Reintentar Pago
               </button>
             </div>
+          ) : (
+            /* Botón especial de recuperación si hay datos guardados pero no orderId */
+            hasRecoveryData && recoveryData && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-blue-800 text-sm font-medium mb-2">
+                  📦 Tus datos fueron guardados automáticamente
+                </p>
+                <p className="text-blue-700 text-xs mb-3">
+                  Podemos restaurar tu carrito con {recoveryData.items?.length || 0} producto(s) 
+                  por un total de {formatCurrency(recoveryData.total || 0)}
+                </p>
+                <button
+                  onClick={handleRecoverCart}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Restaurar Carrito y Continuar
+                </button>
+              </div>
+            )
           )}
-          
+
+          {/* Resto de botones siempre disponibles */}
           <button 
             onClick={handleRetry}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
