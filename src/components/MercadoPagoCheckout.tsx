@@ -313,6 +313,9 @@ export default function MercadoPagoCheckoutPage() {
     setIsCreatingPreference(true);
     setProcessingPayment(true);
     setRedirectingTo('mercadopago');
+    
+    // Marcar actividad de pago para evitar limpieza prematura del estado
+    localStorage.setItem('lastPaymentActivity', Date.now().toString());
 
     try {
       // Verificar stock antes de crear preferencia

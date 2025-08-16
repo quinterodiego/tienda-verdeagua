@@ -20,6 +20,9 @@ function SuccessContent() {
     console.log('🎉 Llegó a página de éxito, limpiando contexto de checkout y carrito');
     clearCheckoutState();
     clearCart();
+    
+    // Limpiar marca de actividad de pago
+    localStorage.removeItem('lastPaymentActivity');
   }, [clearCheckoutState, clearCart]);
 
   const isCashOnPickup = paymentMethod === 'cash_on_pickup';

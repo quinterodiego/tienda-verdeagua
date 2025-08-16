@@ -27,6 +27,9 @@ function FailureContent() {
   useEffect(() => {
     console.log('❌ Llegó a página de fallo, limpiando contexto de checkout');
     clearCheckoutState();
+    
+    // Limpiar marca de actividad de pago
+    localStorage.removeItem('lastPaymentActivity');
   }, [clearCheckoutState]);
 
   // Verificar si hay datos de recuperación en localStorage

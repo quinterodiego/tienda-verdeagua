@@ -10,7 +10,6 @@ import { Product } from '@/types';
 // Lazy load TODOS los componentes para reducir bundle inicial
 const ProductCard = lazy(() => import('@/components/ProductCard'));
 const CategoryFilter = lazy(() => import('@/components/CategoryFilter'));
-const SearchFilters = lazy(() => import('@/components/SearchFilters'));
 const ActiveFilters = lazy(() => import('@/components/ActiveFilters'));
 
 // Fallback ultra-ligero
@@ -21,7 +20,6 @@ const ComponentFallback = ({ className = "" }: { className?: string }) => (
 function HomeContent() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
@@ -204,84 +202,117 @@ function HomeContent() {
         {/* Content Only When Loaded */}
         {!isLoading && !error && (
           <>
-            <Suspense fallback={<ComponentFallback className="h-16 mx-8 mb-4" />}>
-              <CategoryFilter
-                categories={['Todos', ...new Set(products.map(p => p.category))]}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
-            </Suspense>
-
-            {/* Search Filters */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
-                <div className="flex-1 max-w-md">
-                  <input
-                    type="text"
-                    placeholder="Buscar productos..."
-                    value={filters.query}
-                    onChange={(e) => updateFilter('query', e.target.value)}
-                    className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-                  />
+            {/* Si no hay productos en absoluto, mostrar mensaje especial */}
+            {products.length === 0 ? (
+              <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-4 text-center">
+                  <div className="text-yellow-600 mb-4">
+                    <svg className="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">No hay productos disponibles</h3>
+                  <p className="text-yellow-700 mb-4">
+                    Actualmente no tenemos productos en nuestro catálogo. Por favor, vuelve más tarde.
+                  </p>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors w-full"
+                    >
+                      Recargar página
+                    </button>
+                    <a 
+                      href="/contacto" 
+                      className="block bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Contáctanos
+                    </a>
+                  </div>
                 </div>
-                {/* <button
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className="text-white bg-gray-400 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-                >
-                  {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
-                </button> */}
               </div>
-
-              {/* {showAdvancedFilters && (
-                <SearchFilters
-                  filters={filters}
-                  onFilterChange={updateFilter}
-                  onClearFilters={clearFilters}
-                />
-              )} */}
-
-              {/* Active Filters */}
-              <Suspense fallback={<ComponentFallback className="h-8 mb-4" />}>
-                <ActiveFilters
-                  filters={filters}
-                  onRemoveFilter={removeFilter}
-                  onClearAll={clearFilters}
-                />
-              </Suspense>
-
-              {(filters.query || filters.minPrice > 0 || filters.maxPrice < 10000 || filters.rating > 0 || filters.inStock) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                  <span>Mostrando {finalFilteredProducts.length} de {products.length} productos</span>
-                </div>
-              )}
-            </div>
-
-            {/* Grid de productos o skeleton cuando se está filtrando */}
-            {isFiltering ? (
-              <ProductGridSkeleton count={6} />
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 items-stretch">
-                  {finalFilteredProducts.map((product, index) => (
-                    <Suspense 
-                      key={product.id}
-                      fallback={<ComponentFallback className="h-80 w-full" />}
-                    >
-                      <ProductCard 
-                        product={product}
-                        priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
-                        size="medium"
+                <Suspense fallback={<ComponentFallback className="h-16 mx-8 mb-4" />}>
+                  <CategoryFilter
+                    categories={['Todos', ...new Set(products.map(p => p.category))]}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
+                  />
+                </Suspense>
+
+                {/* Search Filters */}
+                <div className="mb-8">
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
+                    <div className="flex-1 max-w-md">
+                      <input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={filters.query}
+                        onChange={(e) => updateFilter('query', e.target.value)}
+                        className="text-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                       />
-                    </Suspense>
-                  ))}
+                    </div>
+                    {/* <button
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                      className="text-white bg-gray-400 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                    >
+                      {showAdvancedFilters ? 'Ocultar filtros' : 'Filtros avanzados'}
+                    </button> */}
+                  </div>
+
+                  {/* {showAdvancedFilters && (
+                    <SearchFilters
+                      filters={filters}
+                      onFilterChange={updateFilter}
+                      onClearFilters={clearFilters}
+                    />
+                  )} */}
+
+                  {/* Active Filters */}
+                  <Suspense fallback={<ComponentFallback className="h-8 mb-4" />}>
+                    <ActiveFilters
+                      filters={filters}
+                      onRemoveFilter={removeFilter}
+                      onClearAll={clearFilters}
+                    />
+                  </Suspense>
+
+                  {(filters.query || filters.minPrice > 0 || filters.maxPrice < 10000 || filters.rating > 0 || filters.inStock) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                      <span>Mostrando {finalFilteredProducts.length} de {products.length} productos</span>
+                    </div>
+                  )}
                 </div>
 
-                {finalFilteredProducts.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">
-                      No se encontraron productos con los filtros aplicados.
-                    </p>
-                  </div>
+                {/* Grid de productos o skeleton cuando se está filtrando */}
+                {isFiltering ? (
+                  <ProductGridSkeleton count={6} />
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 items-stretch">
+                      {finalFilteredProducts.map((product, index) => (
+                        <Suspense 
+                          key={product.id}
+                          fallback={<ComponentFallback className="h-80 w-full" />}
+                        >
+                          <ProductCard 
+                            product={product}
+                            priority={index < 4} // Prioridad para los primeros 4 productos (primera fila)
+                            size="medium"
+                          />
+                        </Suspense>
+                      ))}
+                    </div>
+
+                    {finalFilteredProducts.length === 0 && (
+                      <div className="text-center py-12">
+                        <p className="text-gray-500 text-lg">
+                          No se encontraron productos con los filtros aplicados.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
