@@ -601,6 +601,9 @@ export async function updateOrderForRetry(
   }
 ): Promise<boolean> {
   try {
+    console.log('🔄 updateOrderForRetry iniciado para pedido:', orderId);
+    console.log('📧 Email del usuario:', updateData.userEmail);
+    
     const sheets = await getGoogleSheetsAuth();
     
     // Obtener todos los pedidos para encontrar el que se va a actualizar
@@ -635,8 +638,18 @@ export async function updateOrderForRetry(
       row[idColumnIndex] === orderId && row[emailColumnIndex] === updateData.userEmail
     );
     
+    console.log('🔍 Búsqueda de pedido:');
+    console.log('  - ID buscado:', orderId);
+    console.log('  - Email buscado:', updateData.userEmail);
+    console.log('  - Índice encontrado:', orderRowIndex);
+    console.log('  - Total de pedidos:', orderRows.length);
+    
     if (orderRowIndex === -1) {
-      console.error(`Pedido ${orderId} no encontrado o no pertenece al usuario ${updateData.userEmail}`);
+      console.error(`❌ Pedido ${orderId} no encontrado o no pertenece al usuario ${updateData.userEmail}`);
+      console.log('📋 Pedidos disponibles:');
+      orderRows.slice(0, 5).forEach((row, index) => {
+        console.log(`  ${index}: ID=${row[idColumnIndex]}, Email=${row[emailColumnIndex]}`);
+      });
       return false;
     }
     

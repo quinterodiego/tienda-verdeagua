@@ -104,6 +104,10 @@ export default function MisPedidosPage() {
       localStorage.setItem('retryPaymentOrder', JSON.stringify(orderData));
       localStorage.setItem('retryOrderId', order.id);
       
+      console.log('💾 Guardando datos para reintento de pago:');
+      console.log('  - Order ID:', order.id);
+      console.log('  - Order Data:', orderData);
+      
       // Redirigir al checkout
       router.push('/checkout?retry=true');
     } catch (error) {

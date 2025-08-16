@@ -136,6 +136,9 @@ export default function MercadoPagoCheckoutPage() {
           if (savedRetryOrderId) {
             setRetryOrderId(savedRetryOrderId);
             console.log('🔄 Configurando reintento para el pedido:', savedRetryOrderId);
+            console.log('🔄 Estado retryOrderId establecido correctamente');
+          } else {
+            console.log('⚠️ No se encontró retryOrderId en localStorage');
           }
           
           // Cargar los items del carrito
@@ -450,6 +453,9 @@ export default function MercadoPagoCheckoutPage() {
         retryOrderId: retryOrderId // Incluir ID del pedido si es un reintento
       };
 
+      console.log('🔍 Estado retryOrderId antes de enviar:', retryOrderId);
+      console.log('🔍 ¿Es reintento?', !!retryOrderId);
+
       // ✨ Guardar datos de la orden en el contexto
       setOrderData({
         preferenceId: responseData.preferenceId,
@@ -460,7 +466,12 @@ export default function MercadoPagoCheckoutPage() {
       });
 
       console.log('💾 Guardando orden pendiente...', retryOrderId ? `(reintento para ${retryOrderId})` : '(nueva orden)');
-      await fetch('/api/orders/pending', {
+      console.log('📤 Datos a enviar:', {
+        ...orderData,
+        retryOrderId
+      });
+      
+      const pendingResponse = await fetch('/api/orders/pending', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -468,9 +479,13 @@ export default function MercadoPagoCheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      // Limpiar retryOrderId de localStorage después de usar
-      if (retryOrderId) {
+      const pendingResult = await pendingResponse.json();
+      console.log('📥 Respuesta de orden pendiente:', pendingResult);
+
+      // Limpiar retryOrderId de localStorage solo si fue exitoso
+      if (pendingResult.success && retryOrderId) {
         localStorage.removeItem('retryOrderId');
+        console.log('🧹 Limpiado retryOrderId del localStorage');
       }
 
       // Verificar URL de redirección

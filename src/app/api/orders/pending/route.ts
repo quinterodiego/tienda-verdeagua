@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
     
     const { preferenceId, items, formData, paymentMethod, total, retryOrderId } = body;
     
+    console.log('🔍 Verificando retryOrderId:', retryOrderId);
+    
     // Validar datos requeridos
     if (!preferenceId || !items || !formData || !total) {
       return NextResponse.json({ 
