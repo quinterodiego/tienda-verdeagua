@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { HeartIcon as Heart, ShoppingBagIcon as ShoppingBag } from '@/components/HeroIcons';
+import { HeartIcon as Heart, ShoppingCartIcon as ShoppingBag } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
 import { useFavoritesStore } from '@/lib/store';
 import { Product } from '@/types';

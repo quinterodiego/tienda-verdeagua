@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
 import { 
@@ -33,7 +33,8 @@ const CONTACT_INFO = {
   phone: "+5491123456789"
 };
 
-export default function TransferPage() {
+// Componente que usa useSearchParams - debe estar dentro de Suspense
+function TransferPageContent() {
   const searchParams = useSearchParams();
   const addNotification = useNotifications((state) => state.addNotification);
   
@@ -409,5 +410,35 @@ export default function TransferPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Componente Loading para Suspense
+function LoadingTransferPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-2xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal con Suspense
+export default function TransferPage() {
+  return (
+    <Suspense fallback={<LoadingTransferPage />}>
+      <TransferPageContent />
+    </Suspense>
   );
 }

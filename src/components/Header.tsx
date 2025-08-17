@@ -27,7 +27,13 @@ export default function Header() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Asegurar que el componente esté montado antes de renderizar
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -40,6 +46,25 @@ export default function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // No renderizar hasta que esté montado para evitar problemas de hidratación
+  if (!mounted) {
+    return (
+      <header className="bg-white shadow-md border-b border-gray-300 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center">
+              <div className="w-[150px] h-[40px] bg-gray-200 animate-pulse rounded"></div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-gray-200 animate-pulse rounded"></div>
+              <div className="w-8 h-8 bg-gray-200 animate-pulse rounded"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="bg-white shadow-md border-b border-gray-300 sticky top-0 z-50">
