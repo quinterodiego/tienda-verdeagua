@@ -1,16 +1,17 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { HeartIcon as Heart, ShoppingCartIcon as ShoppingBag } from '@/components/Icons';
 import ProductCard from '@/components/ProductCard';
 import { useFavoritesStore } from '@/lib/store';
 import { Product } from '@/types';
-import Link from 'next/link';
 
 export default function FavoritosPage() {
   const { favorites, clearFavorites } = useFavoritesStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   // Cargar productos desde Google Sheets
   useEffect(() => {
@@ -68,13 +69,13 @@ export default function FavoritosPage() {
             <p className="text-lg text-gray-600 mb-8">
               Guarda tus productos favoritos para encontrarlos fácilmente más tarde
             </p>
-            <Link
-              href="/"
+            <button
+              onClick={() => router.push('/')}
               className="inline-flex items-center px-6 py-3 bg-[#68c3b7] text-white font-semibold rounded-lg hover:bg-[#64b7ac] transition-colors"
             >
               <ShoppingBag className="w-5 h-5 mr-2" />
               Explorar productos
-            </Link>
+            </button>
           </div>
         </div>
       </div>

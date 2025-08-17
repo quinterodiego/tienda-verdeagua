@@ -19,7 +19,6 @@ import { useCartStore } from '@/lib/store';
 import { useCheckoutContext } from '@/contexts/CheckoutContext';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSettings } from '@/lib/use-settings';
@@ -556,9 +555,12 @@ export default function MercadoPagoCheckoutPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Tu carrito está vacío</h2>
-          <Link href="/" className="text-[#68c3b7] hover:underline">
+          <button
+            onClick={() => router.push('/')}
+            className="text-[#68c3b7] hover:underline"
+          >
             Continuar comprando
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -569,9 +571,12 @@ export default function MercadoPagoCheckoutPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Inicia sesión para continuar</h2>
-          <Link href="/auth/signin" className="text-[#68c3b7] hover:underline">
+          <button
+            onClick={() => router.push('/auth/signin')}
+            className="text-[#68c3b7] hover:underline"
+          >
             Iniciar sesión
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -582,10 +587,13 @@ export default function MercadoPagoCheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/cart" className="inline-flex items-center text-[#68c3b7] hover:text-[#64b7ac] mb-4">
+          <button
+            onClick={() => router.push('/cart')}
+            className="inline-flex items-center text-[#68c3b7] hover:text-[#64b7ac] mb-4"
+          >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver al carrito
-          </Link>
+          </button>
           <h1 className="text-3xl font-bold text-gray-900">Finalizar Compra</h1>
           <p className="text-gray-600 mt-2">Completa tus datos para procesar el pedido</p>
         </div>

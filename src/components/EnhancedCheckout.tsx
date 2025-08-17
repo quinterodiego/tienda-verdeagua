@@ -19,7 +19,6 @@ import { useCartStore } from '@/lib/store';
 import { useCheckoutContext } from '@/contexts/CheckoutContext';
 import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -623,12 +622,12 @@ export default function EnhancedCheckout() {
             <p className="text-gray-600 mb-6">
               Agrega algunos productos antes de proceder al checkout
             </p>
-            <Link 
-              href="/"
+            <button
+              onClick={() => router.push('/')}
               className="inline-flex items-center px-6 py-3 bg-[#68c3b7] text-white rounded-lg hover:bg-[#5ab3a7] transition-colors"
             >
               Continuar comprando
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -640,13 +639,13 @@ export default function EnhancedCheckout() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/cart"
+          <button
+            onClick={() => router.push('/cart')}
             className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver al carrito
-          </Link>
+          </button>
           
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
           <p className="text-gray-600 mt-2">

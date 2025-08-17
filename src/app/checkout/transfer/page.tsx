@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency';
 import { 
   CheckCircleIcon,
@@ -13,7 +13,6 @@ import {
   WhatsAppIcon,
   ClockIcon
 } from '@/components/Icons';
-import Link from 'next/link';
 import { useNotifications } from '@/lib/store';
 
 // Datos bancarios para transferencia (estos deberían venir de configuración)
@@ -36,6 +35,7 @@ const CONTACT_INFO = {
 // Componente que usa useSearchParams - debe estar dentro de Suspense
 function TransferPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const addNotification = useNotifications((state) => state.addNotification);
   
   const orderId = searchParams.get('orderId');
@@ -101,12 +101,12 @@ function TransferPageContent() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Información de pedido no encontrada
           </h2>
-          <Link 
-            href="/cart"
+          <button
+            onClick={() => router.push('/cart')}
             className="inline-flex items-center px-6 py-3 bg-[#68c3b7] text-white rounded-lg hover:bg-[#5ab3a7] transition-colors"
           >
             Volver al carrito
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -117,13 +117,13 @@ function TransferPageContent() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/cart"
+          <button
+            onClick={() => router.push('/cart')}
             className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             Volver al carrito
-          </Link>
+          </button>
           
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -401,12 +401,12 @@ function TransferPageContent() {
 
         {/* Footer */}
         <div className="mt-12 text-center">
-          <Link 
-            href="/"
+          <button
+            onClick={() => router.push('/')}
             className="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
             Continuar comprando
-          </Link>
+          </button>
         </div>
       </div>
     </div>

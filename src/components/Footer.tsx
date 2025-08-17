@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MailIcon, PhoneIcon, FacebookIcon, InstagramIcon, MessageCircleIcon } from './Icons';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
@@ -16,6 +16,7 @@ interface SiteSettings {
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
@@ -131,29 +132,44 @@ export default function Footer() {
             <h3 className="font-semibold text-lg mb-4">Enlaces Rápidos</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <Link href="/" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => router.push('/')}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Productos
-                </Link>
+                </button>
               </li>
               <li>
-                <Link href="/nosotros" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => router.push('/nosotros')}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Nosotros
-                </Link>
+                </button>
               </li>
               <li>
-                <Link href="/contacto" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => router.push('/contacto')}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Contacto
-                </Link>
+                </button>
               </li>
               <li>
-                <Link href="/cart" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => router.push('/cart')}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Carrito
-                </Link>
+                </button>
               </li>
               {/* <li>
-                <Link href="/favoritos" className="hover:text-white transition-colors">
+                <button
+                  onClick={() => router.push('/favoritos')}
+                  className="hover:text-white transition-colors text-left"
+                >
                   Favoritos
-                </Link>
+                </button>
               </li> */}
             </ul>
           </div>
@@ -175,46 +191,64 @@ export default function Footer() {
                 // Mostrar categorías dinámicas desde Google Sheets
                 categories.map((category) => (
                   <li key={category.id}>
-                    <Link 
-                      href={`/?category=${encodeURIComponent(category.name)}`} 
-                      className="hover:text-white transition-colors"
+                    <button
+                      onClick={() => router.push(`/?category=${encodeURIComponent(category.name)}`)}
+                      className="hover:text-white transition-colors text-left"
                     >
                       {category.name}
-                    </Link>
+                    </button>
                   </li>
                 ))
               ) : (
                 // Fallback a categorías estáticas si no se pueden cargar las dinámicas
                 <>
                   <li>
-                    <Link href="/?category=Agendas" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Agendas')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Agendas
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link href="/?category=Tazas" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Tazas')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Tazas
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link href="/?category=Llaveros" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Llaveros')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Llaveros
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link href="/?category=Stickers" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Stickers')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Stickers
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link href="/?category=Cuadernos" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Cuadernos')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Cuadernos
-                    </Link>
+                    </button>
                   </li>
                   <li>
-                    <Link href="/?category=Mochilas" className="hover:text-white transition-colors">
+                    <button
+                      onClick={() => router.push('/?category=Mochilas')}
+                      className="hover:text-white transition-colors text-left"
+                    >
                       Mochilas
-                    </Link>
+                    </button>
                   </li>
                 </>
               )}
@@ -254,15 +288,24 @@ export default function Footer() {
               © {currentYear} Verde Agua Personalizados. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 text-sm text-gray-400">
-              <Link href="#" className="hover:text-white transition-colors">
+              <button
+                onClick={() => {/* TODO: Implementar términos y condiciones */}}
+                className="hover:text-white transition-colors"
+              >
                 Términos y Condiciones
-              </Link>
-              <Link href="#" className="hover:text-white transition-colors">
+              </button>
+              <button
+                onClick={() => {/* TODO: Implementar política de privacidad */}}
+                className="hover:text-white transition-colors"
+              >
                 Política de Privacidad
-              </Link>
-              <Link href="#" className="hover:text-white transition-colors">
+              </button>
+              <button
+                onClick={() => {/* TODO: Implementar política de devoluciones */}}
+                className="hover:text-white transition-colors"
+              >
                 Política de Devoluciones
-              </Link>
+              </button>
             </div>
           </div>
            <div className="flex justify-center items-center mt-4">

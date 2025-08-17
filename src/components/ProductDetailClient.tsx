@@ -6,7 +6,6 @@ import { useCartStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
 import { StarIcon, ShoppingCartIcon, ArrowLeftIcon, PlusIcon, MinusIcon, ShareIcon } from '@/components/HeroIcons';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Product } from '@/types';
 
 // Lazy load components
@@ -90,12 +89,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Producto no encontrado</h1>
           <p className="text-gray-600 mb-6">{error || 'El producto que buscas no existe o no está disponible.'}</p>
-          <Link 
-            href="/" 
+          <button
+            onClick={() => router.push('/')}
             className="bg-[#68c3b7] hover:bg-[#64b7ac] text-white px-6 py-2 rounded-lg transition-colors"
           >
             Volver al inicio
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -182,9 +181,12 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
           </button>
           
           <nav className="text-sm text-gray-600 hidden sm:block">
-            <Link href="/" className="hover:text-gray-900">
+            <button
+              onClick={() => router.push('/')}
+              className="hover:text-gray-900"
+            >
               Inicio
-            </Link>
+            </button>
             <span className="mx-2">/</span>
             <span className="text-gray-900">{product.name}</span>
           </nav>
