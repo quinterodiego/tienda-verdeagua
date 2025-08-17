@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ShoppingCartIcon, 
   UserIcon, 
@@ -15,7 +16,6 @@ import {
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useIsAdmin } from '@/hooks/useUserRole';
-import Link from 'next/link';
 import ClientOnly from './ClientOnly';
 import Image from 'next/image';
 
@@ -24,6 +24,7 @@ export default function Header() {
   const { favorites } = useFavoritesStore();
   const { data: session, status } = useSession();
   const { isAdmin } = useIsAdmin();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -45,48 +46,95 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
-            <Image
-              src="/logo-horizontal.png" 
-              alt="Verde Agua Personalizados" 
-              width={150}
-              height={40}
-              className="object-contain transition-all duration-300 group-hover:scale-105"
-              priority
-              unoptimized
-            />
-          </Link>
+          <div className="flex items-center">
+            <div 
+              onClick={() => router.push('/')}
+              className="flex items-center space-x-2 group transition-transform duration-300 hover:scale-105 cursor-pointer"
+              title="Verde Agua Personalizados - Ir a la página principal"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/');
+                }
+              }}
+            >
+              <Image
+                src="/logo-horizontal.png" 
+                alt="Verde Agua Personalizados - Volver al inicio" 
+                width={150}
+                height={40}
+                className="object-contain transition-all duration-300 select-none"
+                priority
+                unoptimized
+                draggable={false}
+              />
+            </div>
+          </div>
 
           {/* Navigation Menu - Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/" 
-              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group"
+            <div
+              onClick={() => router.push('/')}
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/');
+                }
+              }}
             >
               Productos
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#68c3b7] transition-all duration-500 group-hover:w-full"></span>
-            </Link>
-            <Link 
-              href="/nosotros" 
-              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group"
+            </div>
+            <div
+              onClick={() => router.push('/nosotros')}
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/nosotros');
+                }
+              }}
             >
               Nosotros
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#68c3b7] transition-all duration-500 group-hover:w-full"></span>
-            </Link>
-            <Link 
-              href="/contacto" 
-              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group"
+            </div>
+            <div
+              onClick={() => router.push('/contacto')}
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/contacto');
+                }
+              }}
             >
               Contacto
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#68c3b7] transition-all duration-500 group-hover:w-full"></span>
-            </Link>
-            <Link 
-              href="/ayuda" 
-              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group"
+            </div>
+            <div
+              onClick={() => router.push('/ayuda')}
+              className="text-gray-700 hover:text-[#68c3b7] font-medium transition-all duration-500 relative group cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/ayuda');
+                }
+              }}
             >
               Ayuda
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#68c3b7] transition-all duration-500 group-hover:w-full"></span>
-            </Link>
+            </div>
           </nav>
 
           {/* Right Menu */}
@@ -136,29 +184,62 @@ export default function Header() {
                         )}
                       </div>
                       <div className="py-1">
-                        <Link
-                          href="/perfil"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
+                        <div
+                          onClick={() => {
+                            router.push('/perfil');
+                            setShowUserMenu(false);
+                          }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              router.push('/perfil');
+                              setShowUserMenu(false);
+                            }
+                          }}
                         >
                           Mi Perfil
-                        </Link>
-                        <Link
-                          href="/mis-pedidos"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
+                        </div>
+                        <div
+                          onClick={() => {
+                            router.push('/mis-pedidos');
+                            setShowUserMenu(false);
+                          }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              router.push('/mis-pedidos');
+                              setShowUserMenu(false);
+                            }
+                          }}
                         >
                           Mis Pedidos
-                        </Link>
+                        </div>
                         {isAdmin && (
-                          <Link
-                            href="/admin"
-                            className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center"
-                            onClick={() => setShowUserMenu(false)}
+                          <div
+                            onClick={() => {
+                              router.push('/admin');
+                              setShowUserMenu(false);
+                            }}
+                            className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center cursor-pointer"
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                router.push('/admin');
+                                setShowUserMenu(false);
+                              }
+                            }}
                           >
                             <SettingsIcon className="w-4 h-4 mr-2" />
                             Panel de Admin
-                          </Link>
+                          </div>
                         )}
                         <hr className="my-1" />
                         <button
@@ -187,7 +268,18 @@ export default function Header() {
             </div>
 
             {/* Shopping Cart */}
-            <Link href="/cart" className="relative p-2 text-gray-600 hover:text-gray-900 group transition-all duration-500 transform hover:scale-105">
+            <div 
+              onClick={() => router.push('/cart')}
+              className="relative p-2 text-gray-600 hover:text-gray-900 group transition-all duration-500 transform hover:scale-105 cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  router.push('/cart');
+                }
+              }}
+            >
               <ShoppingCartIcon className="w-5 h-5 transition-transform duration-500 group-hover:rotate-6" />
               <ClientOnly>
                 {itemCount > 0 && (
@@ -196,7 +288,7 @@ export default function Header() {
                   </span>
                 )}
               </ClientOnly>
-            </Link>
+            </div>
 
             {/* Mobile menu button */}
             <button 
@@ -235,46 +327,101 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <nav className="py-4 space-y-1">
-              <Link 
-                href="/" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <HomeIcon className="w-5 h-5 mr-3" />
                 Productos
-              </Link>
+              </div>
 
-              <Link 
-                href="/nosotros" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/nosotros');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/nosotros');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <UsersIcon className="w-5 h-5 mr-3" />
                 Nosotros
-              </Link>
+              </div>
 
-              <Link 
-                href="/ayuda" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/ayuda');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/ayuda');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <HelpCircleIcon className="w-5 h-5 mr-3" />
                 Ayuda
-              </Link>
+              </div>
 
-              <Link 
-                href="/contacto" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/contacto');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/contacto');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <MailIcon className="w-5 h-5 mr-3" />
                 Contacto
-              </Link>
+              </div>
               
-              <Link 
-                href="/cart" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/cart');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/cart');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <ShoppingCartIcon className="w-5 h-5 mr-3" />
                 <span>Carrito</span>
@@ -285,12 +432,23 @@ export default function Header() {
                     </span>
                   )}
                 </ClientOnly>
-              </Link>
+              </div>
 
-              <Link 
-                href="/favoritos" 
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <div
+                onClick={() => {
+                  router.push('/favoritos');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push('/favoritos');
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <HeartIcon className="w-5 h-5 mr-3" />
                 <span>Favoritos</span>
@@ -301,15 +459,26 @@ export default function Header() {
                     </span>
                   )}
                 </ClientOnly>
-              </Link>
+              </div>
 
               {/* User Authentication Mobile */}
               {session ? (
                 <>
-                  <Link 
-                    href="/perfil" 
-                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                  <div
+                    onClick={() => {
+                      router.push('/perfil');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        router.push('/perfil');
+                        setIsMobileMenuOpen(false);
+                      }
+                    }}
                   >
                     {session.user?.image ? (
                       <Image
@@ -323,26 +492,48 @@ export default function Header() {
                       <UserIcon className="w-5 h-5 mr-3" />
                     )}
                     <span>Mi Perfil</span>
-                  </Link>
+                  </div>
                   
-                  <Link 
-                    href="/mis-pedidos" 
-                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                  <div
+                    onClick={() => {
+                      router.push('/mis-pedidos');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        router.push('/mis-pedidos');
+                        setIsMobileMenuOpen(false);
+                      }
+                    }}
                   >
                     <UserIcon className="w-5 h-5 mr-3" />
                     <span>Mis Pedidos</span>
-                  </Link>
+                  </div>
                   
                   {isAdmin && (
-                    <Link 
-                      href="/admin" 
-                      className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium"
-                      onClick={() => setIsMobileMenuOpen(false)}
+                    <div
+                      onClick={() => {
+                        router.push('/admin');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push('/admin');
+                          setIsMobileMenuOpen(false);
+                        }
+                      }}
                     >
                       <SettingsIcon className="w-5 h-5 mr-3" />
                       <span>Panel de Admin</span>
-                    </Link>
+                    </div>
                   )}
                   
                   <button 

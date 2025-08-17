@@ -4,11 +4,28 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { CartItem } from '@/types';
 
 interface OrderData {
+  orderId?: string;
   preferenceId: string;
   items: CartItem[];
-  formData: Record<string, string>;
-  paymentMethod: string;
   total: number;
+  customerInfo?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  deliveryInfo?: {
+    method: string;
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    } | null;
+    cost: number;
+  };
+  formData?: Record<string, string>;
+  paymentMethod: string;
 }
 
 interface CheckoutState {
@@ -63,10 +80,20 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsedState = JSON.parse(stored);
+          
           // Solo actualizar si el estado es diferente para evitar bucles infinitos
           setState(prev => {
-            const isDifferent = JSON.stringify(prev) !== JSON.stringify(parsedState);
-            if (isDifferent) {
+            // Comparar solo las propiedades importantes para evitar comparaciones profundas
+            const isSignificantlyDifferent = (
+              prev.isProcessingPayment !== parsedState.isProcessingPayment ||
+              prev.preferenceId !== parsedState.preferenceId ||
+              prev.redirectingTo !== parsedState.redirectingTo ||
+              (!prev.orderData && parsedState.orderData) ||
+              (prev.orderData && !parsedState.orderData) ||
+              (prev.orderData && parsedState.orderData && prev.orderData.preferenceId !== parsedState.orderData.preferenceId)
+            );
+            
+            if (isSignificantlyDifferent) {
               console.log('🔄 Estado de checkout restaurado desde localStorage:', parsedState);
               return parsedState;
             }
@@ -77,7 +104,7 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
         console.error('Error al restaurar estado de checkout:', error);
       }
     }
-  }, []);
+  }, []); // Array de dependencias vacío es correcto aquí
 
   // Limpiar estado
   const clearCheckoutState = () => {

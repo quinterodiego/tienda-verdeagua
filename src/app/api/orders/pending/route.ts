@@ -9,16 +9,112 @@ export async function POST(request: NextRequest) {
   try {
     console.log('📝 Procesando orden pendiente...');
     
+    const body = await request.json();
+    console.log('📦 Datos recibidos para orden pendiente:', JSON.stringify(body, null, 2));
+    
+    const { 
+      orderId: newOrderId, 
+      items, 
+      total, 
+      customerInfo, 
+      deliveryInfo, 
+      paymentMethod, 
+      notes,
+      // Para compatibilidad con el checkout anterior
+      preferenceId, 
+      formData, 
+      retryOrderId 
+    } = body;
+    
+    // Si viene del nuevo checkout (EnhancedCheckout)
+    if (newOrderId && customerInfo) {
+      console.log('🆕 Procesando desde EnhancedCheckout');
+      
+      // Validar datos requeridos del nuevo formato
+      if (!newOrderId || !items || !total || !customerInfo || !paymentMethod) {
+        return NextResponse.json({ 
+          error: 'Faltan datos requeridos: orderId, items, total, customerInfo, paymentMethod' 
+        }, { status: 400 });
+      }
+
+      // Preparar datos para Google Sheets en formato compatible
+      const orderData = {
+        customer: {
+          id: customerInfo.email,
+          name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          email: customerInfo.email,
+        },
+        items: items.map((item: any) => ({
+          product: item.product,
+          quantity: item.quantity
+        })),
+        total,
+        status: 'payment_pending' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        paymentId: newOrderId,
+        paymentMethod,
+        paymentStatus: 'pending' as const,
+        shippingAddress: deliveryInfo?.address ? {
+          firstName: customerInfo.firstName,
+          lastName: customerInfo.lastName,
+          address: deliveryInfo.address.street,
+          city: deliveryInfo.address.city,
+          state: deliveryInfo.address.state,
+          zipCode: deliveryInfo.address.zipCode,
+          phone: customerInfo.phone
+        } : {
+          firstName: customerInfo.firstName || '',
+          lastName: customerInfo.lastName || '',
+          address: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          phone: customerInfo.phone || ''
+        },
+        shippingMethod: deliveryInfo?.method || 'pickup',
+        shippingCost: deliveryInfo?.cost || 0,
+        notes: notes || ''
+      };
+      
+      console.log('� Guardando orden pendiente en Google Sheets...');
+      
+      // Modo DEBUG si no hay credenciales
+      if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_CLIENT_EMAIL) {
+        console.log('⚠️ MODO DEBUG: Simulando guardado de orden pendiente');
+        
+        return NextResponse.json({
+          success: true,
+          orderId: newOrderId,
+          message: 'Orden pendiente simulada (Google Sheets no configurado)',
+          debug: true
+        });
+      }
+      
+      // Guardar orden pendiente en Google Sheets
+      const savedOrderId = await saveOrderToSheets(orderData);
+      
+      if (!savedOrderId) {
+        console.error('❌ Error al guardar orden pendiente');
+        throw new Error('Error al guardar la orden pendiente en Google Sheets');
+      }
+      
+      console.log('✅ Orden pendiente creada exitosamente:', savedOrderId);
+      
+      return NextResponse.json({
+        success: true,
+        orderId: savedOrderId,
+        message: 'Orden pendiente creada exitosamente',
+        status: 'pending_transfer'
+      });
+    }
+    
+    // Si viene del checkout anterior (MercadoPagoCheckout) - mantener compatibilidad
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       console.log('❌ Usuario no autenticado');
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
     }
-
-    const body = await request.json();
-    console.log('📦 Datos recibidos para orden pendiente:', JSON.stringify(body, null, 2));
-    
-    const { preferenceId, items, formData, paymentMethod, total, retryOrderId } = body;
     
     console.log('🔍 Verificando retryOrderId:', retryOrderId);
     

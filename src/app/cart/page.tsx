@@ -12,15 +12,15 @@ import { useEffect } from 'react';
 export default function CartPage() {
   const { items, total, updateQuantity, removeItem, clearCart } = useCartStore();
   const { isProcessingPayment, redirectingTo, orderData, initializeFromStorage, clearCheckoutState } = useCheckoutContext();
-  const { stockChecks, allSufficient, loading: stockLoading, error: stockError, refreshStock } = useStockCheck(items);
+  const { stockChecks, allSufficient, loading: stockLoading, refreshStock } = useStockCheck(items);
 
   // Crear un mapa de stock para fácil acceso
   const stockMap = new Map(stockChecks.map(check => [check.productId, check]));
 
-  // Inicializar estado de checkout al cargar la página
+  // Inicializar estado de checkout al cargar la página (solo una vez)
   useEffect(() => {
     initializeFromStorage();
-  }, [initializeFromStorage]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Limpiar estado de checkout si el usuario interactúa con el carrito
   // (borra productos, cambia cantidades, etc.) y no está en un proceso activo
@@ -178,7 +178,7 @@ export default function CartPage() {
                       <div className="hidden md:flex items-center space-x-4">
                         <div className="relative w-20 h-20 flex-shrink-0">
                           <Image
-                            src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
+                            src={((item.product as { images?: string[] }) && (item.product as { images?: string[] }).images?.[0]) || item.product.image || '/placeholder-image.jpg'}
                             alt={item.product.name}
                             fill
                             className="object-cover rounded-md"
@@ -247,7 +247,7 @@ export default function CartPage() {
                         <div className="flex items-start space-x-3">
                           <div className="relative w-16 h-16 flex-shrink-0">
                             <Image
-                              src={(item.product as any).images?.[0] || item.product.image || '/placeholder-image.jpg'}
+                              src={((item.product as { images?: string[] }) && (item.product as { images?: string[] }).images?.[0]) || item.product.image || '/placeholder-image.jpg'}
                               alt={item.product.name}
                               fill
                               className="object-cover rounded-md"

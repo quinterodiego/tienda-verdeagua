@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Product } from '@/types';
 import { StarIcon, ShoppingCartIcon, HeartIcon, ImageIcon } from './Icons';
 import { useCartStore, useFavoritesStore } from '@/lib/store';
 import { formatCurrency } from '@/lib/currency';
 import OptimizedImage from './OptimizedImage';
-import Link from 'next/link';
 
 // Función para generar placeholder blur data URL
 const generateBlurDataURL = (width: number, height: number): string => {
@@ -30,6 +30,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, priority = false, size = 'medium' }: ProductCardProps) {
+  const router = useRouter();
   const { addItem } = useCartStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const [imageError, setImageError] = useState(false);
@@ -110,7 +111,18 @@ export default function ProductCard({ product, priority = false, size = 'medium'
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 block h-full transform hover:-translate-y-1 group">
-      <Link href={`/producto/${product.id}`} className="block h-full w-full">
+      <div 
+        onClick={() => router.push(`/producto/${product.id}`)}
+        className="block h-full w-full cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            router.push(`/producto/${product.id}`);
+          }
+        }}
+      >
         <div className="flex flex-col h-full w-full">
         <div className="relative aspect-square overflow-hidden">
           {/* Indicador de carga */}
@@ -248,7 +260,7 @@ export default function ProductCard({ product, priority = false, size = 'medium'
           </div>
         </div>
         </div>
-      </Link>
+      </div>
     </div>
   );
 }

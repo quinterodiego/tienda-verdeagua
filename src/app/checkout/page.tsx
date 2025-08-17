@@ -1,7 +1,7 @@
 'use client';
 
-import MercadoPagoCheckout from '@/components/MercadoPagoCheckout';
+import EnhancedCheckout from '@/components/EnhancedCheckout';
 
 export default function CheckoutPage() {
-  return <MercadoPagoCheckout />;
+  return <EnhancedCheckout />;
 }
