@@ -3,6 +3,125 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { ShoppingCart, Calendar, CreditCard, Truck, Package, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Order } from '@/types';
+
+// Función para obtener color según estado
+const getOrderStatusColor = (status: string) => {
+  switch (status) {
+    case 'pending':
+    case 'pending_transfer':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'confirmed':
+      return 'bg-blue-100 text-blue-800';
+    case 'processing':
+      return 'bg-purple-100 text-purple-800';
+    case 'shipped':
+      return 'bg-indigo-100 text-indigo-800';
+    case 'delivered':
+      return 'bg-green-100 text-green-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    case 'payment_failed':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+// Función para obtener texto del estado en español
+const getOrderStatusText = (status: string, paymentMethod?: string) => {
+  switch (status) {
+    case 'pending':
+      return 'Pendiente';
+    case 'pending_transfer':
+      return paymentMethod === 'transfer' ? 'Pago Pendiente' : 'Pago Pendiente';
+    case 'confirmed':
+      return 'Confirmado';
+    case 'processing':
+      return 'Procesando';
+    case 'shipped':
+      return 'Enviado';
+    case 'delivered':
+      return 'Entregado';
+    case 'cancelled':
+      return 'Cancelado';
+    case 'payment_failed':
+      return 'Problema con el pago';
+    default:
+      return status;
+  }
+};
+
+// Función para obtener ícono según estado
+const getOrderStatusIcon = (status: string) => {
+  switch (status) {
+    case 'pending':
+    case 'pending_transfer':
+      return <Clock className="w-4 h-4" />;
+    case 'confirmed':
+      return <CheckCircle className="w-4 h-4" />;
+    case 'processing':
+      return <Package className="w-4 h-4" />;
+    case 'shipped':
+      return <Truck className="w-4 h-4" />;
+    case 'delivered':
+      return <CheckCircle className="w-4 h-4" />;
+    case 'cancelled':
+    case 'payment_failed':
+      return <XCircle className="w-4 h-4" />;
+    default:
+      return <AlertTriangle className="w-4 h-4" />;
+  }
+};
+
+// Función para determinar si el pago falló o está pendiente
+const isPaymentFailed = (status: string) => {
+  return status === 'payment_failed' || 
+         status === 'cancelled' || 
+         !['pending', 'confirmed', 'processing', 'shipped', 'delivered'].includes(status);
+};
+
+export default function MisPedidosPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const retryPayment = async (order: Order) => {
+    try {
+      // Recrear el pedido en el contexto del checkout, permitiendo cambiar método de pago
+      const orderData = {
+        items: order.items,
+        total: order.total,
+        formData: {
+          email: session?.user?.email || order.customer?.email || '',
+          phone: order.shippingAddress?.phone || '', // Precargar datos existentes
+          address: order.shippingAddress?.address || '', // Precargar datos existentes
+          firstName: order.shippingAddress?.firstName || order.customer?.firstName || '',
+          lastName: order.shippingAddress?.lastName || order.customer?.lastName || '',
+          city: order.shippingAddress?.city || '',
+          state: order.shippingAddress?.state || '',
+          zipCode: order.shippingAddress?.zipCode || '',
+        },
+        paymentMethod: order.paymentMethod || 'mercadopago', // Precargar pero permitir cambio
+        isRetry: true, // Indicar que es un reintento
+        originalOrderId: order.id // Mantener referencia al pedido original
+      };h/react';
+import { useRouter } from 'next/navigation';
 import { PackageIcon as Package, CalendarIcon as Calendar, CreditCardIcon as CreditCard, TruckIcon as Truck, CheckCircleIcon as CheckCircle2, ClockIcon as Clock, ExclamationTriangleIcon as AlertCircle, ChevronDownIcon as ChevronDown, ChevronUpIcon as ChevronUp } from '@/components/HeroIcons';
 import { formatCurrency } from '@/lib/currency';
 import { Order } from '@/types';
@@ -88,23 +207,23 @@ export default function MisPedidosPage() {
 
   const retryPayment = async (order: Order) => {
     try {
-      // Si el método de pago es transferencia, redirigir directamente a la página de transferencia
-      if (order.paymentMethod === 'transfer') {
-        console.log('🔄 Redirigiendo a página de transferencia para pedido:', order.id);
-        router.push(`/checkout/transfer?orderId=${order.id}&amount=${order.total}`);
-        return;
-      }
-
-      // Para otros métodos de pago, recrear el pedido en el contexto del checkout
+      // Recrear el pedido en el contexto del checkout, permitiendo cambiar método de pago
       const orderData = {
         items: order.items,
         total: order.total,
         formData: {
-          email: session?.user?.email || '',
-          phone: '', // Se podrá llenar en el checkout
-          address: '', // Se podrá llenar en el checkout
+          email: session?.user?.email || order.customer?.email || '',
+          phone: order.shippingAddress?.phone || '', // Precargar datos existentes
+          address: order.shippingAddress?.address || '', // Precargar datos existentes
+          firstName: order.shippingAddress?.firstName || order.customer?.firstName || '',
+          lastName: order.shippingAddress?.lastName || order.customer?.lastName || '',
+          city: order.shippingAddress?.city || '',
+          state: order.shippingAddress?.state || '',
+          zipCode: order.shippingAddress?.zipCode || '',
         },
-        paymentMethod: order.paymentMethod || 'mercadopago'
+        paymentMethod: order.paymentMethod || 'mercadopago', // Precargar pero permitir cambio
+        isRetry: true, // Indicar que es un reintento
+        originalOrderId: order.id // Mantener referencia al pedido original
       };
 
       // Guardar en localStorage para el checkout
@@ -115,7 +234,7 @@ export default function MisPedidosPage() {
       console.log('  - Order ID:', order.id);
       console.log('  - Order Data:', orderData);
       
-      // Redirigir al checkout
+      // Redirigir al checkout con posibilidad de cambiar método de pago
       router.push('/checkout?retry=true');
     } catch (error) {
       console.error('Error al reintentar pago:', error);
@@ -269,7 +388,7 @@ export default function MisPedidosPage() {
                                 }}
                                 className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#5aa399] transition-colors text-sm font-medium"
                               >
-                                Proceder con el Pago
+                                Completar Pago
                               </button>
                             </div>
                           )}
