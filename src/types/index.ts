@@ -77,7 +77,7 @@ export interface Order {
   updatedAt: Date;
   paymentId?: string;
   paymentStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled';
-  paymentMethod?: 'mercadopago' | 'cash_on_pickup' | 'tarjeta_credito' | 'tarjeta_debito' | 'efectivo' | 'transferencia_bancaria' | 'dinero_cuenta_mp';
+  paymentMethod?: 'mercadopago' | 'cash_on_pickup' | 'tarjeta_credito' | 'tarjeta_debito' | 'efectivo' | 'transferencia_bancaria' | 'dinero_cuenta_mp' | 'transfer';
   shippingAddress: {
     firstName: string;
     lastName: string;

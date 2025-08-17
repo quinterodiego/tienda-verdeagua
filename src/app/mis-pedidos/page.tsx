@@ -44,7 +44,7 @@ const getStatusText = (status: string) => {
     case 'delivered': return 'Entregado';
     case 'cancelled': return 'Cancelado';
     case 'payment_failed': return 'Pago fallido';
-    default: return 'Problema con el pago';
+    default: return 'Pago Pendiente';
   }
 };
 
@@ -88,7 +88,14 @@ export default function MisPedidosPage() {
 
   const retryPayment = async (order: Order) => {
     try {
-      // Recrear el pedido en el contexto del checkout
+      // Si el método de pago es transferencia, redirigir directamente a la página de transferencia
+      if (order.paymentMethod === 'transfer') {
+        console.log('🔄 Redirigiendo a página de transferencia para pedido:', order.id);
+        router.push(`/checkout/transfer?orderId=${order.id}&amount=${order.total}`);
+        return;
+      }
+
+      // Para otros métodos de pago, recrear el pedido en el contexto del checkout
       const orderData = {
         items: order.items,
         total: order.total,
@@ -228,11 +235,11 @@ export default function MisPedidosPage() {
                         </div>
                         
                         {/* Mostrar alerta si hay problema con el pago */}
-                        {shouldShowRetryPayment(order.status) && (
+                        {/* {shouldShowRetryPayment(order.status) && (
                           <div className="mt-2 text-sm text-orange-600">
                             ⚠️ Requiere atención - Haz clic para ver opciones
                           </div>
-                        )}
+                        )} */}
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-semibold text-gray-900">
@@ -262,16 +269,7 @@ export default function MisPedidosPage() {
                                 }}
                                 className="bg-[#68c3b7] text-white px-4 py-2 rounded-lg hover:bg-[#5aa399] transition-colors text-sm font-medium"
                               >
-                                Reintentar pago
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push('/contacto');
-                                }}
-                                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                              >
-                                Contactar soporte
+                                Proceder con el Pago
                               </button>
                             </div>
                           )}

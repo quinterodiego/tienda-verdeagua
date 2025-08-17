@@ -8,7 +8,6 @@ import {
   BanknotesIcon,
   CopyIcon,
   ArrowLeftIcon,
-  PhoneIcon,
   MailIcon,
   WhatsAppIcon,
   ClockIcon
@@ -17,13 +16,12 @@ import { useNotifications } from '@/lib/store';
 
 // Datos bancarios para transferencia (estos deberían venir de configuración)
 const BANK_INFO = {
-  bankName: "Banco Ejemplo",
+  bankName: "Banco de Galicia",
   accountType: "Cuenta Corriente",
-  accountNumber: "123-456789-0",
-  cbu: "0123456789012345678901",
-  alias: "TIENDA.VERDE.AGUA",
-  holder: "Tienda Verde Agua SRL",
-  cuit: "20-12345678-9"
+  cbu: "0070161330004063153197",
+  alias: "verdeagua.julieta",
+  holder: "Julieta Florencia Parrilla",
+  cuit: "27-35862699-3"
 };
 
 const CONTACT_INFO = {
@@ -236,30 +234,6 @@ function TransferPageContent() {
                     </button>
                   </div>
                 </div>
-
-                {/* Número de cuenta */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Número de cuenta
-                      </label>
-                      <p className="text-lg font-mono font-semibold text-gray-900">
-                        {BANK_INFO.accountNumber}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(BANK_INFO.accountNumber, 'Número de cuenta')}
-                      className={`p-2 rounded-lg transition-colors ${
-                        copiedField === 'Número de cuenta'
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-white text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <CopyIcon className="h-5 w-5" />
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -332,14 +306,6 @@ function TransferPageContent() {
                 >
                   <MailIcon className="h-5 w-5 mr-2" />
                   Enviar por Email
-                </a>
-                
-                <a
-                  href={`tel:${CONTACT_INFO.phone}`}
-                  className="w-full flex items-center justify-center px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  <PhoneIcon className="h-5 w-5 mr-2" />
-                  Llamar por teléfono
                 </a>
               </div>
             </div>
