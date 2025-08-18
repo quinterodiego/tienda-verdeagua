@@ -21,6 +21,7 @@ import { useNotifications } from '@/lib/store';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Product } from '@/types';
 
 // Componente para el ícono de MercadoPago
 const MercadoPagoIcon = ({ className = "w-16 h-16" }: { className?: string }) => (
@@ -80,11 +81,13 @@ export default function EnhancedCheckout() {
   const { setProcessingPayment, setRedirectingTo, setOrderData, clearCheckoutState } = useCheckoutContext();
   const addNotification = useNotifications((state) => state.addNotification);
   const router = useRouter();
+  
   // Estados principales
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('mercadopago');
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<DeliveryMethod>('pickup');
   const [step, setStep] = useState<'info' | 'review' | 'processing'>('info');
+  const [isRetryOrder, setIsRetryOrder] = useState(false); // Nuevo estado para detectar reintento
   
   // Estados del formulario
   const [form, setForm] = useState<CheckoutForm>({
@@ -118,6 +121,52 @@ export default function EnhancedCheckout() {
       }));
     }
   }, [session]);
+
+  // Cargar datos de reintento de pago si existen
+  useEffect(() => {
+    const retryPaymentData = localStorage.getItem('retryPaymentOrder');
+    if (retryPaymentData) {
+      try {
+        const orderData = JSON.parse(retryPaymentData);
+        console.log('🔄 Cargando datos de reintento:', orderData);
+        
+        // Marcar como reintento
+        setIsRetryOrder(true);
+        
+        // Cargar items al carrito
+        if (orderData.items && orderData.items.length > 0) {
+          // Limpiar carrito actual
+          clearCart();
+          
+          // Agregar items del pedido
+          orderData.items.forEach((item: { product: Product; quantity: number }) => {
+            if (item.product) {
+              useCartStore.getState().addItem(item.product, item.quantity);
+            }
+          });
+        }
+        
+        // Cargar datos del formulario
+        if (orderData.formData) {
+          setForm(prev => ({
+            ...prev,
+            ...orderData.formData
+          }));
+        }
+        
+        // Establecer método de pago
+        if (orderData.paymentMethod) {
+          setSelectedPaymentMethod(orderData.paymentMethod);
+        }
+        
+        console.log('✅ Datos de reintento cargados correctamente');
+        
+      } catch (error) {
+        console.error('❌ Error al cargar datos de reintento:', error);
+        localStorage.removeItem('retryPaymentOrder');
+      }
+    }
+  }, [clearCart, setIsRetryOrder]);
 
   // Validación del formulario
   useEffect(() => {
@@ -639,17 +688,32 @@ export default function EnhancedCheckout() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => router.push('/cart')}
-            className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
-          >
-            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-            Volver al carrito
-          </button>
+          {isRetryOrder ? (
+            <button
+              onClick={() => router.push('/mis-pedidos')}
+              className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Volver a mis pedidos
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push('/cart')}
+              className="inline-flex items-center text-[#68c3b7] hover:text-[#5ab3a7] mb-4"
+            >
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Volver al carrito
+            </button>
+          )}
           
-          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isRetryOrder ? 'Completar Pago' : 'Checkout'}
+          </h1>
           <p className="text-gray-600 mt-2">
-            Completa tu información para finalizar la compra
+            {isRetryOrder 
+              ? 'Puedes cambiar el método de pago si lo deseas'
+              : 'Completa tu información para finalizar la compra'
+            }
           </p>
         </div>
 
