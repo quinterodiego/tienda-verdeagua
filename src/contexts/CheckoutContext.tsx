@@ -60,19 +60,6 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
     orderData: null,
   });
 
-  // Persistir estado en localStorage solo cuando hay cambios significativos
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const currentStored = localStorage.getItem(STORAGE_KEY);
-      const newStateString = JSON.stringify(state);
-      
-      // Solo guardar si el estado ha cambiado realmente
-      if (currentStored !== newStateString) {
-        localStorage.setItem(STORAGE_KEY, newStateString);
-      }
-    }
-  }, [state]);
-
   // Inicializar desde localStorage
   const initializeFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -80,34 +67,19 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsedState = JSON.parse(stored);
-          
-          // Solo actualizar si el estado es diferente para evitar bucles infinitos
-          setState(prev => {
-            // Comparar solo las propiedades importantes para evitar comparaciones profundas
-            const isSignificantlyDifferent = (
-              prev.isProcessingPayment !== parsedState.isProcessingPayment ||
-              prev.preferenceId !== parsedState.preferenceId ||
-              prev.redirectingTo !== parsedState.redirectingTo ||
-              (!prev.orderData && parsedState.orderData) ||
-              (prev.orderData && !parsedState.orderData) ||
-              (prev.orderData && parsedState.orderData && prev.orderData.preferenceId !== parsedState.orderData.preferenceId)
-            );
-            
-            if (isSignificantlyDifferent) {
-              console.log('🔄 Estado de checkout restaurado desde localStorage:', parsedState);
-              return parsedState;
-            }
-            return prev;
-          });
+          setState(parsedState);
+          console.log('🔄 Estado de checkout restaurado desde localStorage');
         }
       } catch (error) {
         console.error('Error al restaurar estado de checkout:', error);
+        // En caso de error, limpiar el localStorage corrupto
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
-  }, []); // Array de dependencias vacío es correcto aquí
+  }, []);
 
   // Limpiar estado
-  const clearCheckoutState = () => {
+  const clearCheckoutState = useCallback(() => {
     setState({
       isProcessingPayment: false,
       preferenceId: null,
@@ -118,23 +90,36 @@ export function CheckoutProvider({ children }: CheckoutProviderProps) {
       localStorage.removeItem(STORAGE_KEY);
     }
     console.log('🧹 Estado de checkout limpiado');
-  };
+  }, []);
 
-  const setProcessingPayment = (isProcessing: boolean) => {
+  const setProcessingPayment = useCallback((isProcessing: boolean) => {
     setState(prev => ({ ...prev, isProcessingPayment: isProcessing }));
-  };
+  }, []);
 
-  const setPreferenceId = (id: string | null) => {
+  const setPreferenceId = useCallback((id: string | null) => {
     setState(prev => ({ ...prev, preferenceId: id }));
-  };
+  }, []);
 
-  const setRedirectingTo = (platform: 'mercadopago' | null) => {
+  const setRedirectingTo = useCallback((platform: 'mercadopago' | null) => {
     setState(prev => ({ ...prev, redirectingTo: platform }));
-  };
+  }, []);
 
-  const setOrderData = (data: OrderData | null) => {
+  const setOrderData = useCallback((data: OrderData | null) => {
     setState(prev => ({ ...prev, orderData: data }));
-  };
+  }, []);
+
+  // Persistir solo cuando hay datos significativos
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasSignificantData = state.isProcessingPayment || state.preferenceId || state.orderData || state.redirectingTo;
+      
+      if (hasSignificantData) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, [state]);
 
   const contextValue: CheckoutContextType = {
     ...state,

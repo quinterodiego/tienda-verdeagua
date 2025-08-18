@@ -22,22 +22,6 @@ export default function CartPage() {
     initializeFromStorage();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Limpiar estado de checkout si el usuario interactúa con el carrito
-  // (borra productos, cambia cantidades, etc.) y no está en un proceso activo
-  useEffect(() => {
-    // Si no hay items en el carrito y no estamos en un proceso de pago activo,
-    // limpiar el estado de checkout para evitar mostrar pantallas incorrectas
-    if (items.length === 0 && !window.location.pathname.includes('/checkout')) {
-      // Solo limpiar si han pasado más de 5 segundos desde la última actividad de pago
-      const lastPaymentActivity = localStorage.getItem('lastPaymentActivity');
-      const now = Date.now();
-      
-      if (!lastPaymentActivity || (now - parseInt(lastPaymentActivity)) > 5000) {
-        clearCheckoutState();
-      }
-    }
-  }, [items.length, clearCheckoutState]);
-
   // Si hay un proceso de pago ACTIVO en curso y el carrito está "vacío"
   // Solo mostrar si estamos en un proceso de redirección activa
   if (items.length === 0 && isProcessingPayment && orderData && redirectingTo) {
