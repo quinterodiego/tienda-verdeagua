@@ -369,32 +369,57 @@ export async function updateUserPassword(email: string, hashedPassword: string):
   try {
     console.log('🔐 Actualizando contraseña para:', email);
     
-    const auth = await getGoogleSheetsAuth();
-    const doc = new GoogleSpreadsheet(SPREADSHEET_ID, auth);
-    await doc.loadInfo();
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los usuarios para encontrar el correcto
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.USERS}!A2:H`,
+    });
 
-    const sheet = doc.sheetsByTitle['Credenciales'];
-    if (!sheet) {
-      throw new Error('Hoja "Credenciales" no encontrada');
-    }
-
-    const rows = await sheet.getRows();
-    const userRow = rows.find((row: any) => row.get('email') === email);
-
-    if (!userRow) {
+    const rows = response.data.values || [];
+    const userRowIndex = rows.findIndex(row => row[2] === email); // Columna C es email
+    
+    if (userRowIndex === -1) {
       throw new Error('Usuario no encontrado');
     }
 
-    // Actualizar contraseña
-    userRow.set('password', hashedPassword);
-    userRow.set('updatedAt', new Date().toISOString());
-    await userRow.save();
+    console.log('👤 Usuario encontrado en fila:', userRowIndex + 2);
+    
+    // Preparar datos actualizados (mantener todo igual, solo cambiar password)
+    const currentRow = rows[userRowIndex];
+    const updatedRow = [
+      currentRow[0],                              // A: ID
+      currentRow[1],                              // B: Nombre
+      currentRow[2],                              // C: Email
+      currentRow[3],                              // D: Imagen
+      currentRow[4],                              // E: Rol
+      hashedPassword,                             // F: Password (ACTUALIZADO)
+      currentRow[6],                              // G: Fecha Creación
+      new Date().toISOString(),                   // H: Fecha Actualización (ACTUALIZADO)
+    ];
 
-    console.log('✅ Contraseña actualizada exitosamente');
+    console.log('💾 Actualizando fila en Google Sheets...');
+    
+    // Actualizar la fila específica
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.USERS}!A${userRowIndex + 2}:H${userRowIndex + 2}`, // +2 porque empezamos en fila 2
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [updatedRow],
+      },
+    });
+
+    console.log('✅ Contraseña actualizada exitosamente en Google Sheets');
     return true;
 
   } catch (error) {
     console.error('❌ Error actualizando contraseña:', error);
+    if (error instanceof Error) {
+      console.error('💬 Mensaje de error:', error.message);
+      console.error('📚 Stack trace:', error.stack);
+    }
     return false;
   }
 }
