@@ -493,3 +493,58 @@ export async function verifyCredentialsFromSheets(email: string, password: strin
     return null;
   }
 }
+
+// Función para actualizar contraseña de usuario
+export async function updateUserPassword(email: string, hashedPassword: string): Promise<boolean> {
+  try {
+    console.log('🔐 Actualizando contraseña para:', email);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todas las credenciales de la hoja CREDENTIALS
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.CREDENTIALS}!A2:C`, // A=ID, B=Email, C=Password
+    });
+
+    const rows = response.data.values || [];
+    const credentialRowIndex = rows.findIndex(row => row[1] === email); // Columna B es email
+    
+    if (credentialRowIndex === -1) {
+      throw new Error('Credenciales no encontradas para el usuario');
+    }
+
+    console.log('👤 Credenciales encontradas en fila:', credentialRowIndex + 2);
+    
+    // Preparar datos actualizados (mantener ID y email, solo cambiar password)
+    const currentRow = rows[credentialRowIndex];
+    const updatedRow = [
+      currentRow[0],                              // A: ID
+      currentRow[1],                              // B: Email
+      hashedPassword,                             // C: Password (ACTUALIZADO)
+    ];
+
+    console.log('💾 Actualizando credenciales en Google Sheets...');
+    
+    // Actualizar la fila específica en la hoja CREDENTIALS
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.CREDENTIALS}!A${credentialRowIndex + 2}:C${credentialRowIndex + 2}`, // +2 porque empezamos en fila 2
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [updatedRow],
+      },
+    });
+
+    console.log('✅ Contraseña actualizada exitosamente en hoja CREDENTIALS');
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error actualizando contraseña:', error);
+    if (error instanceof Error) {
+      console.error('💬 Mensaje de error:', error.message);
+      console.error('📚 Stack trace:', error.stack);
+    }
+    return false;
+  }
+}

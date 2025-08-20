@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getUserFromSheets, updateUserPassword } from '@/lib/users-sheets-new';
+import { getUserFromSheets, updateUserPassword } from '@/lib/users-sheets';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {

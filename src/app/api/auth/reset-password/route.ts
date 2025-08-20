@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateResetToken, deleteResetToken } from '@/lib/password-reset';
-import { updateUserPassword } from '@/lib/users-sheets-new';
+import { updateUserPassword } from '@/lib/users-sheets';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
