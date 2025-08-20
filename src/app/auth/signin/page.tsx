@@ -1,24 +1,15 @@
 'use client';
 
-import { signIn, getProviders, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, Mail, ArrowLeft, Eye, EyeOff, Lock, User } from 'lucide-react';
 import Link from 'next/link';
 import { useNotification } from '@/components/NotificationProvider';
 
-interface Provider {
-  id: string;
-  name: string;
-  type: string;
-  signinUrl: string;
-  callbackUrl: string;
-}
-
 function SignInContent() {
   const { showNotification } = useNotification();
   const { data: session, status } = useSession();
-  const [providers, setProviders] = useState<Record<string, Provider> | null>(null);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,14 +32,6 @@ function SignInContent() {
       router.push(callbackUrl);
     }
   }, [status, session, callbackUrl, router]);
-
-  useEffect(() => {
-    const fetchProviders = async () => {
-      const res = await getProviders();
-      setProviders(res);
-    };
-    fetchProviders();
-  }, []);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -420,6 +403,18 @@ function SignInContent() {
                 }
               </button>
             </form>
+
+            {/* Forgot Password Link - Solo mostrar en login */}
+            {isLogin && (
+              <div className="text-center mt-6 mb-4 p-2 border-t border-gray-200 pt-4">
+                <Link
+                  href="/auth/forgot-password"
+                  className="inline-block text-sm text-[#68c3b7] hover:text-[#64b7ac] font-medium underline px-4 py-2 rounded transition-colors hover:bg-gray-50"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+            )}
 
             {/* Toggle Login/Register */}
             <div className="text-center">

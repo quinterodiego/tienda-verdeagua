@@ -7,16 +7,53 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== INICIO - Crear preferencia de MercadoPago ===');
     
-    // Verificar configuración de MercadoPago
+    // Verificar configuración de MercadoPago con más detalle
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    console.log('MercadoPago Access Token configurado:', accessToken ? 'SÍ' : 'NO');
+    const publicKey = process.env.MERCADOPAGO_PUBLIC_KEY;
+    const mode = process.env.MERCADOPAGO_MODE || 'test';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    
+    console.log('🔧 Configuración de MercadoPago:', {
+      hasAccessToken: !!accessToken,
+      hasPublicKey: !!publicKey,
+      mode,
+      baseUrl,
+      environment: process.env.NODE_ENV,
+      accessTokenPrefix: accessToken ? accessToken.substring(0, 15) + '...' : 'NO CONFIGURADO',
+      publicKeyPrefix: publicKey ? publicKey.substring(0, 15) + '...' : 'NO CONFIGURADO',
+      isProductionToken: accessToken?.startsWith('APP_USR-') ? 'SÍ (PRODUCCIÓN)' : 'NO (TEST O INVÁLIDO)',
+      timestamp: new Date().toISOString()
+    });
     
     if (!accessToken) {
       console.error('❌ MERCADOPAGO_ACCESS_TOKEN no configurado');
       return NextResponse.json(
         { 
           error: 'Configuración de MercadoPago incompleta',
-          details: 'MERCADOPAGO_ACCESS_TOKEN no está configurado en las variables de entorno'
+          details: 'MERCADOPAGO_ACCESS_TOKEN no está configurado en Vercel'
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!baseUrl) {
+      console.error('❌ NEXT_PUBLIC_BASE_URL no configurado');
+      return NextResponse.json(
+        { 
+          error: 'Configuración de URL base incompleta',
+          details: 'NEXT_PUBLIC_BASE_URL no está configurado en Vercel'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Validar que las credenciales sean realmente de producción
+    if (mode === 'production' && !accessToken.startsWith('APP_USR-')) {
+      console.error('❌ Credenciales de producción requeridas');
+      return NextResponse.json(
+        { 
+          error: 'Credenciales inválidas para producción',
+          details: 'El access token debe comenzar con APP_USR- para modo producción'
         },
         { status: 500 }
       );
@@ -24,7 +61,6 @@ export async function POST(request: NextRequest) {
     
     // Verificar autenticación 
     const session = await getServerSession(authOptions);
-    const mode = process.env.MERCADOPAGO_MODE || 'test';
     console.log('Sesión de usuario:', session?.user?.email || 'No autenticado');
     console.log('Modo MercadoPago:', mode);
     
@@ -101,7 +137,6 @@ export async function POST(request: NextRequest) {
     );
 
     // URLs de retorno - hardcodeadas para asegurar que funcionen
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const returnUrls = {
       success: `${baseUrl}/checkout/success?order_id=${orderId}`,
       failure: `${baseUrl}/checkout/failure?order_id=${orderId}`,

@@ -15,14 +15,13 @@ interface SiteSettings {
 }
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  // Detectar cuando estamos en el cliente
+  // Detectar cuando estamos en el cliente y establecer el año actual
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -177,7 +176,7 @@ export default function Footer() {
           {/* Categories */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Categorías</h3>
-            <ul className="space-y-2 text-gray-400">
+            <ul className="space-y-2 text-gray-400" suppressHydrationWarning>
               {!isClient || categoriesLoading ? (
                 // Skeleton loader para categorías
                 <>
@@ -258,7 +257,7 @@ export default function Footer() {
           {/* Contact Info */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Contacto</h3>
-            <div className="space-y-3 text-gray-400">
+            <div className="space-y-3 text-gray-400" suppressHydrationWarning>
               <div className="flex items-center space-x-2">
                 <PhoneIcon className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">
@@ -284,8 +283,8 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {currentYear} Verde Agua Personalizados. Todos los derechos reservados.
+            <div className="text-gray-400 text-sm mb-4 md:mb-0" suppressHydrationWarning>
+              © {new Date().getFullYear()} Verde Agua Personalizados. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 text-sm text-gray-400">
               <button
@@ -310,7 +309,7 @@ export default function Footer() {
           </div>
            <div className="flex justify-center items-center mt-4">
             <div className="text-gray-400 text-sm mt-4 md:mt-0">
-              Desarrollado por <a href="https://coderflix.com.ar" target='_blank' className="hover:text-white transition-colors font-bold">Coderflix</a>  
+              Desarrollado por <a href="https://coderflix.com.ar" target='_blank' className="hover:text-white transition-colors font-bold">CoderFlix</a>  
             </div>
            </div>
         </div>

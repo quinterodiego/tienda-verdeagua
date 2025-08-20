@@ -1298,3 +1298,219 @@ export async function sendOrderNotificationToAdmin(data: OrderEmailData) {
     html: template.html,
   });
 }
+
+// Template para email de recuperación de contraseña
+export function createPasswordResetEmail(data: { resetUrl: string, userName: string }) {
+  const { resetUrl, userName } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const logoUrl = process.env.EMAIL_LOGO_URL || `${baseUrl}/logo.png`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Recuperar Contraseña - Verde Agua Personalizados</title>
+      <style>
+        body { 
+          margin: 0; 
+          padding: 0; 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          line-height: 1.6; 
+          color: #333; 
+          background-color: #f8fffe;
+        }
+        .email-container { 
+          max-width: 600px; 
+          margin: 0 auto; 
+          background-color: #ffffff;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header { 
+          background: linear-gradient(135deg, #ffffff, #f8fffe); 
+          color: #2d3748; 
+          padding: 30px 40px; 
+          text-align: center;
+          border-bottom: 3px solid #68c3b7;
+        }
+        .logo { 
+          margin-bottom: 20px;
+        }
+        .logo img {
+          max-width: 200px;
+          height: auto;
+        }
+        .header h1 { 
+          margin: 0; 
+          font-size: 28px; 
+          font-weight: 300;
+          color: #2d3748;
+        }
+        .content { 
+          padding: 40px;
+          background-color: white;
+        }
+        .message-section {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .message-section h2 { 
+          color: #2d3748; 
+          font-size: 24px; 
+          margin-bottom: 15px;
+          font-weight: 400;
+        }
+        .message-text {
+          font-size: 16px;
+          color: #4a5568;
+          margin-bottom: 25px;
+          line-height: 1.7;
+        }
+        .reset-button { 
+          display: inline-block; 
+          background: linear-gradient(135deg, #68c3b7, #4fb3a6);
+          color: white !important; 
+          padding: 15px 30px; 
+          text-decoration: none; 
+          border-radius: 8px; 
+          margin: 20px 0;
+          font-weight: 500;
+          font-size: 16px;
+          box-shadow: 0 4px 6px rgba(104, 195, 183, 0.3);
+          transition: all 0.3s ease;
+        }
+        .reset-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 12px rgba(104, 195, 183, 0.4);
+        }
+        .security-note {
+          background: #fef3c7;
+          border: 1px solid #f59e0b;
+          padding: 20px;
+          border-radius: 8px;
+          margin: 25px 0;
+        }
+        .security-note h3 {
+          color: #92400e;
+          margin-top: 0;
+          margin-bottom: 10px;
+          font-size: 16px;
+        }
+        .security-note p {
+          color: #92400e;
+          margin: 8px 0;
+          font-size: 14px;
+        }
+        .expiry-notice {
+          background: #fee2e2;
+          border: 1px solid #ef4444;
+          padding: 15px;
+          border-radius: 8px;
+          text-align: center;
+          margin: 20px 0;
+        }
+        .expiry-notice strong {
+          color: #dc2626;
+        }
+        .footer { 
+          background-color: #f7fafc;
+          padding: 30px 40px;
+          text-align: center; 
+          border-top: 1px solid #e2e8f0;
+        }
+        .footer-logo {
+          margin-bottom: 15px;
+        }
+        .footer-logo img {
+          max-width: 120px;
+          height: auto;
+          opacity: 0.7;
+        }
+        .footer p { 
+          color: #718096; 
+          font-size: 14px; 
+          margin: 5px 0;
+        }
+        @media only screen and (max-width: 600px) {
+          .email-container { margin: 0 10px; }
+          .content { padding: 30px 20px; }
+          .header { padding: 25px 20px; }
+          .footer { padding: 25px 20px; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <h1>🔐 Recuperar Contraseña</h1>
+        </div>
+        
+        <div class="content">
+          <div class="message-section">
+            <h2>Hola ${userName},</h2>
+            <div class="message-text">
+              <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Verde Agua Personalizados.</p>
+              <p>Si fuiste tú quien realizó esta solicitud, haz clic en el botón de abajo para crear una nueva contraseña:</p>
+            </div>
+            <a href="${resetUrl}" class="reset-button">Restablecer Contraseña</a>
+          </div>
+
+          <div class="expiry-notice">
+            <strong>⏰ Este enlace expira en 1 hora</strong><br>
+            Por seguridad, debes usar este enlace antes de que expire
+          </div>
+
+          <div class="security-note">
+            <h3>🛡️ Importante - Información de Seguridad</h3>
+            <p><strong>• Si no solicitaste este cambio,</strong> ignora este email y tu contraseña permanecerá sin cambios.</p>
+            <p><strong>• Este enlace solo puede usarse una vez</strong> y expira automáticamente en 1 hora.</p>
+            <p><strong>• Nunca compartas este enlace</strong> con nadie por razones de seguridad.</p>
+            <p><strong>• Si tienes problemas,</strong> contáctanos directamente desde nuestro sitio web.</p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+            <p style="margin: 0; color: #4a5568;">¿No puedes hacer clic en el botón?</p>
+            <p style="margin: 5px 0; font-size: 14px; color: #68c3b7; word-break: break-all;">
+              Copia y pega este enlace en tu navegador:<br>
+              <span style="background: #e2e8f0; padding: 5px; border-radius: 4px;">${resetUrl}</span>
+            </p>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <div class="footer-logo">
+            <img src="${logoUrl}" alt="Verde Agua Personalizados" />
+          </div>
+          <p><strong>Verde Agua Personalizados</strong></p>
+          <p>Tu tienda online de productos personalizados</p>
+          <p style="margin-top: 20px; font-size: 12px;">Este email fue enviado por una solicitud de recuperación de contraseña</p>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">© 2025 Verde Agua Personalizados. Todos los derechos reservados.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return {
+    subject: '🔐 Recuperar tu contraseña - Verde Agua Personalizados',
+    html,
+  };
+}
+
+// Función para enviar email de recuperación de contraseña
+export async function sendPasswordResetEmail(data: { to: string, resetUrl: string, userName: string }) {
+  const template = createPasswordResetEmail({
+    resetUrl: data.resetUrl,
+    userName: data.userName
+  });
+  
+  return sendEmail({
+    to: data.to,
+    subject: template.subject,
+    html: template.html,
+  });
+}

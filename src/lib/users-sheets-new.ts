@@ -363,3 +363,38 @@ export async function getOrCreateOAuthUser(email: string, name: string, image?: 
     return null;
   }
 }
+
+// Actualizar contraseña de usuario
+export async function updateUserPassword(email: string, hashedPassword: string): Promise<boolean> {
+  try {
+    console.log('🔐 Actualizando contraseña para:', email);
+    
+    const auth = await getGoogleSheetsAuth();
+    const doc = new GoogleSpreadsheet(SPREADSHEET_ID, auth);
+    await doc.loadInfo();
+
+    const sheet = doc.sheetsByTitle['Credenciales'];
+    if (!sheet) {
+      throw new Error('Hoja "Credenciales" no encontrada');
+    }
+
+    const rows = await sheet.getRows();
+    const userRow = rows.find((row: any) => row.get('email') === email);
+
+    if (!userRow) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Actualizar contraseña
+    userRow.set('password', hashedPassword);
+    userRow.set('updatedAt', new Date().toISOString());
+    await userRow.save();
+
+    console.log('✅ Contraseña actualizada exitosamente');
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error actualizando contraseña:', error);
+    return false;
+  }
+}

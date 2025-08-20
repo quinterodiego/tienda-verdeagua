@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import ClientFooter from "@/components/ClientFooter";
 import AuthProvider from "@/components/AuthProvider";
 import ThemeProvider from "@/components/ThemeProvider";
 import { NotificationProvider } from "@/components/NotificationProvider";
@@ -52,7 +52,7 @@ export default function RootLayout({
                 <main className="flex-1">
                   {children}
                 </main>
-                <Footer />
+                <ClientFooter />
                 <GlobalNotifications />
                 <WhatsAppFloat />
               </CheckoutProvider>
