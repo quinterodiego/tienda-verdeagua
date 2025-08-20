@@ -186,32 +186,47 @@ export async function POST(request: NextRequest) {
       const preferenceService = getPreferenceService();
       console.log('Servicio de preferencia inicializado');
       
-      const preference = await preferenceService.create({
+      // Agregar timeout específico para producción
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout al crear preferencia en MercadoPago')), 15000);
+      });
+      
+      const preferencePromise = preferenceService.create({
         body: preferenceData
       });
+      
+      console.log('🕐 Esperando respuesta de MercadoPago (timeout: 15s)...');
+      const result = await Promise.race([preferencePromise, timeoutPromise]) as any;
 
-      console.log('Preferencia creada exitosamente:', preference.id);
-      console.log('Init point:', preference.init_point);
-      console.log('Sandbox init point:', preference.sandbox_init_point);
+      console.log('✅ Preferencia creada exitosamente:', result.id);
+      console.log('🔗 Init point:', result.init_point);
+      console.log('🧪 Sandbox init point:', result.sandbox_init_point);
+
+      // Validar que la respuesta tenga los datos necesarios
+      if (!result.id || !result.init_point) {
+        throw new Error('Respuesta incompleta de MercadoPago');
+      }
 
       return NextResponse.json({
         success: true,
-        id: preference.id,
-        preferenceId: preference.id,
-        init_point: preference.init_point,
-        initPoint: preference.init_point,
-        sandbox_init_point: preference.sandbox_init_point,
-        sandboxInitPoint: preference.sandbox_init_point,
+        id: result.id,
+        preferenceId: result.id,
+        init_point: result.init_point,
+        initPoint: result.init_point,
+        sandbox_init_point: result.sandbox_init_point,
+        sandboxInitPoint: result.sandbox_init_point,
       });
       
     } catch (mpError) {
       console.error('=== ERROR ESPECÍFICO DE MERCADOPAGO ===');
-      console.error('Error del SDK:', mpError);
-      console.error('Tipo de error:', typeof mpError);
+      console.error('🚨 Error del SDK:', mpError);
+      console.error('🔍 Tipo de error:', typeof mpError);
+      console.error('📋 Environment:', process.env.NODE_ENV);
+      console.error('🌐 Base URL:', baseUrl);
       
       if (mpError instanceof Error) {
-        console.error('Mensaje:', mpError.message);
-        console.error('Stack:', mpError.stack);
+        console.error('💬 Mensaje:', mpError.message);
+        console.error('📚 Stack:', mpError.stack);
       }
       
       // Verificar si es un error de autenticación o credenciales inválidas
