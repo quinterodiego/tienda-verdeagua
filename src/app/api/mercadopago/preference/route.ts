@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPreferenceService, getReturnUrls, PAYMENT_METHODS_CONFIG } from '@/lib/mercadopago';
+import { getPreferenceService } from '@/lib/mercadopago';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+
+// Tipos para los items del carrito
+interface CartItem {
+  id: string;
+  title: string;
+  quantity: number;
+  unit_price: number;
+}
+
+interface CustomerInfo {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  zipCode?: string;
+}
+
+interface MercadoPagoPreferenceResponse {
+  id: string;
+  init_point: string;
+  sandbox_init_point?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,18 +33,16 @@ export async function POST(request: NextRequest) {
     // Verificar configuración de MercadoPago con más detalle
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     const publicKey = process.env.MERCADOPAGO_PUBLIC_KEY;
-    const mode = process.env.MERCADOPAGO_MODE || 'test';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     
     console.log('🔧 Configuración de MercadoPago:', {
       hasAccessToken: !!accessToken,
       hasPublicKey: !!publicKey,
-      mode,
       baseUrl,
       environment: process.env.NODE_ENV,
       accessTokenPrefix: accessToken ? accessToken.substring(0, 15) + '...' : 'NO CONFIGURADO',
       publicKeyPrefix: publicKey ? publicKey.substring(0, 15) + '...' : 'NO CONFIGURADO',
-      isProductionToken: accessToken?.startsWith('APP_USR-') ? 'SÍ (PRODUCCIÓN)' : 'NO (TEST O INVÁLIDO)',
+      isProductionToken: accessToken?.startsWith('APP_USR-') ? 'SÍ (PRODUCCIÓN)' : 'NO (TEST)',
       timestamp: new Date().toISOString()
     });
     
@@ -47,8 +68,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validar que las credenciales sean realmente de producción
-    if (mode === 'production' && !accessToken.startsWith('APP_USR-')) {
+    // Validar que las credenciales sean de producción si estamos en Vercel
+    const isProduction = process.env.NODE_ENV === 'production' || 
+                         process.env.VERCEL_ENV === 'production' ||
+                         baseUrl?.includes('vercel.app') ||
+                         baseUrl?.includes('tienda-verdeagua.com.ar');
+    
+    if (isProduction && accessToken && !accessToken.startsWith('APP_USR-')) {
       console.error('❌ Credenciales de producción requeridas');
       return NextResponse.json(
         { 
@@ -62,55 +88,26 @@ export async function POST(request: NextRequest) {
     // Verificar autenticación 
     const session = await getServerSession(authOptions);
     console.log('Sesión de usuario:', session?.user?.email || 'No autenticado');
-    console.log('Modo MercadoPago:', mode);
+    console.log('Modo MercadoPago:', isProduction ? 'production' : 'development');
     
-    // En modo producción con localhost, permitir pagos sin autenticación para testing
-    const isProductionTesting = mode === 'production' && 
-      (process.env.NEXT_PUBLIC_BASE_URL?.includes('localhost') || 
-       process.env.NEXT_PUBLIC_BASE_URL?.includes('127.0.0.1'));
+    // En desarrollo o testing, permitir pagos sin autenticación estricta
+    const allowUnauthenticated = !isProduction || baseUrl?.includes('localhost');
     
-    if (!session?.user?.email && !isProductionTesting) {
-      console.log('⚠️ Usuario no autenticado - Usando modo DEMO');
-      
-      // Para usuarios no autenticados, usar modo demo directamente
-      const body = await request.json();
-      const { items, orderId } = body;
-
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        return NextResponse.json({ error: 'Items requeridos' }, { status: 400 });
-      }
-
-      if (!orderId) {
-        return NextResponse.json({ error: 'Order ID requerido' }, { status: 400 });
-      }
-
-      // Generar respuesta demo para usuarios no autenticados
-      const fakePreferenceId = `DEMO-UNAUTH-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      const demoInitPoint = `${baseUrl}/demo/mercadopago?order_id=${orderId}&preference_id=${fakePreferenceId}&unauth=true`;
-
-      console.log('🧪 Modo DEMO activado para usuario no autenticado');
-      
-      return NextResponse.json({
-        success: true,
-        id: fakePreferenceId,
-        preferenceId: fakePreferenceId,
-        init_point: demoInitPoint,
-        initPoint: demoInitPoint,
-        sandbox_init_point: demoInitPoint,
-        sandboxInitPoint: demoInitPoint,
-        demo: true,
-        unauth: true,
-        message: '🧪 Modo DEMO - Usuario no autenticado',
-        orderId: orderId,
-        timestamp: new Date().toISOString()
-      });
+    if (!session?.user?.email && !allowUnauthenticated) {
+      return NextResponse.json(
+        { error: 'Autenticación requerida' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
     console.log('Datos recibidos:', JSON.stringify(body, null, 2));
     
-    const { items, orderId, customerInfo } = body;
+    const { items, orderId, customerInfo }: { 
+      items: CartItem[], 
+      orderId: string, 
+      customerInfo?: CustomerInfo 
+    } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.log('Error: Items inválidos');
@@ -131,11 +128,6 @@ export async function POST(request: NextRequest) {
     console.log('Items a procesar:', items.length);
     console.log('Order ID:', orderId);
 
-    // Calcular el total
-    const total = items.reduce((sum: number, item: any) => 
-      sum + (item.unit_price * item.quantity), 0
-    );
-
     // URLs de retorno - hardcodeadas para asegurar que funcionen
     const returnUrls = {
       success: `${baseUrl}/checkout/success?order_id=${orderId}`,
@@ -147,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     // Crear la preferencia de pago
     const preferenceData = {
-      items: items.map((item: any) => ({
+      items: items.map((item: CartItem) => ({
         id: item.id,
         title: item.title,
         quantity: item.quantity,
@@ -186,17 +178,17 @@ export async function POST(request: NextRequest) {
       const preferenceService = getPreferenceService();
       console.log('Servicio de preferencia inicializado');
       
-      // Agregar timeout específico para producción
+      // Agregar timeout específico para producción (30 segundos)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout al crear preferencia en MercadoPago')), 15000);
+        setTimeout(() => reject(new Error('Timeout al crear preferencia en MercadoPago')), 30000);
       });
       
       const preferencePromise = preferenceService.create({
         body: preferenceData
       });
       
-      console.log('🕐 Esperando respuesta de MercadoPago (timeout: 15s)...');
-      const result = await Promise.race([preferencePromise, timeoutPromise]) as any;
+      console.log('🕐 Esperando respuesta de MercadoPago (timeout: 30s)...');
+      const result = await Promise.race([preferencePromise, timeoutPromise]) as MercadoPagoPreferenceResponse;
 
       console.log('✅ Preferencia creada exitosamente:', result.id);
       console.log('🔗 Init point:', result.init_point);
@@ -232,34 +224,22 @@ export async function POST(request: NextRequest) {
       // Verificar si es un error de autenticación o credenciales inválidas
       const errorMessage = mpError instanceof Error ? mpError.message : String(mpError);
       
-      // Si hay error de credenciales, usar modo demo como fallback
+      // Si hay error de credenciales, devolver error claro
       if (errorMessage.includes('401') || 
           errorMessage.includes('unauthorized') || 
           errorMessage.includes('authentication') ||
-          errorMessage.includes('invalid') ||
-          accessToken.includes('PASTE_YOUR') ||
-          accessToken.includes('TU_NUEVO')) {
+          errorMessage.includes('invalid')) {
         
-        console.log('🔄 Fallback a modo DEMO por credenciales inválidas');
+        console.log('� Error de autenticación en MercadoPago');
         
-        // Generar respuesta demo
-        const fakePreferenceId = `DEMO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        const demoInitPoint = `${baseUrl}/demo/mercadopago?order_id=${orderId}&preference_id=${fakePreferenceId}`;
-
-        return NextResponse.json({
-          success: true,
-          id: fakePreferenceId,
-          preferenceId: fakePreferenceId,
-          init_point: demoInitPoint,
-          initPoint: demoInitPoint,
-          sandbox_init_point: demoInitPoint,
-          sandboxInitPoint: demoInitPoint,
-          demo: true,
-          message: '🧪 Modo DEMO - Configurar credenciales reales de MercadoPago',
-          orderId: orderId,
-          timestamp: new Date().toISOString()
-        });
+        return NextResponse.json(
+          { 
+            error: 'Error de autenticación con MercadoPago',
+            details: 'Verifica las credenciales de MercadoPago en las variables de entorno',
+            suggestion: 'Asegúrate de que MERCADOPAGO_ACCESS_TOKEN esté configurado correctamente'
+          },
+          { status: 401 }
+        );
       }
       
       return NextResponse.json(
