@@ -222,7 +222,28 @@ export async function POST(request: NextRequest) {
       }
       
       // Verificar si es un error de autenticación o credenciales inválidas
-      const errorMessage = mpError instanceof Error ? mpError.message : String(mpError);
+      let errorMessage = 'Error desconocido';
+      let errorDetails = {};
+      
+      if (mpError instanceof Error) {
+        errorMessage = mpError.message;
+        errorDetails = {
+          message: mpError.message,
+          name: mpError.name,
+          stack: mpError.stack?.split('\n').slice(0, 3)
+        };
+      } else if (typeof mpError === 'object' && mpError !== null) {
+        try {
+          errorMessage = JSON.stringify(mpError);
+          errorDetails = mpError;
+        } catch {
+          errorMessage = String(mpError);
+          errorDetails = { rawError: String(mpError) };
+        }
+      } else {
+        errorMessage = String(mpError);
+        errorDetails = { rawError: String(mpError) };
+      }
       
       // Si hay error de credenciales, devolver error claro
       if (errorMessage.includes('401') || 
@@ -235,7 +256,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             error: 'Error de autenticación con MercadoPago',
-            details: 'Verifica las credenciales de MercadoPago en las variables de entorno',
+            details: errorMessage,
+            errorDetails,
             suggestion: 'Asegúrate de que MERCADOPAGO_ACCESS_TOKEN esté configurado correctamente'
           },
           { status: 401 }
@@ -246,6 +268,7 @@ export async function POST(request: NextRequest) {
         { 
           error: 'Error al crear preferencia en MercadoPago',
           details: errorMessage,
+          errorDetails,
           suggestion: 'Verifica las credenciales de MercadoPago en las variables de entorno'
         },
         { status: 500 }
@@ -258,10 +281,34 @@ export async function POST(request: NextRequest) {
     console.error('Tipo de error:', typeof error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     
+    let errorMessage = 'Error interno del servidor';
+    let errorDetails = {};
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorDetails = {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 3)
+      };
+    } else if (typeof error === 'object' && error !== null) {
+      try {
+        errorMessage = JSON.stringify(error);
+        errorDetails = error;
+      } catch {
+        errorMessage = String(error);
+        errorDetails = { rawError: String(error) };
+      }
+    } else {
+      errorMessage = String(error);
+      errorDetails = { rawError: String(error) };
+    }
+    
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Error desconocido'
+        details: errorMessage,
+        errorDetails
       },
       { status: 500 }
     );
