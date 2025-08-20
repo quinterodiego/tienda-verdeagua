@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       // Preparar datos para guardar
       const customOrderId = body.orderId; // Usar el orderId personalizado si viene
       const customerInfo = body.customerInfo || {};
-      const shippingAddress = body.shippingAddress || {}; // Usar directamente si viene
+      const bodyShippingAddress = body.shippingAddress || {}; // Usar directamente si viene
       const items = body.items || [];
       const total = body.total || 0;
       const paymentMethod = body.paymentMethod || 'Pago al retirar';
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       
       const customerEmail = customerInfo.email || session.user?.email || '';
       
-      // Preparar dirección de envío
-      const shippingAddress = {
+      // Preparar dirección de envío (usar bodyShippingAddress si existe, sino crear desde customerInfo)
+      const shippingAddress = Object.keys(bodyShippingAddress).length > 0 ? bodyShippingAddress : {
         firstName: customerInfo.firstName || '',
         lastName: customerInfo.lastName || '',
         address: customerInfo.address || '',

@@ -37,9 +37,6 @@ export async function saveOrderToSheetsWithId(order: Omit<Order, 'id'>, customOr
     // Usar el ID personalizado
     const orderId = customOrderId;
     
-    // Generar ID único para el pedido
-    const orderId = `ORD-${Date.now()}`;
-    
     // Validar que los items tengan la estructura correcta
     order.items.forEach((item, index) => {
       if (!item.product) {
