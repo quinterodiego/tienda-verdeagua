@@ -22,6 +22,24 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
     // Generar ID único para el pedido
     const orderId = `ORD-${Date.now()}`;
     
+    return await saveOrderToSheetsWithId(order, orderId);
+  } catch (error) {
+    console.error('Error al guardar pedido en Google Sheets:', error);
+    return null;
+  }
+}
+
+// Función para guardar un pedido en Google Sheets con ID personalizado
+export async function saveOrderToSheetsWithId(order: Omit<Order, 'id'>, customOrderId: string): Promise<string | null> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Usar el ID personalizado
+    const orderId = customOrderId;
+    
+    // Generar ID único para el pedido
+    const orderId = `ORD-${Date.now()}`;
+    
     // Validar que los items tengan la estructura correcta
     order.items.forEach((item, index) => {
       if (!item.product) {

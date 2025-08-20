@@ -275,6 +275,56 @@ export default function EnhancedCheckout() {
       const data = await response.json();
       console.log('📦 Respuesta de MercadoPago:', data);
       
+      // ✅ CREAR PEDIDO INICIAL EN GOOGLE SHEETS
+      console.log('💾 Creando pedido inicial en Google Sheets...');
+      try {
+        const orderResponse = await fetch('/api/orders/mercadopago', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId,
+            items: items.map(item => ({
+              productId: item.product.id,
+              productName: item.product.name,
+              quantity: item.quantity,
+              price: item.product.price
+            })),
+            total: finalTotal,
+            customerInfo: {
+              firstName: form.firstName,
+              lastName: form.lastName,
+              email: form.email,
+              phone: form.phone
+            },
+            shippingAddress: {
+              firstName: form.firstName,
+              lastName: form.lastName,
+              address: selectedDeliveryMethod === 'delivery' ? form.address : 'Retiro en local',
+              city: selectedDeliveryMethod === 'delivery' ? form.city : 'CABA',
+              state: selectedDeliveryMethod === 'delivery' ? form.state : 'CABA',
+              zipCode: selectedDeliveryMethod === 'delivery' ? form.zipCode : '1000',
+              phone: form.phone
+            },
+            paymentMethod: 'mercadopago',
+            paymentStatus: 'pending',
+            status: 'payment_pending',
+            notes: form.notes
+          })
+        });
+
+        if (!orderResponse.ok) {
+          const errorData = await orderResponse.json();
+          console.error('❌ Error al crear pedido inicial:', errorData);
+          throw new Error('Error al crear pedido inicial en Google Sheets');
+        }
+
+        const orderResult = await orderResponse.json();
+        console.log('✅ Pedido inicial creado exitosamente:', orderResult);
+      } catch (orderError) {
+        console.error('❌ Error crítico al crear pedido:', orderError);
+        throw new Error('No se pudo crear el pedido. Por favor, intenta nuevamente.');
+      }
+      
       // Guardar datos del pedido
       setOrderData({
         orderId,

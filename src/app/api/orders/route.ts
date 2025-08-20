@@ -66,11 +66,14 @@ export async function POST(request: NextRequest) {
       console.log('💾 Guardando pedido en Google Sheets...');
       
       // Preparar datos para guardar
+      const customOrderId = body.orderId; // Usar el orderId personalizado si viene
       const customerInfo = body.customerInfo || {};
+      const shippingAddress = body.shippingAddress || {}; // Usar directamente si viene
       const items = body.items || [];
       const total = body.total || 0;
       const paymentMethod = body.paymentMethod || 'Pago al retirar';
       const paymentStatus = body.paymentStatus || 'pending';
+      const orderStatus = body.status || 'pending';
       
       // Extraer información del cliente
       const customerName = customerInfo.firstName && customerInfo.lastName 
