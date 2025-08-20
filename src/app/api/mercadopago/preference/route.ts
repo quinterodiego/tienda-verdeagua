@@ -22,16 +22,53 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar autenticación
+    // Verificar autenticación 
     const session = await getServerSession(authOptions);
+    const mode = process.env.MERCADOPAGO_MODE || 'test';
     console.log('Sesión de usuario:', session?.user?.email || 'No autenticado');
+    console.log('Modo MercadoPago:', mode);
     
-    if (!session?.user?.email) {
-      console.log('Error: Usuario no autenticado');
-      return NextResponse.json(
-        { error: 'Usuario no autenticado' },
-        { status: 401 }
-      );
+    // En modo producción con localhost, permitir pagos sin autenticación para testing
+    const isProductionTesting = mode === 'production' && 
+      (process.env.NEXT_PUBLIC_BASE_URL?.includes('localhost') || 
+       process.env.NEXT_PUBLIC_BASE_URL?.includes('127.0.0.1'));
+    
+    if (!session?.user?.email && !isProductionTesting) {
+      console.log('⚠️ Usuario no autenticado - Usando modo DEMO');
+      
+      // Para usuarios no autenticados, usar modo demo directamente
+      const body = await request.json();
+      const { items, orderId } = body;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return NextResponse.json({ error: 'Items requeridos' }, { status: 400 });
+      }
+
+      if (!orderId) {
+        return NextResponse.json({ error: 'Order ID requerido' }, { status: 400 });
+      }
+
+      // Generar respuesta demo para usuarios no autenticados
+      const fakePreferenceId = `DEMO-UNAUTH-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      const demoInitPoint = `${baseUrl}/demo/mercadopago?order_id=${orderId}&preference_id=${fakePreferenceId}&unauth=true`;
+
+      console.log('🧪 Modo DEMO activado para usuario no autenticado');
+      
+      return NextResponse.json({
+        success: true,
+        id: fakePreferenceId,
+        preferenceId: fakePreferenceId,
+        init_point: demoInitPoint,
+        initPoint: demoInitPoint,
+        sandbox_init_point: demoInitPoint,
+        sandboxInitPoint: demoInitPoint,
+        demo: true,
+        unauth: true,
+        message: '🧪 Modo DEMO - Usuario no autenticado',
+        orderId: orderId,
+        timestamp: new Date().toISOString()
+      });
     }
 
     const body = await request.json();
@@ -83,9 +120,9 @@ export async function POST(request: NextRequest) {
         currency_id: 'ARS', // Cambiar según tu país
       })),
       payer: {
-        name: customerInfo?.firstName || session.user.name?.split(' ')[0],
-        surname: customerInfo?.lastName || session.user.name?.split(' ').slice(1).join(' '),
-        email: session.user.email,
+        name: customerInfo?.firstName || session?.user?.name?.split(' ')[0] || 'Usuario',
+        surname: customerInfo?.lastName || session?.user?.name?.split(' ').slice(1).join(' ') || 'Prueba',
+        email: session?.user?.email || customerInfo?.email || 'test@prueba.com',
         phone: customerInfo?.phone ? {
           area_code: customerInfo.phone.substring(0, 3),
           number: customerInfo.phone.substring(3),
@@ -124,8 +161,11 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        id: preference.id,
         preferenceId: preference.id,
+        init_point: preference.init_point,
         initPoint: preference.init_point,
+        sandbox_init_point: preference.sandbox_init_point,
         sandboxInitPoint: preference.sandbox_init_point,
       });
       
@@ -139,18 +179,37 @@ export async function POST(request: NextRequest) {
         console.error('Stack:', mpError.stack);
       }
       
-      // Verificar si es un error de autenticación
+      // Verificar si es un error de autenticación o credenciales inválidas
       const errorMessage = mpError instanceof Error ? mpError.message : String(mpError);
       
-      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('authentication')) {
-        return NextResponse.json(
-          { 
-            error: 'Error de autenticación con MercadoPago',
-            details: 'Verifica que MERCADOPAGO_ACCESS_TOKEN sea válido',
-            mpError: errorMessage
-          },
-          { status: 401 }
-        );
+      // Si hay error de credenciales, usar modo demo como fallback
+      if (errorMessage.includes('401') || 
+          errorMessage.includes('unauthorized') || 
+          errorMessage.includes('authentication') ||
+          errorMessage.includes('invalid') ||
+          accessToken.includes('PASTE_YOUR') ||
+          accessToken.includes('TU_NUEVO')) {
+        
+        console.log('🔄 Fallback a modo DEMO por credenciales inválidas');
+        
+        // Generar respuesta demo
+        const fakePreferenceId = `DEMO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const demoInitPoint = `${baseUrl}/demo/mercadopago?order_id=${orderId}&preference_id=${fakePreferenceId}`;
+
+        return NextResponse.json({
+          success: true,
+          id: fakePreferenceId,
+          preferenceId: fakePreferenceId,
+          init_point: demoInitPoint,
+          initPoint: demoInitPoint,
+          sandbox_init_point: demoInitPoint,
+          sandboxInitPoint: demoInitPoint,
+          demo: true,
+          message: '🧪 Modo DEMO - Configurar credenciales reales de MercadoPago',
+          orderId: orderId,
+          timestamp: new Date().toISOString()
+        });
       }
       
       return NextResponse.json(

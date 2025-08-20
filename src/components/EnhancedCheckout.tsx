@@ -273,6 +273,7 @@ export default function EnhancedCheckout() {
       if (!response.ok) throw new Error('Error al crear preferencia de pago');
 
       const data = await response.json();
+      console.log('📦 Respuesta de MercadoPago:', data);
       
       // Guardar datos del pedido
       setOrderData({
@@ -296,14 +297,20 @@ export default function EnhancedCheckout() {
           cost: deliveryCost
         },
         paymentMethod: selectedPaymentMethod,
-        preferenceId: data.id
+        preferenceId: data.preferenceId || data.id
       });
 
       setProcessingPayment(true);
       setRedirectingTo('mercadopago');
 
       // Redirigir a MercadoPago
-      window.location.href = data.init_point;
+      const redirectUrl = data.initPoint || data.init_point;
+      console.log('🔗 URL de redirección:', redirectUrl);
+      if (!redirectUrl) {
+        throw new Error('No se recibió URL de redirección');
+      }
+      console.log('🚀 Redirigiendo a:', redirectUrl);
+      window.location.href = redirectUrl;
       
     } catch (error) {
       throw error;
