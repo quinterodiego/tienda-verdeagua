@@ -30,7 +30,8 @@ const createTransporter = () => {
     secure: config.secure,
     auth: config.auth,
     tls: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      ciphers: 'SSLv3'
     }
   });
 };
@@ -1291,7 +1292,12 @@ export function createOrderNotificationAdminEmail(data: OrderEmailData) {
 // Función para enviar notificación de pedido al admin/vendedor
 export async function sendOrderNotificationToAdmin(data: OrderEmailData) {
   const template = createOrderNotificationAdminEmail(data);
-  const adminEmail = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM;
+  const adminEmail = process.env.EMAIL_ADMIN || process.env.EMAIL_FROM || '';
+  
+  if (!adminEmail) {
+    throw new Error('No se ha configurado EMAIL_ADMIN ni EMAIL_FROM');
+  }
+  
   return sendEmail({
     to: adminEmail,
     subject: template.subject,

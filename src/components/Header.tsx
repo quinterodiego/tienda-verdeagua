@@ -246,25 +246,65 @@ export default function Header() {
                           Mis Pedidos
                         </div>
                         {isAdmin && (
-                          <div
-                            onClick={() => {
-                              router.push('/admin');
-                              setShowUserMenu(false);
-                            }}
-                            className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center cursor-pointer"
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
+                          <>
+                            <div
+                              onClick={() => {
                                 router.push('/admin');
                                 setShowUserMenu(false);
-                              }
-                            }}
-                          >
-                            <SettingsIcon className="w-4 h-4 mr-2" />
-                            Panel de Admin
-                          </div>
+                              }}
+                              className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  router.push('/admin');
+                                  setShowUserMenu(false);
+                                }
+                              }}
+                            >
+                              <SettingsIcon className="w-4 h-4 mr-2" />
+                              Panel de Admin
+                            </div>
+                            <div
+                              onClick={() => {
+                                router.push('/config/notification-email');
+                                setShowUserMenu(false);
+                              }}
+                              className="block px-4 py-2 text-sm text-[#68c3b7] hover:bg-gray-100 font-medium flex items-center cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  router.push('/config/notification-email');
+                                  setShowUserMenu(false);
+                                }
+                              }}
+                            >
+                              <MailIcon className="w-4 h-4 mr-2" />
+                              Config. Email
+                            </div>
+                            <div
+                              onClick={() => {
+                                router.push('/debug/email');
+                                setShowUserMenu(false);
+                              }}
+                              className="block px-4 py-2 text-sm text-orange-600 hover:bg-gray-100 font-medium flex items-center cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  router.push('/debug/email');
+                                  setShowUserMenu(false);
+                                }
+                              }}
+                            >
+                              <SettingsIcon className="w-4 h-4 mr-2" />
+                              Debug Email
+                            </div>
+                          </>
                         )}
                         <hr className="my-1" />
                         <button
@@ -540,25 +580,65 @@ export default function Header() {
                   </div>
                   
                   {isAdmin && (
-                    <div
-                      onClick={() => {
-                        router.push('/admin');
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium cursor-pointer"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
+                    <>
+                      <div
+                        onClick={() => {
                           router.push('/admin');
                           setIsMobileMenuOpen(false);
-                        }
-                      }}
-                    >
-                      <SettingsIcon className="w-5 h-5 mr-3" />
-                      <span>Panel de Admin</span>
-                    </div>
+                        }}
+                        className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push('/admin');
+                            setIsMobileMenuOpen(false);
+                          }
+                        }}
+                      >
+                        <SettingsIcon className="w-5 h-5 mr-3" />
+                        <span>Panel de Admin</span>
+                      </div>
+                      <div
+                        onClick={() => {
+                          router.push('/config/notification-email');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex items-center px-4 py-2 text-[#68c3b7] hover:bg-gray-100 font-medium cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push('/config/notification-email');
+                            setIsMobileMenuOpen(false);
+                          }
+                        }}
+                      >
+                        <MailIcon className="w-5 h-5 mr-3" />
+                        <span>Config. Email</span>
+                      </div>
+                      <div
+                        onClick={() => {
+                          router.push('/debug/email');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex items-center px-4 py-2 text-orange-600 hover:bg-gray-100 font-medium cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push('/debug/email');
+                            setIsMobileMenuOpen(false);
+                          }
+                        }}
+                      >
+                        <SettingsIcon className="w-5 h-5 mr-3" />
+                        <span>Debug Email</span>
+                      </div>
+                    </>
                   )}
                   
                   <button 
