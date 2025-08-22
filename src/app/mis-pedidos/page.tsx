@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Calendar, CreditCard, Truck, Package, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingCart, Calendar, CreditCard, Truck, Package, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, Eye, Send, Trash2 } from 'lucide-react';
 import { Order } from '@/types';
 import Image from 'next/image';
 
@@ -90,6 +90,25 @@ const isPaymentFailed = (status: string) => {
          !['pending', 'confirmed', 'processing', 'shipped', 'delivered'].includes(status);
 };
 
+// Función para determinar si se puede cancelar un pedido (excluye pedidos ya cancelados)
+const canCancelOrder = (status: string) => {
+  const cancellableStatuses = [
+    'pending', 
+    'payment_pending', 
+    'payment_failed', 
+    'pending_transfer',
+    'rejected',
+    'failed'
+  ];
+  return cancellableStatuses.includes(status);
+};
+
+// Función para determinar si mostrar botones de acción (excluye pedidos cancelados)
+const canShowActionButtons = (status: string) => {
+  // No mostrar botones de acción para pedidos ya cancelados
+  return status !== 'cancelled';
+};
+
 export default function MisPedidosPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -146,6 +165,75 @@ export default function MisPedidosPage() {
     }
   };
 
+  const handleTransferPayment = async (order: Order) => {
+    try {
+      // Para transferencias, redirigir directamente a la página de transferencia
+      // con los datos del pedido existente
+      const url = `/checkout/transfer?orderId=${order.id}&amount=${order.total}`;
+      router.push(url);
+    } catch (error) {
+      console.error('Error al redirigir a transferencia:', error);
+      alert('Error al acceder a los datos de transferencia. Por favor, intenta nuevamente.');
+    }
+  };
+
+  const sendComprobante = async (order: Order) => {
+    try {
+      // Abrir WhatsApp con mensaje predefinido
+      const message = `Hola! Quiero enviar el comprobante de pago para el pedido ${order.id} por ${formatCurrency(order.total)}. ¿Podrían verificar el pago?`;
+      const whatsappNumber = "+5491123456789"; // Este debería venir de configuración
+      const url = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error al abrir WhatsApp:', error);
+      alert('Error al abrir WhatsApp. Por favor, contacta directamente al vendedor.');
+    }
+  };
+
+  const cancelOrder = async (order: Order) => {
+    // Confirmar antes de cancelar
+    const confirmCancel = window.confirm(
+      `¿Estás seguro de que quieres cancelar el pedido ${order.id}?\n\nEsta acción no se puede deshacer y el pedido será eliminado de tu historial.`
+    );
+    
+    if (!confirmCancel) return;
+
+    try {
+      console.log('🚫 Iniciando cancelación del pedido:', order.id);
+      
+      const response = await fetch(`/api/orders/${order.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: 'cancelled_by_customer',
+          userEmail: session?.user?.email
+        })
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        console.log('✅ Pedido cancelado exitosamente:', responseData);
+        
+        // Actualizar la lista de pedidos inmediatamente
+        if (session?.user?.email) {
+          await fetchOrders(session.user.email);
+        }
+        
+        // Mensaje de éxito más claro
+        alert(`✅ Pedido ${order.id} cancelado exitosamente.\n\nEl pedido ya no aparecerá como pendiente y no se procesará ningún pago.`);
+      } else {
+        console.error('❌ Error al cancelar pedido:', responseData);
+        alert(`❌ Error al cancelar el pedido:\n${responseData.message || 'Error desconocido'}\n\nPor favor, intenta nuevamente o contacta con soporte.`);
+      }
+    } catch (error) {
+      console.error('❌ Error de red al cancelar pedido:', error);
+      alert('❌ Error de conexión al cancelar el pedido.\n\nVerifica tu conexión a internet e intenta nuevamente.');
+    }
+  };
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
@@ -192,9 +280,23 @@ export default function MisPedidosPage() {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: 'short',
         year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Fecha inválida';
+    }
+  };
+
+  const formatDateShort = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -281,46 +383,97 @@ export default function MisPedidosPage() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                         Pedido #{order.id}
                       </h3>
-                      <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getOrderStatusColor(order.status)}`}>
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getOrderStatusColor(order.status)}`}>
                         {getOrderStatusIcon(order.status)}
                         {getOrderStatusText(order.status)}
                       </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(order.createdAt.toString())}
+                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="truncate sm:hidden">{formatDateShort(order.createdAt.toString())}</span>
+                        <span className="truncate hidden sm:inline">{formatDate(order.createdAt.toString())}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <CreditCard className="w-4 h-4" />
-                        {getPaymentMethodText(order.paymentMethod || '')}
+                        <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="truncate">{getPaymentMethodText(order.paymentMethod || '')}</span>
                       </div>
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-gray-900 text-sm sm:text-base">
                         {formatCurrency(order.total)}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    {isPaymentFailed(order.status) && (
-                      <button
-                        onClick={() => retryPayment(order)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                      >
-                        Completar Pago
-                      </button>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    {/* Mostrar diferentes botones según el método de pago y estado */}
+                    {isPaymentFailed(order.status) && canShowActionButtons(order.status) && (
+                      <>
+                        {/* Para transferencias bancarias: mostrar botones específicos */}
+                        {(order.paymentMethod === 'transfer' || order.paymentMethod === 'transferencia_bancaria') ? (
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                              onClick={() => handleTransferPayment(order)}
+                              className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md min-w-0"
+                            >
+                              <Eye className="w-4 h-4 flex-shrink-0" />
+                              <span className="truncate sm:hidden">Ver Datos</span>
+                              <span className="truncate hidden sm:inline">Ver Datos de Transferencia</span>
+                            </button>
+                            <button
+                              onClick={() => sendComprobante(order)}
+                              className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                            >
+                              <Send className="w-4 h-4 flex-shrink-0" />
+                              <span className="sm:hidden">Enviar</span>
+                              <span className="hidden sm:inline">Enviar Comprobante</span>
+                            </button>
+                            {/* Solo mostrar botón cancelar si el pedido puede ser cancelado */}
+                            {canCancelOrder(order.status) && (
+                              <button
+                                onClick={() => cancelOrder(order)}
+                                className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                              >
+                                <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                <span className="sm:hidden">Cancelar</span>
+                                <span className="hidden sm:inline">Cancelar Pedido</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          /* Para MercadoPago u otros métodos: mostrar completar pago y cancelar */
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                              onClick={() => retryPayment(order)}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                            >
+                              Completar Pago
+                            </button>
+                            {/* Solo mostrar botón cancelar si el pedido puede ser cancelado */}
+                            {canCancelOrder(order.status) && (
+                              <button
+                                onClick={() => cancelOrder(order)}
+                                className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                              >
+                                <Trash2 className="w-4 h-4 flex-shrink-0" />
+                                <span className="sm:hidden">Cancelar</span>
+                                <span className="hidden sm:inline">Cancelar Pedido</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                     
                     <button
                       onClick={() => toggleOrderExpansion(order.id)}
-                      className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors"
+                      className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
                     >
-                      <span className="text-sm">Detalles</span>
+                      <span className="text-sm font-medium">Detalles</span>
                       {expandedOrders.has(order.id) ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
