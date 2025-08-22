@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAllOrdersFromSheets, updateOrderStatus } from '@/lib/orders-sheets';
+import { sendOrderNotificationToAdmin } from '@/lib/email';
+import { Order } from '@/types';
 
 // Simulamos una base de datos temporal en memoria para los comprobantes enviados
 // En producción esto debería ser una base de datos real
@@ -29,10 +32,34 @@ export async function POST(request: NextRequest) {
     // Guardar en memoria (en producción usar base de datos)
     paymentNotifications.set(orderId, notification);
 
-    // En un entorno real, aquí notificarías al administrador
-    // await notifyAdminPaymentProofSent(notification);
+    try {
+      // Actualizar estado del pedido en Google Sheets
+      await updateOrderStatus(orderId, 'pending', undefined, 'transfer', false);
 
-    console.log('Comprobante de pago notificado:', orderId);
+      // Obtener detalles del pedido y enviar notificación al administrador
+      const orders = await getAllOrdersFromSheets();
+      const order = orders.find((o: Order) => o.id === orderId);
+      
+      if (order) {
+        await sendOrderNotificationToAdmin({
+          orderId: order.id,
+          customerName: order.customer?.name || order.shippingAddress?.firstName + ' ' + order.shippingAddress?.lastName || 'Cliente',
+          customerEmail: order.customer?.email || '',
+          items: order.items.map(item => ({
+            productName: item.product?.name || 'Producto',
+            quantity: item.quantity,
+            price: item.product?.price || 0
+          })),
+          total: order.total,
+          orderDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-AR') : new Date().toLocaleDateString('es-AR')
+        });
+      }
+
+      console.log('✅ Comprobante de pago notificado y actualizado:', orderId);
+    } catch (updateError) {
+      console.error('⚠️ Error actualizando pedido, pero notificación registrada:', updateError);
+      // Continúa aunque falle la actualización en Sheets
+    }
 
     return NextResponse.json({ 
       success: true, 
