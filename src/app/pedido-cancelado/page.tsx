@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
 
-export default function OrderCancelledPage() {
+function OrderCancelledContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [orderId, setOrderId] = useState<string>('');
@@ -89,5 +89,30 @@ export default function OrderCancelledPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Componente de loading para Suspense
+function OrderCancelledLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-6"></div>
+          <div className="h-6 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal con Suspense
+export default function OrderCancelledPage() {
+  return (
+    <Suspense fallback={<OrderCancelledLoading />}>
+      <OrderCancelledContent />
+    </Suspense>
   );
 }
