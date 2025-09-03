@@ -24,7 +24,6 @@ export default function CategoryModal({
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    slug: '',
     isActive: true,
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -35,44 +34,23 @@ export default function CategoryModal({
       setFormData({
         name: category.name,
         description: category.description || '',
-        slug: category.slug,
         isActive: category.isActive,
       });
     } else {
       setFormData({
         name: '',
         description: '',
-        slug: '',
         isActive: true,
       });
     }
     setErrors({});
   }, [category, isOpen]);
 
-  // Generar slug automáticamente cuando se cambia el nombre
-  useEffect(() => {
-    if (formData.name && !category) {
-      const slug = formData.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s-]/g, '')
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
-      setFormData(prev => ({ ...prev, slug }));
-    }
-  }, [formData.name, category]);
-
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es requerido';
-    }
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'El slug es requerido';
     }
 
     setErrors(newErrors);
@@ -149,25 +127,6 @@ export default function CategoryModal({
             />
             {errors.name && (
               <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-              Slug *
-            </label>
-            <input
-              type="text"
-              id="slug"
-              value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600 ${
-                errors.slug ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="slug-de-la-categoria"
-            />
-            {errors.slug && (
-              <p className="text-red-500 text-sm mt-1">{errors.slug}</p>
             )}
           </div>
 

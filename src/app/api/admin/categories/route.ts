@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { 
   addCategoryToSheets, 
   updateCategoryInSheets, 
-  deleteCategoryFromSheets,
-  generateSlug 
+  deleteCategoryFromSheets
 } from '../../../../lib/categories-sheets';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth';
@@ -29,12 +28,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const slug = generateSlug(name);
-    
     const newCategoryId = await addCategoryToSheets({
       name,
       description,
-      slug,
       isActive,
     });
 
@@ -83,7 +79,6 @@ export async function PUT(request: NextRequest) {
     const updates: any = {};
     if (name) {
       updates.name = name;
-      updates.slug = generateSlug(name);
     }
     if (description !== undefined) updates.description = description;
     if (isActive !== undefined) updates.isActive = isActive;

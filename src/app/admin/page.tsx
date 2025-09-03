@@ -67,7 +67,6 @@ interface OrderItem {
 interface Category {
   id: string;
   name: string;
-  slug: string;
   description?: string;
   isActive: boolean;
   createdAt: string;
@@ -980,7 +979,7 @@ function ProductsContent({
             ...categories
               .filter((cat: Category) => cat.isActive)
               .map((cat: Category) => ({
-                value: cat.slug,
+                value: cat.name,
                 label: cat.name
               }))
           ];
@@ -1242,8 +1241,7 @@ function CategoriesContent() {
   // Filtrar categorías
   const filteredCategories = categories.filter(category => {
     const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.slug.toLowerCase().includes(searchTerm.toLowerCase());
+                         category.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterActive === null || category.isActive === filterActive;
     return matchesSearch && matchesFilter;
   });
@@ -1383,9 +1381,6 @@ function CategoriesContent() {
                   Nombre
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Descripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1410,11 +1405,6 @@ function CategoriesContent() {
                           {category.name}
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded">
-                      {category.slug}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -1483,9 +1473,11 @@ function CategoriesContent() {
                   <h3 className="text-sm font-medium text-gray-900 truncate">
                     {category.name}
                   </h3>
-                  <div className="text-xs text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
-                    {category.slug}
-                  </div>
+                  {category.description && (
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {category.description}
+                    </p>
+                  )}
                 </div>
               </div>
               

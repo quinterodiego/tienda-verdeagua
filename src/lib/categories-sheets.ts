@@ -78,10 +78,9 @@ export async function getCategoriesFromSheets(): Promise<Category[]> {
         id: row[0] || '',
         name: row[1] || '',
         description: row[2] || '',
-        slug: row[3] || '',
-        isActive: row[4]?.toLowerCase() === 'true',
-        createdAt: row[5] || '',
-        updatedAt: row[6] || '',
+        isActive: row[3]?.toLowerCase() === 'true',
+        createdAt: row[4] || '',
+        updatedAt: row[5] || '',
       };
     }).filter(category => category.id && category.name); // Filtrar categorías vacías
 
@@ -110,7 +109,6 @@ export async function addCategoryToSheets(category: Omit<Category, 'id' | 'creat
       newId,
       category.name,
       category.description || '',
-      category.slug,
       category.isActive.toString().toUpperCase(),
       timestamp,
       timestamp,
@@ -119,7 +117,7 @@ export async function addCategoryToSheets(category: Omit<Category, 'id' | 'creat
     await withRateLimit(async () => {
       return sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${sheetName}!A2:G`,
+        range: `${sheetName}!A2:F`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values },
       });
@@ -165,14 +163,13 @@ export async function updateCategoryInSheets(id: string, updates: Partial<Omit<C
       currentRow[0], // id (no cambia)
       updates.name || currentRow[1],
       updates.description !== undefined ? updates.description : currentRow[2],
-      updates.slug || currentRow[3],
-      updates.isActive !== undefined ? updates.isActive.toString().toUpperCase() : currentRow[4],
-      currentRow[5], // createdAt (no cambia)
+      updates.isActive !== undefined ? updates.isActive.toString().toUpperCase() : currentRow[3],
+      currentRow[4], // createdAt (no cambia)
       timestamp, // updatedAt
     ];
 
     // Actualizar la fila específica (rowIndex + 2 porque empezamos en A2)
-    const range = `${sheetName}!A${rowIndex + 2}:G${rowIndex + 2}`;
+    const range = `${sheetName}!A${rowIndex + 2}:F${rowIndex + 2}`;
     
     await withRateLimit(async () => {
       return sheets.spreadsheets.values.update({
@@ -276,18 +273,6 @@ export async function deleteCategoryFromSheets(id: string): Promise<boolean> {
     console.error('Error al eliminar categoría:', error);
     return false;
   }
-}
-
-// Función para generar slug a partir del nombre
-export function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
-    .replace(/[^a-z0-9\s-]/g, '') // Remover caracteres especiales
-    .trim()
-    .replace(/\s+/g, '-') // Reemplazar espacios con guiones
-    .replace(/-+/g, '-'); // Remover guiones duplicados
 }
 
 // Función para configurar los encabezados de categorías

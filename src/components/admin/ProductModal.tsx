@@ -371,7 +371,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 {categories
                   .filter(cat => cat.isActive)
                   .map((cat) => (
-                    <option key={cat.id} value={cat.slug}>
+                    <option key={cat.id} value={cat.name}>
                       {cat.name}
                     </option>
                   ))}
