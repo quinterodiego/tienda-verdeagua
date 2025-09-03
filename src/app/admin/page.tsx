@@ -35,6 +35,7 @@ import { Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
 import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
+import CategoryModal from '@/components/admin/CategoryModal';
 import UserRoleManager from '@/components/admin/UserRoleManager';
 import ContactTestPanel from '@/components/admin/ContactTestPanel';
 // import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel'; // Oculto temporalmente
@@ -1543,6 +1544,16 @@ function CategoriesContent() {
           </div>
         )}
       </div>
+
+      {/* Modal de categoría */}
+      <CategoryModal
+        isOpen={categoryModal.isOpen}
+        onClose={() => setCategoryModal({ isOpen: false })}
+        category={categoryModal.category}
+        onSave={handleCreateCategory}
+        onUpdate={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+      />
     </div>
   );
 }
