@@ -29,71 +29,107 @@ async function getProducts() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getProducts();
-  
-  // Usar URL fija para el sitemap (evitar problemas con variables de entorno)
-  const baseUrl = 'https://verdeaguapersonalizados.com';
-  
-  console.log(`Generating sitemap with baseUrl: ${baseUrl}`);
-  console.log(`Products count: ${products.length}`);
-  
-  // URLs estáticas
-  const staticUrls: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/productos`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/cart`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/favoritos`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/contacto`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-  ];
-  
-  // URLs de productos dinámicas - con validación
-  const productUrls: MetadataRoute.Sitemap = products
-    .filter((product: any) => product && product.id) // Filtrar productos válidos
-    .map((product: any) => ({
-      url: `${baseUrl}/producto/${product.id}`,
-      lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }));
-  
-  // URLs de categorías dinámicas - con validación
-  const categories = [...new Set(products
-    .map((product: any) => product.category)
-    .filter(Boolean) // Filtrar categorías vacías/null/undefined
-    .filter((category: string) => category.trim() !== '') // Filtrar categorías vacías
-  )];
-  
-  const categoryUrls: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: `${baseUrl}/categoria/${String(category).toLowerCase().replace(/\s+/g, '-')}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }));
-  
-  return [...staticUrls, ...productUrls, ...categoryUrls];
+  try {
+    const products = await getProducts();
+    
+    // Usar URL fija para el sitemap (evitar problemas con variables de entorno)
+    const baseUrl = 'https://verdeaguapersonalizados.com';
+    
+    console.log(`Generating sitemap with baseUrl: ${baseUrl}`);
+    console.log(`Products count: ${products.length}`);
+    
+    // URLs estáticas
+    const staticUrls: MetadataRoute.Sitemap = [
+      {
+        url: baseUrl,
+        lastModified: new Date(),
+        changeFrequency: 'daily',
+        priority: 1,
+      },
+      {
+        url: `${baseUrl}/productos`,
+        lastModified: new Date(),
+        changeFrequency: 'daily',
+        priority: 0.8,
+      },
+      {
+        url: `${baseUrl}/cart`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.5,
+      },
+      {
+        url: `${baseUrl}/favoritos`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.5,
+      },
+      {
+        url: `${baseUrl}/contacto`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.6,
+      },
+    ];
+    
+    // URLs de productos dinámicas - solo productos válidos
+    const productUrls: MetadataRoute.Sitemap = [];
+    for (const product of products) {
+      if (product && product.id) {
+        const id = String(product.id).trim();
+        if (id && id !== '') {
+          productUrls.push({
+            url: `${baseUrl}/producto/${id}`,
+            lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date(),
+            changeFrequency: 'weekly',
+            priority: 0.7,
+          });
+        }
+      }
+    }
+    
+    // URLs de categorías dinámicas - solo categorías válidas
+    const categorySet = new Set<string>();
+    for (const product of products) {
+      if (product && product.category) {
+        const category = String(product.category).trim();
+        if (category && category !== '') {
+          categorySet.add(category);
+        }
+      }
+    }
+    
+    const categoryUrls: MetadataRoute.Sitemap = [];
+    for (const category of categorySet) {
+      const slug = category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      if (slug && slug !== '') {
+        categoryUrls.push({
+          url: `${baseUrl}/categoria/${slug}`,
+          lastModified: new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        });
+      }
+    }
+    
+    return [...staticUrls, ...productUrls, ...categoryUrls];
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    // En caso de error, devolver solo URLs estáticas
+    const baseUrl = 'https://verdeaguapersonalizados.com';
+    return [
+      {
+        url: baseUrl,
+        lastModified: new Date(),
+        changeFrequency: 'daily',
+        priority: 1,
+      },
+      {
+        url: `${baseUrl}/contacto`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.6,
+      },
+    ];
+  }
 }
