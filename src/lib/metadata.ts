@@ -4,7 +4,9 @@ import { Metadata } from 'next';
 export const siteConfig = {
   name: 'Verde Agua Personalizados',
   description: 'Tienda online de productos personalizados: agendas, tazas, llaveros, stickers, cuadernos y más. Dale tu toque personal a tus estudios con Verde Agua Personalizados.',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://verdeaguapersonalizados.com',
+  url: process.env.NEXT_PUBLIC_SITE_URL && process.env.NEXT_PUBLIC_SITE_URL.trim() !== ''
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : 'https://verdeaguapersonalizados.com',
   ogImage: '/og-image.jpg',
   creator: 'Verde Agua Personalizados',
   keywords: [
