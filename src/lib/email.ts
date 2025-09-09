@@ -302,7 +302,6 @@ export function createOrderConfirmationEmail(data: OrderEmailData) {
   
   const statusText = isPending ? 'Pendiente de Pago' : 'Confirmado';
   const statusColor = isPending ? '#f59e0b' : '#10b981';
-  const headerTitle = isPending ? 'Pedido Recibido - Pendiente de Pago' : 'Pedido Confirmado';
   const messageText = isPending 
     ? 'Hemos recibido tu pedido y está pendiente de pago. Te enviaremos una confirmación una vez que procesemos el pago.'
     : 'Tu pedido ha sido confirmado y está siendo procesado.';
