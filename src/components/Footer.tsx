@@ -38,9 +38,13 @@ export default function Footer() {
           if (data.success && data.settings) {
             setSiteSettings(data.settings);
           }
+        } else {
+          console.error('Error al cargar configuración del sitio:', response.statusText);
         }
       } catch (error) {
         console.error('Error al cargar configuración del sitio:', error);
+        // Si hay error, mantener configuración como null para usar valores por defecto
+        setSiteSettings(null);
       }
     };
 
@@ -64,9 +68,13 @@ export default function Footer() {
           setCategories(activeCategories);
         } else {
           console.error('Error al cargar categorías:', response.statusText);
+          // Si hay error, usar categorías vacías para mostrar el fallback
+          setCategories([]);
         }
       } catch (error) {
         console.error('Error al cargar categorías:', error);
+        // Si hay error de conexión, usar categorías vacías para mostrar el fallback
+        setCategories([]);
       } finally {
         setCategoriesLoading(false);
       }

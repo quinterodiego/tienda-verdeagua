@@ -14,15 +14,20 @@ interface OrderModalProps {
 
 const statusInfo = {
   pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  payment_pending: { label: 'Pendiente de Pago', color: 'bg-orange-100 text-orange-800', icon: Clock },
+  pending_transfer: { label: 'Pendiente Transferencia', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
   confirmed: { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
   processing: { label: 'Procesando', color: 'bg-teal-100 text-teal-800', icon: Package },
   shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
   delivered: { label: 'Entregado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle }
+  cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle },
+  unknown: { label: 'Estado Desconocido', color: 'bg-gray-100 text-gray-800', icon: Clock }
 };
 
 const statusOptions: Array<{ value: Order['status']; label: string }> = [
   { value: 'pending', label: 'Pendiente' },
+  { value: 'payment_pending', label: 'Pendiente de Pago' },
+  { value: 'pending_transfer', label: 'Pendiente Transferencia' },
   { value: 'confirmed', label: 'Confirmado' },
   { value: 'processing', label: 'Procesando' },
   { value: 'shipped', label: 'Enviado' },
@@ -50,7 +55,7 @@ export default function OrderModal({ isOpen, onClose, order, onUpdateStatus }: O
     }
   };
 
-  const currentStatusInfo = statusInfo[order.status];
+  const currentStatusInfo = statusInfo[order.status as keyof typeof statusInfo] || statusInfo.unknown;
   const StatusIcon = currentStatusInfo.icon;
 
   const formatDate = (dateString: string) => {

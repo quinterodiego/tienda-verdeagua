@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { saveOrderToSheets } from '@/lib/orders-sheets';
+import { sendOrderNotificationToAdmin, sendOrderConfirmationEmail } from '@/lib/email';
 import { Product } from '@/types';
 
 // POST /api/orders/pending - Crear orden pendiente antes del pago o actualizar existente
@@ -100,6 +101,57 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('✅ Orden pendiente creada exitosamente:', savedOrderId);
+      
+      // Notificar al admin por email
+      try {
+        await sendOrderNotificationToAdmin({
+          orderId: savedOrderId,
+          customerName: orderData.customer.name,
+          customerEmail: orderData.customer.email,
+          items: items.map((item: { product?: { name?: string; price?: number }; quantity: number }) => ({
+            productName: item.product?.name || '',
+            quantity: item.quantity,
+            price: item.product?.price || 0
+          })),
+          total,
+          orderDate: new Date().toLocaleDateString('es-AR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          isPending: true
+        });
+        console.log('📧 Notificación de orden pendiente enviada al admin');
+      } catch (err) {
+        console.error('❌ Error enviando notificación al admin:', err);
+        // No fallar la creación de la orden si falla el email
+      }
+      
+      // Enviar confirmación al usuario
+      try {
+        console.log('📧 Intentando enviar confirmación al usuario:', orderData.customer.email);
+        await sendOrderConfirmationEmail({
+          orderId: savedOrderId,
+          customerName: orderData.customer.name,
+          customerEmail: orderData.customer.email,
+          items: items.map((item: { product?: { name?: string; price?: number }; quantity: number }) => ({
+            productName: item.product?.name || '',
+            quantity: item.quantity,
+            price: item.product?.price || 0
+          })),
+          total,
+          orderDate: new Date().toLocaleDateString('es-AR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          isPending: true
+        });
+        console.log('📧 Confirmación de pedido enviada al usuario:', orderData.customer.email);
+      } catch (err) {
+        console.error('❌ Error enviando confirmación al usuario:', err);
+        // No fallar la creación de la orden si falla el email
+      }
       
       return NextResponse.json({
         success: true,
@@ -252,6 +304,56 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('✅ Orden pendiente creada exitosamente:', orderId);
+    
+    // Notificar al admin por email
+    try {
+      await sendOrderNotificationToAdmin({
+        orderId: orderId,
+        customerName: orderData.customer.name,
+        customerEmail: orderData.customer.email,
+        items: transformedItems.map((item: { product?: { name?: string; price?: number }; quantity: number }) => ({
+          productName: item.product?.name || '',
+          quantity: item.quantity,
+          price: item.product?.price || 0
+        })),
+        total,
+        orderDate: new Date().toLocaleDateString('es-AR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        isPending: true
+      });
+      console.log('📧 Notificación de orden pendiente enviada al admin');
+    } catch (err) {
+      console.error('❌ Error enviando notificación al admin:', err);
+      // No fallar la creación de la orden si falla el email
+    }
+    
+    // Enviar confirmación al usuario
+    try {
+      await sendOrderConfirmationEmail({
+        orderId: orderId,
+        customerName: orderData.customer.name,
+        customerEmail: orderData.customer.email,
+        items: transformedItems.map((item: { product?: { name?: string; price?: number }; quantity: number }) => ({
+          productName: item.product?.name || '',
+          quantity: item.quantity,
+          price: item.product?.price || 0
+        })),
+        total,
+        orderDate: new Date().toLocaleDateString('es-AR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        isPending: true
+      });
+      console.log('📧 Confirmación de pedido enviada al usuario:', orderData.customer.email);
+    } catch (err) {
+      console.error('❌ Error enviando confirmación al usuario:', err);
+      // No fallar la creación de la orden si falla el email
+    }
     
     return NextResponse.json({
       success: true,

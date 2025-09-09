@@ -80,7 +80,8 @@ export default function EmailConfigPage() {
   }
 
   // Solo permitir al admin principal
-  if (session.user?.email !== 'd86webs@gmail.com') {
+  const adminEmails = ['d86webs@gmail.com', 'coderflixarg@gmail.com'];
+  if (!adminEmails.includes(session.user?.email || '')) {
     return <div className="p-4">Solo el administrador principal puede acceder a esta configuración</div>;
   }
 

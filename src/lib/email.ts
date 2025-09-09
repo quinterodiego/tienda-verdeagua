@@ -296,9 +296,16 @@ export function createWelcomeEmail(data: WelcomeEmailData) {
 
 // Template para email de confirmación de pedido
 export function createOrderConfirmationEmail(data: OrderEmailData) {
-  const { orderId, customerName, customerEmail, items, total, orderDate } = data;
+  const { orderId, customerName, customerEmail, items, total, orderDate, isPending } = data;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const logoUrl = process.env.EMAIL_LOGO_URL || `${baseUrl}/logo.png`;
+  
+  const statusText = isPending ? 'Pendiente de Pago' : 'Confirmado';
+  const statusColor = isPending ? '#f59e0b' : '#10b981';
+  const headerTitle = isPending ? 'Pedido Recibido - Pendiente de Pago' : 'Pedido Confirmado';
+  const messageText = isPending 
+    ? 'Hemos recibido tu pedido y está pendiente de pago. Te enviaremos una confirmación una vez que procesemos el pago.'
+    : 'Tu pedido ha sido confirmado y está siendo procesado.';
   
   const itemsHtml = items.map(item => `
     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -516,16 +523,19 @@ export function createOrderConfirmationEmail(data: OrderEmailData) {
           <div class="logo">
             <img src="${logoUrl}" alt="Verde Agua Personalizados" />
           </div>
-          <h1>¡Pedido Confirmado!</h1>
+          <h1>${isPending ? '📄 Pedido Recibido' : '✅ ¡Pedido Confirmado!'}</h1>
           <div class="order-number">Pedido #${orderId}</div>
+          ${isPending ? `<div style="background: ${statusColor}; color: white; padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 500; margin-top: 8px; display: inline-block;">${statusText}</div>` : ''}
         </div>
         
         <div class="content">
           <div class="greeting">
             <h2>¡Hola ${customerName}!</h2>
-            <div class="status-badge">✓ Pedido Recibido</div>
+            <div class="status-badge" style="background: ${isPending ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #48bb78, #38a169)'}">
+              ${isPending ? '⏳ Pendiente de Pago' : '✓ Pedido Recibido'}
+            </div>
             <p style="color: #4a5568; font-size: 16px; margin-top: 15px;">
-              ¡Gracias por tu compra! Hemos recibido tu pedido y está siendo procesado por nuestro equipo.
+              ${messageText}
             </p>
           </div>
           
@@ -597,7 +607,7 @@ export function createOrderConfirmationEmail(data: OrderEmailData) {
   `;
 
   return {
-    subject: `✅ Confirmación de Pedido #${orderId} - Verde Agua Personalizados`,
+    subject: isPending ? `⏳ Pedido Recibido #${orderId} - Verde Agua Personalizados` : `✅ Confirmación de Pedido #${orderId} - Verde Agua Personalizados`,
     html,
   };
 }
@@ -838,6 +848,22 @@ export function createOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
       color: '#f59e0b',
       bgColor: '#fef3c7',
       actionText: 'No necesitas hacer nada por ahora. Te contactaremos si necesitamos información adicional.',
+    },
+    payment_pending: {
+      title: '💳 Esperando confirmación de pago',
+      message: 'Hemos recibido tu pedido y estamos esperando la confirmación de tu pago.',
+      description: 'Una vez que recibamos y verifiquemos tu pago, confirmaremos tu pedido.',
+      color: '#f59e0b',
+      bgColor: '#fef3c7',
+      actionText: 'Por favor, envíanos el comprobante de pago para procesar tu pedido.',
+    },
+    pending_transfer: {
+      title: '🏦 Esperando comprobante de transferencia',
+      message: 'Tu pedido está pendiente de confirmación de transferencia.',
+      description: 'Por favor, envíanos el comprobante de tu transferencia bancaria.',
+      color: '#f59e0b',
+      bgColor: '#fef3c7',
+      actionText: 'Envía tu comprobante de transferencia para que podamos procesar tu pedido.',
     },
     confirmed: {
       title: '✅ ¡Tu pedido ha sido confirmado!',
@@ -1145,6 +1171,8 @@ export function createOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
 function getStatusDisplayName(status: string): string {
   const statusNames: Record<string, string> = {
     pending: 'Pendiente',
+    payment_pending: 'Pendiente de Pago',
+    pending_transfer: 'Pendiente Transferencia',
     confirmed: 'Confirmado',
     processing: 'Procesando',
     shipped: 'Enviado',
@@ -1156,9 +1184,13 @@ function getStatusDisplayName(status: string): string {
 
 // Template para notificación de pedido al admin/vendedor
 export function createOrderNotificationAdminEmail(data: OrderEmailData) {
-  const { orderId, customerName, customerEmail, items, total, orderDate } = data;
+  const { orderId, customerName, customerEmail, items, total, orderDate, isPending } = data;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const logoUrl = process.env.EMAIL_LOGO_URL || `${baseUrl}/logo.png`;
+  
+  const statusText = isPending ? 'Pendiente de Pago' : 'Confirmado';
+  const statusColor = isPending ? '#f59e0b' : '#10b981';
+  const headerTitle = isPending ? 'Nuevo Pedido Pendiente' : 'Nuevo Pedido Recibido';
 
   const itemsHtml = items.map(item => `
     <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -1239,8 +1271,9 @@ export function createOrderNotificationAdminEmail(data: OrderEmailData) {
           <div class="logo">
             <img src="${logoUrl}" alt="Verde Agua Personalizados" />
           </div>
-          <h1>Nuevo Pedido Recibido</h1>
+          <h1>${headerTitle}</h1>
           <div class="order-number">Pedido #${orderId}</div>
+          ${isPending ? `<div style="background: ${statusColor}; color: white; padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 500; margin-top: 8px; display: inline-block;">${statusText}</div>` : ''}
         </div>
         <div class="content">
           <div class="order-details">
@@ -1284,7 +1317,7 @@ export function createOrderNotificationAdminEmail(data: OrderEmailData) {
   `;
 
   return {
-    subject: `🛒 Nuevo Pedido #${orderId} - Verde Agua Personalizados`,
+    subject: isPending ? `⏳ Pedido Pendiente #${orderId} - Verde Agua Personalizados` : `🛒 Nuevo Pedido #${orderId} - Verde Agua Personalizados`,
     html,
   };
 }
@@ -1516,6 +1549,17 @@ export async function sendPasswordResetEmail(data: { to: string, resetUrl: strin
   
   return sendEmail({
     to: data.to,
+    subject: template.subject,
+    html: template.html,
+  });
+}
+
+// Función para enviar email de actualización de estado de pedido
+export async function sendOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
+  const template = createOrderStatusUpdateEmail(data);
+  
+  return sendEmail({
+    to: data.customerEmail,
     subject: template.subject,
     html: template.html,
   });

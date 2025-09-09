@@ -22,7 +22,7 @@ interface TestResult {
 export default function EmailDebugPage() {
   const { data: session } = useSession();
   const [testEmail, setTestEmail] = useState('');
-  const [testType, setTestType] = useState<'smtp' | 'advanced' | 'welcome' | 'order' | 'admin_notification'>('smtp');
+  const [testType, setTestType] = useState<'smtp' | 'advanced' | 'welcome' | 'order' | 'admin_notification' | 'password_reset'>('smtp');
   const [result, setResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -71,6 +71,13 @@ export default function EmailDebugPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ testEmail })
         });
+      } else if (testType === 'password_reset') {
+        // Test email de reseteo de contraseña
+        response = await fetch('/api/debug/email/password-reset-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testEmail })
+        });
       }
 
       const data = await response?.json();
@@ -107,8 +114,9 @@ export default function EmailDebugPage() {
     );
   }
 
-  // Solo permitir al admin principal
-  if (session.user?.email !== 'd86webs@gmail.com') {
+  // Solo permitir al admin (usando EMAIL_ADMIN del .env o emails específicos)
+  const adminEmails = ['d86webs@gmail.com', 'coderflixarg@gmail.com'];
+  if (!adminEmails.includes(session.user?.email || '')) {
     return (
       <div className="max-w-md mx-auto p-6 mt-10">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -170,7 +178,7 @@ export default function EmailDebugPage() {
                 <label className="block text-sm font-medium mb-2">Tipo de Test:</label>
                 <select
                   value={testType}
-                  onChange={(e) => setTestType(e.target.value as 'smtp' | 'advanced' | 'welcome' | 'order' | 'admin_notification')}
+                  onChange={(e) => setTestType(e.target.value as 'smtp' | 'advanced' | 'welcome' | 'order' | 'admin_notification' | 'password_reset')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="smtp">🔧 Test Básico SMTP</option>
@@ -178,6 +186,7 @@ export default function EmailDebugPage() {
                   <option value="welcome">👋 Email de Bienvenida</option>
                   <option value="order">📦 Confirmación de Pedido</option>
                   <option value="admin_notification">📧 Notificación Admin</option>
+                  <option value="password_reset">🔐 Reset de Contraseña</option>
                 </select>
               </div>
             </div>
@@ -207,6 +216,11 @@ export default function EmailDebugPage() {
               {testType === 'admin_notification' && (
                 <p className="text-sm text-gray-600">
                   Envía una notificación de nuevo pedido al email admin configurado.
+                </p>
+              )}
+              {testType === 'password_reset' && (
+                <p className="text-sm text-gray-600">
+                  Envía un email de recuperación de contraseña con enlace de reset.
                 </p>
               )}
             </div>

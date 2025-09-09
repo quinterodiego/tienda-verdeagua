@@ -36,6 +36,7 @@ export interface OrderEmailData {
   }>;
   total: number;
   orderDate: string;
+  isPending?: boolean;
 }
 
 export interface WelcomeEmailData {
@@ -54,7 +55,7 @@ export interface OrderStatusUpdateEmailData {
   orderId: string;
   customerName: string;
   customerEmail: string;
-  newStatus: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  newStatus: 'pending' | 'payment_pending' | 'pending_transfer' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   items: Array<{
     productName: string;
     quantity: number;

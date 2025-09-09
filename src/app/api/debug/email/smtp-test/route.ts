@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { verifyDebugAdminAccess } from '@/lib/debug-admin-helper';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email || session.user.email !== 'd86webs@gmail.com') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Verificar acceso administrativo dinámicamente
+    const adminCheck = await verifyDebugAdminAccess();
+    if (!adminCheck.success) {
+      return adminCheck.response!;
     }
 
     const { testEmail } = await request.json();

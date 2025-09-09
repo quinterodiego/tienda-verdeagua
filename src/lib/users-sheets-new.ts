@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 // Lista de emails de administradores predeterminados
 const DEFAULT_ADMIN_EMAILS = [
   'd86webs@gmail.com',
+  'coderflixarg@gmail.com',
   // Agrega más emails de administradores aquí
 ];
 

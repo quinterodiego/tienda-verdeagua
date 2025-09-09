@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { User, UserRole } from '@/types';
-import { ShieldCheckIcon as Shield, UserGroupIcon as Users, StarIcon as Crown, PencilIcon as Edit, CheckIcon as Save, XMarkIcon as X } from '@/components/HeroIcons';
+import { ShieldCheckIcon as Shield, UserGroupIcon as Users, StarIcon as Crown, XMarkIcon as X } from '@/components/HeroIcons';
 
 interface UserRoleManagerProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<UserRole>('user');
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -79,6 +81,39 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
     setEditingRole('user');
   };
 
+  const handleDeleteUser = async (userEmail: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar al usuario ${userEmail}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      setDeleting(userEmail);
+      const response = await fetch('/api/admin/user-roles', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+        }),
+      });
+
+      if (response.ok) {
+        // Actualizar la lista local removiendo el usuario
+        setUsers(users.filter(user => user.email !== userEmail));
+        alert('Usuario eliminado exitosamente');
+      } else {
+        const errorData = await response.json();
+        alert(`Error al eliminar el usuario: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      alert('Error al eliminar el usuario');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case 'admin':
@@ -112,9 +147,7 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
     }
   };
 
-  // Funciones auxiliares para verificar roles
-  const isAdmin = (user: User): boolean => user.role === 'admin';
-  const isModerator = (user: User): boolean => user.role === 'moderator';
+  // Funciones auxiliares para verificar roles (removidas las no usadas)
 
   if (loading) {
     return (
@@ -177,9 +210,11 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
                   <td className="py-4 px-4">
                     <div className="flex items-center space-x-3">
                       {user.image ? (
-                        <img
+                        <Image
                           src={user.image}
                           alt={user.name}
+                          width={32}
+                          height={32}
                           className="w-8 h-8 rounded-full"
                         />
                       ) : (
@@ -219,31 +254,49 @@ export default function UserRoleManager({ onClose }: UserRoleManagerProps) {
                     }
                   </td>
                   <td className="py-4 px-4">
-                    {editingUserId === user.id ? (
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleSaveRole(user.email)}
-                          disabled={updating}
-                          className="p-1 text-green-600 hover:bg-green-100 rounded disabled:opacity-50"
-                        >
-                          <Save className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={updating}
-                          className="p-1 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
+                    <div className="flex items-center space-x-2">
+                      {/* Botón Editar */}
                       <button
                         onClick={() => handleEditRole(user)}
-                        className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                        className="p-2 text-blue-600 hover:bg-blue-100 rounded border border-blue-300"
+                        title="Editar rol"
+                        disabled={editingUserId === user.id}
                       >
-                        <Edit className="w-4 h-4" />
+                        {editingUserId === user.id ? '📝' : '✏️'}
                       </button>
-                    )}
+                      
+                      {/* Botón Eliminar */}
+                      <button
+                        onClick={() => handleDeleteUser(user.email)}
+                        disabled={deleting === user.email}
+                        className="p-2 text-red-600 hover:bg-red-100 rounded border border-red-300"
+                        title="Eliminar usuario"
+                      >
+                        {deleting === user.email ? '⏳' : '🗑️'}
+                      </button>
+                      
+                      {/* Botones de Guardar/Cancelar cuando está editando */}
+                      {editingUserId === user.id && (
+                        <>
+                          <button
+                            onClick={() => handleSaveRole(user.email)}
+                            disabled={updating}
+                            className="p-2 text-green-600 hover:bg-green-100 rounded border border-green-300"
+                            title="Guardar cambios"
+                          >
+                            {updating ? '⏳' : '✅'}
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={updating}
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded border border-gray-300"
+                            title="Cancelar"
+                          >
+                            ❌
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

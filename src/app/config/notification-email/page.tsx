@@ -44,7 +44,8 @@ export default function EmailNotificationConfig() {
   }
 
   // Solo permitir al admin principal
-  if (session.user?.email !== 'd86webs@gmail.com') {
+  const adminEmails = ['d86webs@gmail.com', 'coderflixarg@gmail.com'];
+  if (!adminEmails.includes(session.user?.email || '')) {
     return (
       <div className="max-w-md mx-auto p-6 mt-10">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">

@@ -1,20 +1,22 @@
-import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES, ensureSheetsExist } from './google-sheets';
+import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { User, UserRole } from '@/types';
 import bcrypt from 'bcryptjs';
 import { sheetsCache, generateCacheKey } from './sheets-cache';
 import { withRateLimit } from './rate-limiter';
 import { withQuotaHandling } from './quota-handler';
+import { getAdminEmailsFromSheets } from './admin-config';
 
-// Lista de emails de administradores predeterminados
-const DEFAULT_ADMIN_EMAILS = [
-  'd86webs@gmail.com',
-  'sebastianperez6@hotmail.com',
-  // Agrega más emails de administradores aquí
-];
-
-// Determinar el rol de un usuario basado en su email
-const getUserRole = (email: string): UserRole => {
-  return DEFAULT_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+// Determinar el rol de un usuario basado en su email (ahora dinámico)
+const getUserRole = async (email: string): Promise<UserRole> => {
+  try {
+    const adminEmails = await getAdminEmailsFromSheets();
+    return adminEmails.includes(email.toLowerCase()) ? 'admin' : 'user';
+  } catch (error) {
+    console.error('Error al obtener admins dinámicos, usando fallback:', error);
+    // Fallback: lista estática solo para emergencias
+    const fallbackAdminEmails = ['d86webs@gmail.com', 'coderflixarg@gmail.com', 'sebastianperez6@hotmail.com'];
+    return fallbackAdminEmails.includes(email.toLowerCase()) ? 'admin' : 'user';
+  }
 };
 
 // Función para guardar/actualizar un usuario en Google Sheets
@@ -44,11 +46,12 @@ export async function saveUserToSheets(user: Omit<User, 'id'>, providedId?: stri
     // Usar ID proporcionado o generar uno nuevo
     const userId = providedId || `USER-${Date.now()}`;
 
+    const userRole = await getUserRole(user.email);
     const values = [[
       userId,                         // A: ID
       user.name,                      // B: Nombre
       user.email,                     // C: Email
-      user.role || getUserRole(user.email), // D: Rol
+      user.role || userRole,          // D: Rol (usar el proporcionado o determinar dinámicamente)
       user.createdAt || new Date().toISOString(), // E: Fecha Registro
       '',                             // F: Último Login (vacío inicialmente)
       'TRUE',                         // G: Activo (por defecto TRUE)
@@ -121,9 +124,9 @@ export async function getUserFromSheets(email: string): Promise<User | null> {
       id: userRow[0] || '',
       name: userRow[1] || '',
       email: userRow[2] || '',
-      role: (userRow[3] as UserRole) || 'user',
-      createdAt: userRow[4] || new Date().toISOString(),
-      updatedAt: userRow[5] || undefined, // Último Login como updatedAt
+      role: (userRow[3] as UserRole) || 'user', // D: Rol (CORREGIDO)
+      createdAt: userRow[4] || new Date().toISOString(), // E: Fecha Registro
+      updatedAt: userRow[5] || undefined, // F: Último Login
       // Los campos imagen y password no están en la hoja Users ahora
       image: undefined,
       password: undefined,
@@ -195,21 +198,24 @@ export async function getAllUsersFromSheets(): Promise<User[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.USERS}!A2:H`,
+      range: `${SHEET_NAMES.USERS}!A2:I`, // Leer hasta columna I para obtener todos los datos
     });
 
     const rows = response.data.values || [];
     
     const users: User[] = rows.map(row => ({
-      id: row[0] || '',
-      name: row[1] || '',
-      email: row[2] || '',
-      image: row[3] || undefined,
-      role: (row[4] as UserRole) || 'user',
-      password: undefined, // No exponer passwords
-      createdAt: row[6] || new Date().toISOString(),
-      updatedAt: row[7] || undefined,
+      id: row[0] || '',               // A: ID
+      name: row[1] || '',             // B: Nombre
+      email: row[2] || '',            // C: Email
+      role: (row[3] as UserRole) || 'user', // D: Rol (CORREGIDO)
+      image: undefined,               // La imagen no está en esta hoja
+      password: undefined,            // No exponer passwords
+      createdAt: row[4] || new Date().toISOString(), // E: Fecha Registro
+      updatedAt: row[5] || undefined, // F: Último Login
     }));
+
+    console.log('📋 getAllUsersFromSheets - usuarios obtenidos:', users.length);
+    console.log('👤 Usuarios con roles:', users.map(u => `${u.email}: ${u.role}`));
 
     return users;
   } catch (error) {
@@ -265,7 +271,111 @@ export const isModerator = (user: User | null): boolean => {
   return user?.role === 'moderator' || isAdmin(user);
 };
 
-// Función para obtener un usuario por ID
+// Función para eliminar un usuario por email
+export async function deleteUserByEmailFromSheets(email: string): Promise<boolean> {
+  try {
+    console.log('🗑️ deleteUserByEmailFromSheets iniciado para:', email);
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los usuarios para encontrar la fila del usuario a eliminar
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.USERS}!A2:I`,
+    });
+
+    const rows = response.data.values || [];
+    const userRowIndex = rows.findIndex(row => row[2] === email); // Columna C es email
+    
+    if (userRowIndex === -1) {
+      console.error('❌ Usuario no encontrado para eliminar:', email);
+      return false;
+    }
+
+    const actualRowNumber = userRowIndex + 2; // +2 porque empezamos en fila 2
+    console.log('📍 Usuario encontrado en fila:', actualRowNumber);
+
+    // Eliminar la fila completa
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: 1665236855, // ID correcto de la hoja Usuarios
+              dimension: 'ROWS',
+              startIndex: actualRowNumber - 1, // startIndex es 0-based
+              endIndex: actualRowNumber, // endIndex es exclusivo
+            }
+          }
+        }]
+      }
+    });
+
+    // También eliminar credenciales si existen
+    try {
+      await deleteCredentialsByEmailFromSheets(email);
+      console.log('🔐 Credenciales eliminadas para:', email);
+    } catch (credError) {
+      console.warn('⚠️ Error al eliminar credenciales (puede no existir):', credError);
+    }
+
+    // Invalidar caché del usuario
+    const cacheKey = generateCacheKey('users', 'getUser', email);
+    sheetsCache.delete(cacheKey);
+
+    console.log('✅ Usuario eliminado exitosamente de Sheets:', email);
+    return true;
+  } catch (error) {
+    console.error('❌ Error al eliminar usuario de Sheets:', error);
+    return false;
+  }
+}
+
+// Función auxiliar para eliminar credenciales
+async function deleteCredentialsByEmailFromSheets(email: string): Promise<boolean> {
+  try {
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todas las credenciales para encontrar la fila
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.CREDENTIALS}!A2:D`,
+    });
+
+    const rows = response.data.values || [];
+    const credRowIndex = rows.findIndex(row => row[1] === email); // Columna B es email
+    
+    if (credRowIndex === -1) {
+      console.log('ℹ️ No se encontraron credenciales para:', email);
+      return true; // No es error si no hay credenciales
+    }
+
+    const actualRowNumber = credRowIndex + 2; // +2 porque empezamos en fila 2
+
+    // Eliminar la fila de credenciales
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: 1082538100, // ID correcto de la hoja Credenciales
+              dimension: 'ROWS',
+              startIndex: actualRowNumber - 1,
+              endIndex: actualRowNumber,
+            }
+          }
+        }]
+      }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('❌ Error al eliminar credenciales:', error);
+    return false;
+  }
+}
 export async function getUserByIdFromSheets(userId: string): Promise<User | null> {
   try {
     const sheets = await getGoogleSheetsAuth();
@@ -286,11 +396,11 @@ export async function getUserByIdFromSheets(userId: string): Promise<User | null
       id: userRow[0] || '',
       name: userRow[1] || '',
       email: userRow[2] || '',
-      image: userRow[3] || undefined,
-      role: (userRow[4] as UserRole) || 'user',
+      role: (userRow[3] as UserRole) || 'user', // D: Rol (CORREGIDO)
+      image: undefined, // No está en esta hoja
       password: undefined, // No exponer password
-      createdAt: userRow[6] || new Date().toISOString(),
-      updatedAt: userRow[7] || undefined,
+      createdAt: userRow[4] || new Date().toISOString(), // E: Fecha Registro
+      updatedAt: userRow[5] || undefined, // F: Último Login
     };
   } catch (error) {
     console.error('Error al obtener usuario por ID:', error);
@@ -304,7 +414,7 @@ export async function getOrCreateOAuthUser(email: string, name: string, image?: 
     console.log('👤 Obteniendo/creando usuario OAuth:', email);
     
     // Verificar si el usuario ya existe
-    let user = await getUserFromSheets(email);
+    const user = await getUserFromSheets(email);
     
     if (user) {
       console.log('👤 Usuario OAuth ya existe, actualizando información:', email);
@@ -319,8 +429,8 @@ export async function getOrCreateOAuthUser(email: string, name: string, image?: 
 
     console.log('➕ Creando nuevo usuario OAuth:', email);
     
-    // Determinar rol basado en email
-    const role = getUserRole(email);
+    // Determinar rol basado en email (dinámicamente)
+    const role = await getUserRole(email);
     
     const newUser: Omit<User, 'id'> = {
       name,
@@ -429,8 +539,8 @@ export async function registerUserWithCredentials(email: string, password: strin
     // Hash del password
     const hashedPassword = await bcrypt.hash(password, 12);
     
-    // Determinar rol basado en email
-    const role = getUserRole(email);
+    // Determinar rol basado en email (dinámicamente)
+    const role = await getUserRole(email);
     
     // Generar ID único para el usuario
     const userId = `USER-${Date.now()}`;

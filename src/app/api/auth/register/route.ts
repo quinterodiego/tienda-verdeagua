@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerUserWithCredentials, getUserFromSheets } from '@/lib/users-sheets';
+import { sendWelcomeEmail, sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,10 +99,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Retornar usuario sin password
-    const { password: _, ...userWithoutPassword } = user;
-    
     console.log('✅ Usuario creado exitosamente:', user.email);
+
+    // Enviar email de bienvenida al usuario
+    try {
+      console.log('📧 Enviando email de bienvenida...');
+      await sendWelcomeEmail({
+        userEmail: user.email,
+        userName: user.name,
+        loginUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      });
+      console.log('✅ Email de bienvenida enviado');
+    } catch (emailError) {
+      console.error('⚠️ Error enviando email de bienvenida (continuando):', emailError);
+      // No fallar el registro por error de email
+    }
+
+    // Enviar notificación al administrador
+    try {
+      console.log('🔔 Enviando notificación al administrador...');
+      const adminEmail = process.env.EMAIL_ADMIN || 'coderflixarg@gmail.com';
+      
+      await sendEmail({
+        to: adminEmail,
+        subject: `🎉 Nuevo Usuario Registrado - ${user.name}`,
+        html: `
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+            <h2 style="color: #2d5a27;">🎉 Nuevo Usuario Registrado</h2>
+            <div style="background: #f0f8f0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h3>📊 Información del Usuario:</h3>
+              <ul>
+                <li><strong>Nombre:</strong> ${user.name}</li>
+                <li><strong>Email:</strong> ${user.email}</li>
+                <li><strong>Rol:</strong> ${user.role || 'user'}</li>
+                <li><strong>Fecha:</strong> ${new Date().toLocaleString()}</li>
+              </ul>
+            </div>
+            <p style="color: #666; font-size: 14px;">
+              Este usuario se registró exitosamente en Verde Agua Personalizados.
+            </p>
+          </div>
+        `
+      });
+      console.log('✅ Notificación al administrador enviada');
+    } catch (adminEmailError) {
+      console.error('⚠️ Error enviando notificación al admin (continuando):', adminEmailError);
+      // No fallar el registro por error de email
+    }
+
+    // Retornar usuario sin password
+    const { password: userPassword, ...userWithoutPassword } = user;
+    
     return NextResponse.json(
       { 
         message: 'Usuario creado exitosamente', 

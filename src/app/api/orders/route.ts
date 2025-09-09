@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { saveOrderToSheets, getUserOrdersFromSheets, getAllOrdersFromSheets } from '@/lib/orders-sheets';
 import { saveUserToSheets } from '@/lib/users-sheets';
-import { sendOrderNotificationToAdmin } from '@/lib/email';
+import { sendOrderNotificationToAdmin, sendOrderConfirmationEmail } from '@/lib/email';
 
 // GET /api/orders - Obtener todos los pedidos
 export async function GET(request: NextRequest) {
@@ -190,6 +190,29 @@ export async function POST(request: NextRequest) {
         console.log('📧 Notificación de pedido enviada al admin');
       } catch (err) {
         console.error('❌ Error enviando notificación al admin:', err);
+      }
+      
+      // Enviar confirmación al usuario
+      try {
+        await sendOrderConfirmationEmail({
+          orderId: orderId,
+          customerName,
+          customerEmail,
+          items: transformedItems.map((item: any) => ({
+            productName: item.product?.name || item.name || '',
+            quantity: item.quantity,
+            price: item.product?.price || item.price || 0
+          })),
+          total,
+          orderDate: new Date().toLocaleDateString('es-AR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        });
+        console.log('📧 Confirmación de pedido enviada al usuario:', customerEmail);
+      } catch (err) {
+        console.error('❌ Error enviando confirmación al usuario:', err);
       }
       
       return NextResponse.json({

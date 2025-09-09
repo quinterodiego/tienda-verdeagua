@@ -64,7 +64,7 @@ export interface Customer {
   };
 }
 
-export type OrderStatus = 'payment_pending' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'payment_pending' | 'pending_transfer' | 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface Order {
   id: string;

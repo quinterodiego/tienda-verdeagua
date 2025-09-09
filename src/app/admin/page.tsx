@@ -43,7 +43,7 @@ import EmailTestPanel from '@/components/admin/EmailTestPanel';
 import EmailPreviewPanel from '@/components/admin/EmailPreviewPanel';
 import OrderStatusEmailTestPanel from '@/components/admin/OrderStatusEmailTestPanel';
 import { useNotifications, NotificationsStore } from '@/lib/store';
-import { isAdminUserSync } from '@/lib/admin-config';
+import { isAdminUserSync } from '@/lib/admin-client';
 import { User } from '@/types';
 
 // Interfaz para usuarios de admin desde Google Sheets (extendida de User)
@@ -167,13 +167,46 @@ export default function AdminPage() {
       return;
     }
 
-    // Verificar si es admin
-    if (!isAdminUserSync(session)) {
-      router.push('/');
-      return;
-    }
+    // Verificar si es admin usando la API (verificación dinámica)
+    const checkAdminAccess = async () => {
+      try {
+        const response = await fetch('/api/auth/user-role');
+        
+        if (response.ok) {
+          const roleInfo = await response.json();
+          
+          if (!roleInfo.isAdmin) {
+            console.log('❌ Usuario no es admin según verificación dinámica');
+            router.push('/');
+            return;
+          }
+          console.log('✅ Usuario verificado como admin');
+          setLoading(false);
+        } else {
+          // Fallback: usar verificación sincrónica si la API falla
+          console.log('⚠️ API de roles no disponible, usando fallback');
+          const fallbackResult = isAdminUserSync(session);
+          
+          if (!fallbackResult) {
+            router.push('/');
+            return;
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Error al verificar rol de admin:', error);
+        // Fallback: usar verificación sincrónica si hay error
+        const fallbackResult = isAdminUserSync(session);
+        
+        if (!fallbackResult) {
+          router.push('/');
+          return;
+        }
+        setLoading(false);
+      }
+    };
 
-    setLoading(false);
+    checkAdminAccess();
   }, [session, status, router]);
 
   // Funciones para cargar datos desde Google Sheets
@@ -267,7 +300,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!session || !isAdminUserSync(session)) {
+  if (!session) {
     return null;
   }
 
@@ -1236,7 +1269,7 @@ function CategoriesContent() {
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [loadCategories]);
 
   // Filtrar categorías
   const filteredCategories = categories.filter(category => {
@@ -1247,7 +1280,6 @@ function CategoriesContent() {
   });
 
   // Crear categoría
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCreateCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const response = await fetch('/api/admin/categories', {
@@ -1270,7 +1302,6 @@ function CategoriesContent() {
   };
 
   // Actualizar categoría
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleUpdateCategory = async (id: string, updates: Partial<Category>) => {
     try {
       const response = await fetch('/api/admin/categories', {
@@ -1568,6 +1599,8 @@ function OrdersContent({
   const statusOptions = [
     { value: 'all', label: 'Todos los estados' },
     { value: 'pending', label: 'Pendientes' },
+    { value: 'payment_pending', label: 'Pendientes de Pago' },
+    { value: 'pending_transfer', label: 'Pendientes Transferencia' },
     { value: 'confirmed', label: 'Confirmados' },
     { value: 'processing', label: 'Procesando' },
     { value: 'shipped', label: 'Enviados' },
@@ -1581,7 +1614,12 @@ function OrdersContent({
     processing: { label: 'Procesando', color: 'bg-teal-100 text-teal-800', icon: Package },
     shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
     delivered: { label: 'Entregado', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle }
+    cancelled: { label: 'Cancelado', color: 'bg-red-100 text-red-800', icon: XCircle },
+    // Nuevos estados para órdenes pendientes
+    payment_pending: { label: 'Pendiente de Pago', color: 'bg-orange-100 text-orange-800', icon: Clock },
+    pending_transfer: { label: 'Pendiente Transferencia', color: 'bg-amber-100 text-amber-800', icon: Clock },
+    // Estado por defecto para casos no manejados
+    unknown: { label: 'Estado Desconocido', color: 'bg-gray-100 text-gray-800', icon: Clock }
   };
 
   const filteredOrders = sheetsOrders.filter((order: Order) => {
@@ -1700,7 +1738,8 @@ function OrdersContent({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredOrders.map((order: Order) => {
-                        const currentStatusInfo = statusInfo[order.status];
+                        // Manejo defensivo del estado - usar 'unknown' si el estado no existe
+                        const currentStatusInfo = statusInfo[order.status as keyof typeof statusInfo] || statusInfo.unknown;
                         const StatusIcon = currentStatusInfo.icon;
                         
                         return (
@@ -1753,7 +1792,8 @@ function OrdersContent({
                 <div className="lg:hidden">
                   <div className="divide-y divide-gray-200">
                     {filteredOrders.map((order: Order) => {
-                      const currentStatusInfo = statusInfo[order.status];
+                      // Manejo defensivo del estado - usar 'unknown' si el estado no existe
+                      const currentStatusInfo = statusInfo[order.status as keyof typeof statusInfo] || statusInfo.unknown;
                       const StatusIcon = currentStatusInfo.icon;
                       
                       return (

@@ -2,13 +2,15 @@ import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 import { User, UserRole } from '@/types';
+import { getAdminEmailsFromSheets } from './admin-config';
 
 const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
 
-// Lista de emails de administradores predeterminados
-const DEFAULT_ADMIN_EMAILS = [
+// Lista de emails de administradores predeterminados (fallback)
+const FALLBACK_ADMIN_EMAILS = [
   'd86webs@gmail.com',
-  // Agrega más emails de administradores aquí
+  'coderflixarg@gmail.com',
+  'sebastianperez6@hotmail.com',
 ];
 
 // Asegurarse de que el directorio existe
@@ -44,9 +46,15 @@ const saveUsers = (users: User[]) => {
   }
 };
 
-// Determinar el rol de un usuario basado en su email
-const getUserRole = (email: string): UserRole => {
-  return DEFAULT_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+// Determinar el rol de un usuario basado en su email (ahora dinámico)
+const getUserRole = async (email: string): Promise<UserRole> => {
+  try {
+    const adminEmails = await getAdminEmailsFromSheets();
+    return adminEmails.includes(email.toLowerCase()) ? 'admin' : 'user';
+  } catch (error) {
+    console.error('Error al obtener admins dinámicos, usando fallback:', error);
+    return FALLBACK_ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+  }
 };
 
 // Encontrar usuario por email
@@ -68,8 +76,8 @@ export const createUser = async (email: string, password: string, name: string):
     // Hash del password
     const hashedPassword = await bcrypt.hash(password, 12);
     
-    // Determinar rol basado en email
-    const role = getUserRole(email);
+    // Determinar rol basado en email (dinámicamente)
+    const role = await getUserRole(email);
     
     // Crear nuevo usuario
     const newUser: User = {
@@ -121,8 +129,8 @@ export const createOAuthUser = async (email: string, name: string, image?: strin
     return existingUser;
   }
 
-  // Determinar rol basado en email
-  const role = getUserRole(email);
+  // Determinar rol basado en email (dinámicamente)
+  const role = await getUserRole(email);
   
   // Crear nuevo usuario OAuth
   const newUser: User = {

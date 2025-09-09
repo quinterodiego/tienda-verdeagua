@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email || session.user.email !== 'd86webs@gmail.com') {
+    const adminEmails = ['d86webs@gmail.com', 'coderflixarg@gmail.com'];
+    if (!session?.user?.email || !adminEmails.includes(session.user.email)) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
