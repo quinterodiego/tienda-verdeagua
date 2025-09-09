@@ -21,7 +21,7 @@ export async function GET() {
     
     if (!settingsSheet) {
       // Si no existe, usar valores por defecto desde .env
-      const contactFormEmail = process.env.EMAIL_FROM || 'd86webs@gmail.com';
+      const contactFormEmail = process.env.EMAIL_FROM || 'verdeaguapersonalizados@gmail.com';
       return NextResponse.json({
         success: true,
         contactFormEmail
@@ -33,7 +33,7 @@ export async function GET() {
     const rows = await settingsSheet.getRows();
 
     // Buscar el email para formulario de contacto
-    let contactFormEmail = process.env.EMAIL_FROM || 'd86webs@gmail.com';
+    let contactFormEmail = process.env.EMAIL_FROM || 'verdeaguapersonalizados@gmail.com';
     let contactEmail = '';
 
     for (const row of rows) {
@@ -60,7 +60,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error obteniendo configuración de contacto:', error);
     // Fallback a variable de entorno
-    const contactFormEmail = process.env.EMAIL_FROM || 'd86webs@gmail.com';
+    const contactFormEmail = process.env.EMAIL_FROM || 'verdeaguapersonalizados@gmail.com';
     return NextResponse.json({
       success: true,
       contactFormEmail
