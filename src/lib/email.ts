@@ -7,6 +7,8 @@ import type {
   TestEmailData,
   OrderStatusUpdateEmailData 
 } from '@/types/email';
+import { addEmailLog, updateEmailLogStatus, type EmailLog } from './google-sheets';
+import { v4 as uuidv4 } from 'uuid';
 
 // Configuración del transportador de email
 const createTransporter = () => {
@@ -36,9 +38,29 @@ const createTransporter = () => {
   });
 };
 
-// Función principal para enviar emails
+// Función principal para enviar emails con logging
 export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
+  const emailId = uuidv4();
+  
   try {
+    // Crear log inicial
+    const emailLog: EmailLog = {
+      id: emailId,
+      timestamp: new Date().toISOString(),
+      type: 'admin_notification', // Tipo por defecto
+      to,
+      subject,
+      status: 'pending'
+    };
+
+    // Registrar log inicial
+    try {
+      await addEmailLog(emailLog);
+      console.log(`Email log creado: ${emailId}`);
+    } catch (logError) {
+      console.warn('Error al crear email log, continuando con envío:', logError);
+    }
+
     const transporter = createTransporter();
     const fromEmail = process.env.EMAIL_FROM || '';
     const fromName = process.env.EMAIL_FROM_NAME || 'Verde Agua';
@@ -51,11 +73,105 @@ export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
       text: text || html.replace(/<[^>]*>/g, ''), // Fallback a texto plano
     });
 
-    console.log('Email enviado:', result.messageId);
-    return { success: true, messageId: result.messageId };
+    // Actualizar log a exitoso
+    try {
+      await updateEmailLogStatus(emailId, 'sent');
+      console.log(`Email enviado y log actualizado: ${emailId} -> ${result.messageId}`);
+    } catch (logError) {
+      console.warn('Error al actualizar email log (email se envió correctamente):', logError);
+    }
+
+    return { success: true, messageId: result.messageId, emailId };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
+    // Actualizar log a fallido
+    try {
+      await updateEmailLogStatus(emailId, 'failed', errorMessage);
+      console.log(`Email log actualizado a failed: ${emailId}`);
+    } catch (logError) {
+      console.warn('Error al actualizar email log para fallo:', logError);
+    }
+
     console.error('Error enviando email:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' };
+    return { success: false, error: errorMessage, emailId };
+  }
+}
+
+// Función avanzada para enviar emails con metadata completa
+export async function sendEmailWithMetadata({
+  to,
+  subject,
+  html,
+  text,
+  type,
+  orderId,
+  userId,
+  metadata
+}: SendEmailParams & {
+  type?: EmailLog['type'];
+  orderId?: string;
+  userId?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const emailId = uuidv4();
+  
+  try {
+    // Crear log inicial con metadata completa
+    const emailLog: EmailLog = {
+      id: emailId,
+      timestamp: new Date().toISOString(),
+      type: type || 'admin_notification',
+      to,
+      subject,
+      status: 'pending',
+      orderId,
+      userId,
+      metadata: metadata ? JSON.stringify(metadata) : undefined
+    };
+
+    // Registrar log inicial
+    try {
+      await addEmailLog(emailLog);
+      console.log(`Email log con metadata creado: ${emailId}`);
+    } catch (logError) {
+      console.warn('Error al crear email log, continuando con envío:', logError);
+    }
+
+    const transporter = createTransporter();
+    const fromEmail = process.env.EMAIL_FROM || '';
+    const fromName = process.env.EMAIL_FROM_NAME || 'Verde Agua';
+
+    const result = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]*>/g, ''), // Fallback a texto plano
+    });
+
+    // Actualizar log a exitoso
+    try {
+      await updateEmailLogStatus(emailId, 'sent');
+      console.log(`Email enviado y log actualizado: ${emailId} -> ${result.messageId}`);
+    } catch (logError) {
+      console.warn('Error al actualizar email log (email se envió correctamente):', logError);
+    }
+
+    return { success: true, messageId: result.messageId, emailId };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
+    // Actualizar log a fallido
+    try {
+      await updateEmailLogStatus(emailId, 'failed', errorMessage);
+      console.log(`Email log actualizado a failed: ${emailId}`);
+    } catch (logError) {
+      console.warn('Error al actualizar email log para fallo:', logError);
+    }
+
+    console.error('Error enviando email:', error);
+    return { success: false, error: errorMessage, emailId };
   }
 }
 
@@ -807,28 +923,48 @@ export function createTestEmail(data: TestEmailData) {
 // Funciones de conveniencia
 export async function sendWelcomeEmail(data: WelcomeEmailData) {
   const template = createWelcomeEmail(data);
-  return sendEmail({
+  return sendEmailWithMetadata({
     to: data.userEmail,
     subject: template.subject,
     html: template.html,
+    type: 'welcome',
+    userId: data.userEmail, // Usar email como ID de usuario temporalmente
+    metadata: {
+      userName: data.userName,
+      registrationDate: new Date().toISOString()
+    }
   });
 }
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData) {
   const template = createOrderConfirmationEmail(data);
-  return sendEmail({
+  return sendEmailWithMetadata({
     to: data.customerEmail,
     subject: template.subject,
     html: template.html,
+    type: 'order_status',
+    orderId: data.orderId,
+    userId: data.customerEmail,
+    metadata: {
+      customerName: data.customerName,
+      total: data.total,
+      itemCount: data.items.length,
+      orderDate: data.orderDate
+    }
   });
 }
 
 export async function sendTestEmail(data: TestEmailData) {
   const template = createTestEmail(data);
-  return sendEmail({
+  return sendEmailWithMetadata({
     to: data.recipientEmail,
     subject: template.subject,
     html: template.html,
+    type: 'admin_notification',
+    metadata: {
+      testType: data.testType,
+      testDate: new Date().toISOString()
+    }
   });
 }
 
@@ -1546,10 +1682,16 @@ export async function sendPasswordResetEmail(data: { to: string, resetUrl: strin
     userName: data.userName
   });
   
-  return sendEmail({
+  return sendEmailWithMetadata({
     to: data.to,
     subject: template.subject,
     html: template.html,
+    type: 'password_reset',
+    userId: data.to,
+    metadata: {
+      userName: data.userName,
+      resetRequestDate: new Date().toISOString()
+    }
   });
 }
 
@@ -1557,9 +1699,21 @@ export async function sendPasswordResetEmail(data: { to: string, resetUrl: strin
 export async function sendOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
   const template = createOrderStatusUpdateEmail(data);
   
-  return sendEmail({
+  return sendEmailWithMetadata({
     to: data.customerEmail,
     subject: template.subject,
     html: template.html,
+    type: 'order_status',
+    orderId: data.orderId,
+    userId: data.customerEmail,
+    metadata: {
+      customerName: data.customerName,
+      newStatus: data.newStatus,
+      total: data.total,
+      orderDate: data.orderDate,
+      trackingNumber: data.trackingNumber,
+      estimatedDelivery: data.estimatedDelivery,
+      cancellationReason: data.cancellationReason
+    }
   });
 }

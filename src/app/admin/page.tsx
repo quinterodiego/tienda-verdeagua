@@ -313,6 +313,7 @@ export default function AdminPage() {
     // { id: 'test-payments', label: 'Pagos de Prueba', icon: CreditCard }, // Oculto temporalmente
     { id: 'test-emails', label: 'Envío de Emails', icon: Mail },
     { id: 'email-preview', label: 'Diseño de Emails', icon: Eye },
+    { id: 'email-logs', label: 'Logs de Emails', icon: HelpCircle },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -405,6 +406,25 @@ export default function AdminPage() {
               );
             }}
           />
+        );
+      case 'email-logs':
+        return (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                📧 Logs de Emails
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Consulta el historial completo de emails enviados desde el sistema.
+              </p>
+              <Link 
+                href="/admin/email-logs"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Ver Logs Completos
+              </Link>
+            </div>
+          </div>
         );
       case 'settings':
         return <SettingsContent />;
