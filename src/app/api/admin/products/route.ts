@@ -64,7 +64,9 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== undefined ? body.isActive : true,
       sku: body.sku || `SKU-${Date.now()}`,
       brand: body.brand || '',
-      tags: body.tags || []
+      tags: body.tags || [],
+      medidas: body.medidas || '', // Campo medidas
+      color: body.color || '' // Campo color
     };
 
     // Guardar producto en Google Sheets
@@ -121,6 +123,8 @@ export async function PUT(request: NextRequest) {
     if (body.sku !== undefined) updates.sku = body.sku;
     if (body.brand !== undefined) updates.brand = body.brand;
     if (body.tags !== undefined) updates.tags = body.tags;
+    if (body.medidas !== undefined) updates.medidas = body.medidas; // Campo medidas
+    if (body.color !== undefined) updates.color = body.color; // Campo color
 
     // Actualizar en Google Sheets
     const success = await updateAdminProductInSheets(body.id, updates);
