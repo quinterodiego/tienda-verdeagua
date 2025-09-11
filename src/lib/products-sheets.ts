@@ -299,7 +299,8 @@ export async function migrateProductsToSheets(products: Product[]): Promise<bool
 // Función para decrementar el stock de múltiples productos (para cuando se hace un pedido)
 export async function decrementProductsStock(items: Array<{ productId: string; quantity: number }>): Promise<boolean> {
   try {
-    console.log('🔄 Actualizando stock de productos...');
+    console.log('🔄 INICIANDO DECREMENTO DE STOCK...');
+    console.log('📋 Items recibidos para decrementar:', JSON.stringify(items, null, 2));
     
     const sheets = await getGoogleSheetsAuth();
     
@@ -310,24 +311,29 @@ export async function decrementProductsStock(items: Array<{ productId: string; q
     });
 
     const rows = response.data.values || [];
+    console.log(`📊 Total de productos en sheet: ${rows.length}`);
     
     // Verificar que hay suficiente stock antes de hacer cambios
     for (const item of items) {
       const productIndex = rows.findIndex(row => row[0] === item.productId);
       
       if (productIndex === -1) {
-        console.error(`Producto ${item.productId} no encontrado`);
+        console.error(`❌ Producto ${item.productId} no encontrado en la hoja de productos`);
         return false;
       }
       
       const currentStock = parseInt(rows[productIndex][8]) || 0; // Columna I (índice 8) es stock
       const productName = rows[productIndex][1] || 'Producto sin nombre';
       
+      console.log(`📦 Verificando ${productName}: Stock actual=${currentStock}, Cantidad pedida=${item.quantity}`);
+      
       if (currentStock < item.quantity) {
-        console.error(`Stock insuficiente para producto ${productName}. Stock actual: ${currentStock}, cantidad solicitada: ${item.quantity}`);
+        console.error(`❌ STOCK INSUFICIENTE para producto ${productName}. Stock actual: ${currentStock}, cantidad solicitada: ${item.quantity}`);
         return false;
       }
     }
+
+    console.log('✅ Verificación de stock completada. Procediendo a actualizar...');
 
     // Si todo está bien, actualizar el stock
     for (const item of items) {
@@ -337,6 +343,8 @@ export async function decrementProductsStock(items: Array<{ productId: string; q
         const currentStock = parseInt(rows[productIndex][8]) || 0;
         const newStock = currentStock - item.quantity;
         const productName = rows[productIndex][1] || 'Producto sin nombre';
+        
+        console.log(`🔄 Actualizando ${productName}: ${currentStock} - ${item.quantity} = ${newStock}`);
         
         // La fila en la hoja (considerando que fila 1 son encabezados)
         const rowNumber = productIndex + 2;
@@ -351,11 +359,13 @@ export async function decrementProductsStock(items: Array<{ productId: string; q
           },
         });
         
-        console.log(`📦 Producto ${productName}: ${currentStock} → ${newStock} (vendidos: ${item.quantity})`);
+        console.log(`✅ Producto ${productName}: ${currentStock} → ${newStock} (vendidos: ${item.quantity})`);
+      } else {
+        console.error(`❌ No se pudo encontrar producto ${item.productId} para actualizar`);
       }
     }
 
-    console.log('✅ Stock actualizado correctamente para todos los productos');
+    console.log('🎉 STOCK ACTUALIZADO CORRECTAMENTE PARA TODOS LOS PRODUCTOS');
     return true;
   } catch (error) {
     console.error('Error al decrementar stock de productos:', error);

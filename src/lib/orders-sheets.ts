@@ -79,13 +79,27 @@ export async function saveOrderToSheetsWithId(order: Omit<Order, 'id'>, customOr
     });
 
     // ✨ Decrementar stock de productos cuando se confirma un pedido
+    console.log(`🔍 Verificando estado del pedido para decrementar stock: "${order.status}"`);
+    
     if (order.status === 'confirmed' || order.status === 'pending') {
+      console.log('✅ Estado válido para decrementar stock, preparando items...');
+      
       const stockItems = order.items.map(item => ({
         productId: item.product.id,
         quantity: item.quantity
       }));
       
-      await decrementProductsStock(stockItems);
+      console.log('📦 Items para decrementar stock:', JSON.stringify(stockItems, null, 2));
+      
+      const stockUpdated = await decrementProductsStock(stockItems);
+      
+      if (stockUpdated) {
+        console.log('✅ Stock decrementado exitosamente');
+      } else {
+        console.error('❌ Error al decrementar stock');
+      }
+    } else {
+      console.log(`⏸️ Estado "${order.status}" no requiere decrementar stock`);
     }
 
     return orderId;
