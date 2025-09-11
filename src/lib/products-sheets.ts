@@ -29,24 +29,24 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
         // Estructura actualizada para coincidir con admin-products-sheets:
         // A=id, B=name, C=description, D=price, E=originalPrice, F=category, G=subcategory, H=images, I=stock, J=brand, K=tags, L=status, M=rating, N=reviews, O=createdAt, P=medidas, Q=color
         
-        // DETECTAR LA COLUMNA DE ESTADO - columna 'Activo' en índice 9
+        // DETECTAR EL ESTADO DEL PRODUCTO - columna 'isActive' en índice 9
         let productStatus: ProductStatus = 'active';
         
-        const activoValue = row[9]; // Columna J (índice 9) - "Activo"
-        console.log(`🔍 Producto ${row[1]} - Columna Activo (índice 9): '${activoValue}' (tipo: ${typeof activoValue})`);
+        const isActiveValue = row[9]; // Columna J (índice 9) - "isActive" (boolean)
+        console.log(`🔍 Producto ${row[1]} - Columna isActive (índice 9): '${isActiveValue}' (tipo: ${typeof isActiveValue})`);
         
-        if (activoValue !== undefined && activoValue !== '') {
-          // Convertir string a boolean y luego a status
-          if (activoValue === 'TRUE' || activoValue === 'true' || activoValue === true) {
+        if (isActiveValue !== undefined && isActiveValue !== '') {
+          // Convertir string/boolean a ProductStatus
+          if (isActiveValue === 'TRUE' || isActiveValue === 'true' || isActiveValue === true || isActiveValue === 'TRUE') {
             productStatus = 'active';
-            console.log(`✅ ${row[1]} -> ACTIVO (TRUE)`);
-          } else if (activoValue === 'FALSE' || activoValue === 'false' || activoValue === false) {
+            console.log(`✅ ${row[1]} -> ACTIVO (isActive=true)`);
+          } else if (isActiveValue === 'FALSE' || isActiveValue === 'false' || isActiveValue === false || isActiveValue === 'FALSE') {
             productStatus = 'inactive';
-            console.log(`❌ ${row[1]} -> INACTIVO (FALSE)`);
+            console.log(`❌ ${row[1]} -> INACTIVO (isActive=false)`);
           } else {
             // Fallback: si no es TRUE/FALSE, asumir activo
             productStatus = 'active';
-            console.log(`⚠️ ${row[1]} -> ACTIVO por defecto (valor: '${activoValue}')`);
+            console.log(`⚠️ ${row[1]} -> ACTIVO por defecto (valor: '${isActiveValue}')`);
           }
         } else {
           console.log(`⚠️ ${row[1]} -> ACTIVO por defecto (valor vacío)`);
