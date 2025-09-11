@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
       retryOrderId 
     } = body;
     
-    // Si viene del nuevo checkout (EnhancedCheckout)
-    if (newOrderId && customerInfo) {
-      console.log('🆕 Procesando desde EnhancedCheckout');
+    // Si viene del nuevo checkout (EnhancedCheckout) - detectar por customerInfo
+    if (customerInfo && !preferenceId) {
+      console.log('🆕 Procesando desde EnhancedCheckout (sin orderId previo)');
       
-      // Validar datos requeridos del nuevo formato
-      if (!newOrderId || !items || !total || !customerInfo || !paymentMethod) {
+      // Validar datos requeridos del nuevo formato (sin requerir newOrderId)
+      if (!items || !total || !customerInfo || !paymentMethod) {
         return NextResponse.json({ 
-          error: 'Faltan datos requeridos: orderId, items, total, customerInfo, paymentMethod' 
+          error: 'Faltan datos requeridos: items, total, customerInfo, paymentMethod' 
         }, { status: 400 });
       }
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         status: 'payment_pending' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
-        paymentId: newOrderId,
+        paymentId: undefined, // Se generará automáticamente
         paymentMethod,
         paymentStatus: 'pending' as const,
         shippingAddress: deliveryInfo?.address ? {
@@ -84,9 +84,11 @@ export async function POST(request: NextRequest) {
       if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_CLIENT_EMAIL) {
         console.log('⚠️ MODO DEBUG: Simulando guardado de orden pendiente');
         
+        const mockOrderId = `ORD-${Date.now().toString().slice(-6)}`;
+        
         return NextResponse.json({
           success: true,
-          orderId: newOrderId,
+          orderId: mockOrderId,
           message: 'Orden pendiente simulada (Google Sheets no configurado)',
           debug: true
         });
