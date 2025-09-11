@@ -81,7 +81,7 @@ export async function saveOrderToSheetsWithId(order: Omit<Order, 'id'>, customOr
     // ✨ Decrementar stock de productos cuando se confirma un pedido
     console.log(`🔍 Verificando estado del pedido para decrementar stock: "${order.status}"`);
     
-    if (order.status === 'confirmed' || order.status === 'pending') {
+    if (order.status === 'confirmed') {
       console.log('✅ Estado válido para decrementar stock, preparando items...');
       
       const stockItems = order.items.map(item => ({
