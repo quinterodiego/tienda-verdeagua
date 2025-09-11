@@ -372,3 +372,58 @@ export async function decrementProductsStock(items: Array<{ productId: string; q
     return false;
   }
 }
+
+// Función para restaurar el stock de múltiples productos (para cuando se cancela un pedido)
+export async function restoreProductsStock(items: Array<{ productId: string; quantity: number }>): Promise<boolean> {
+  try {
+    console.log('🔄 INICIANDO RESTAURACIÓN DE STOCK...');
+    console.log('📋 Items recibidos para restaurar:', JSON.stringify(items, null, 2));
+    
+    const sheets = await getGoogleSheetsAuth();
+    
+    // Obtener todos los productos actuales
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.PRODUCTS}!A2:P`,
+    });
+
+    const rows = response.data.values || [];
+    console.log(`📊 Total de productos en sheet: ${rows.length}`);
+
+    // Restaurar el stock de cada producto
+    for (const item of items) {
+      const productIndex = rows.findIndex(row => row[0] === item.productId);
+      
+      if (productIndex !== -1) {
+        const currentStock = parseInt(rows[productIndex][8]) || 0;
+        const newStock = currentStock + item.quantity;
+        const productName = rows[productIndex][1] || 'Producto sin nombre';
+        
+        console.log(`🔄 Restaurando ${productName}: ${currentStock} + ${item.quantity} = ${newStock}`);
+        
+        // La fila en la hoja (considerando que fila 1 son encabezados)
+        const rowNumber = productIndex + 2;
+
+        // Actualizar stock (columna I)
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEET_NAMES.PRODUCTS}!I${rowNumber}`,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: {
+            values: [[newStock]],
+          },
+        });
+        
+        console.log(`✅ Producto ${productName}: ${currentStock} → ${newStock} (restaurados: ${item.quantity})`);
+      } else {
+        console.error(`❌ No se pudo encontrar producto ${item.productId} para restaurar`);
+      }
+    }
+
+    console.log('🎉 STOCK RESTAURADO CORRECTAMENTE PARA TODOS LOS PRODUCTOS');
+    return true;
+  } catch (error) {
+    console.error('Error al restaurar stock de productos:', error);
+    return false;
+  }
+}

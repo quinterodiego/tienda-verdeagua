@@ -1,6 +1,6 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { Order, Customer, CartItem } from '@/types';
-import { decrementProductsStock, getProductsFromSheets } from './products-sheets';
+import { decrementProductsStock, getProductsFromSheets, restoreProductsStock } from './products-sheets';
 import { generateOrderId } from './order-utils';
 
 // Función para obtener la imagen de un producto por su ID
@@ -305,7 +305,34 @@ export async function updateOrderStatus(
       },
     });
 
-    // 📧 NUEVO: Enviar email de notificación al cliente (solo si sendEmail es true)
+    // � GESTIÓN DE STOCK: Restaurar stock si el pedido se cancela
+    if (status === 'cancelled' || status === 'rejected' || status === 'failed') {
+      try {
+        console.log(`🔄 Pedido ${orderId} cambió a estado ${status}, restaurando stock...`);
+        
+        // Obtener los items del pedido para restaurar el stock
+        const orderItems = JSON.parse(orderRow[5] || '[]'); // Columna F contiene los items
+        const stockItems = orderItems.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }));
+        
+        console.log('📦 Items para restaurar stock:', JSON.stringify(stockItems, null, 2));
+        
+        const stockRestored = await restoreProductsStock(stockItems);
+        
+        if (stockRestored) {
+          console.log('✅ Stock restaurado exitosamente');
+        } else {
+          console.error('❌ Error al restaurar stock');
+        }
+      } catch (stockError) {
+        console.error('❌ Error al restaurar stock del pedido cancelado:', stockError);
+        // No fallar la actualización del estado si la restauración de stock falla
+      }
+    }
+
+    // �📧 NUEVO: Enviar email de notificación al cliente (solo si sendEmail es true)
     if (sendEmail) {
       try {
         // En lugar de enviar email de cambio de estado, 
