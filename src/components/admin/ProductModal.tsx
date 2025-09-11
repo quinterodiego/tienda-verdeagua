@@ -353,8 +353,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
             </div>
           </div>
 
-          {/* Categoría y marca */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Categoría y subcategoría */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Categoría
@@ -394,7 +394,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               />
             </div>
 
-            <div>
+            {/* Campo Marca oculto temporalmente */}
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Marca
               </label>
@@ -405,7 +406,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
                 className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
                 placeholder="Ej: Apple"
               />
-            </div>
+            </div> */}
           </div>
 
           {/* Imágenes */}
