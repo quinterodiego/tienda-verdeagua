@@ -1180,14 +1180,15 @@ export function createOrderStatusUpdateEmail(data: OrderStatusUpdateEmailData) {
           margin-top: 15px;
         }
         .footer { 
-          background-color: #2d3748; 
-          color: white; 
+          background-color: #f7fafc; 
+          color: #4a5568; 
           text-align: center; 
           padding: 30px 40px;
+          border-top: 1px solid #e2e8f0;
         }
         .footer-logo { margin-bottom: 15px; }
-        .footer-logo img { max-width: 150px; height: auto; filter: brightness(0) invert(1); }
-        .footer p { margin: 8px 0; font-size: 14px; color: #a0aec0; }
+        .footer-logo img { max-width: 150px; height: auto; opacity: 0.7; }
+        .footer p { margin: 8px 0; font-size: 14px; color: #718096; }
         @media only screen and (max-width: 600px) {
           .email-container { margin: 0 10px; }
           .content { padding: 30px 20px; }
@@ -1397,7 +1398,36 @@ export function createOrderNotificationAdminEmail(data: OrderEmailData) {
           font-size: 14px; 
           margin: 5px 0;
         }
-        @media only screen and (max-width: 600px) { .email-container { margin: 0 10px; } .content { padding: 30px 20px; } .header { padding: 25px 20px; } .order-details { padding: 20px; } .footer { padding: 25px 20px; } }
+        @media only screen and (max-width: 600px) { 
+          .email-container { 
+            margin: 0 10px; 
+            box-shadow: none;
+          } 
+          .content { 
+            padding: 30px 20px; 
+          } 
+          .header { 
+            padding: 25px 20px; 
+          } 
+          .order-details { 
+            padding: 20px; 
+            margin: 15px 0;
+            border-radius: 8px;
+          } 
+          .order-details h3 {
+            font-size: 16px;
+            text-align: center;
+            word-break: break-word;
+          }
+          .footer { 
+            padding: 25px 20px; 
+          }
+          .items-table th,
+          .items-table td {
+            padding: 10px 8px;
+            font-size: 12px;
+          }
+        }
       </style>
     </head>
     <body>
