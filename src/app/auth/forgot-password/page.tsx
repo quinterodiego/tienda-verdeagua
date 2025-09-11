@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
                 ¡Email Enviado!
               </h1>
               <p className="text-gray-600">
-                Si el email existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
+                Si tu email está registrado en nuestro sistema, recibirás un enlace para restablecer tu contraseña en unos minutos.
               </p>
             </div>
 
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
                 📧 Revisa tu email
               </h3>
               <p className="text-sm text-blue-800">
-                El enlace de recuperación expira en <strong>1 hora</strong>. Si no encuentras el email, revisa tu carpeta de spam.
+                El enlace de recuperación expira en <strong>1 hora</strong>. Si no recibes el email en 5-10 minutos, es posible que el email no esté registrado o esté en tu carpeta de spam.
               </p>
             </div>
 
@@ -88,8 +88,17 @@ export default function ForgotPasswordPage() {
                 }}
                 className="w-full text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Enviar a otro email
+                Probar con otro email
               </button>
+
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-500">
+                  💡 <strong>¿No recibes el email?</strong> Es posible que el email no esté registrado. 
+                  <Link href="/auth/signin" className="text-[#68c3b7] hover:text-[#64b7ac] font-medium ml-1">
+                    Intenta crear una cuenta nueva
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
