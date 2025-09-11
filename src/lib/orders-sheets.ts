@@ -305,6 +305,33 @@ export async function updateOrderStatus(
       },
     });
 
+    // 🎯 GESTIÓN DE STOCK: Decrementar stock cuando admin confirma un pedido
+    if (status === 'confirmed' && currentStatus !== 'confirmed') {
+      try {
+        console.log(`✅ Admin confirmó pedido ${orderId} - decrementando stock...`);
+        
+        // Obtener los items del pedido para decrementar el stock
+        const orderItems = JSON.parse(orderRow[5] || '[]'); // Columna F contiene los items
+        const stockItems = orderItems.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }));
+        
+        console.log('📦 Items para decrementar stock:', JSON.stringify(stockItems, null, 2));
+        
+        const stockUpdated = await decrementProductsStock(stockItems);
+        
+        if (stockUpdated) {
+          console.log('✅ Stock decrementado exitosamente al confirmar pedido');
+        } else {
+          console.error('❌ Error al decrementar stock del pedido confirmado');
+        }
+      } catch (stockError) {
+        console.error('❌ Error al decrementar stock del pedido confirmado:', stockError);
+        // No fallar la actualización del estado si el decremento de stock falla
+      }
+    }
+
     // � GESTIÓN DE STOCK: Restaurar stock si el pedido se cancela
     if (status === 'cancelled' || status === 'rejected' || status === 'failed') {
       try {
