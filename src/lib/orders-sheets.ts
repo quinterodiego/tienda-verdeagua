@@ -1,6 +1,7 @@
 import { getGoogleSheetsAuth, SPREADSHEET_ID, SHEET_NAMES } from './google-sheets';
 import { Order, Customer, CartItem } from '@/types';
 import { decrementProductsStock, getProductsFromSheets } from './products-sheets';
+import { generateOrderId } from './order-utils';
 
 // Función para obtener la imagen de un producto por su ID
 async function getProductImageById(productId: string): Promise<string> {
@@ -19,8 +20,8 @@ export async function saveOrderToSheets(order: Omit<Order, 'id'>): Promise<strin
   try {
     const sheets = await getGoogleSheetsAuth();
     
-    // Generar ID único para el pedido
-    const orderId = `ORD-${Date.now()}`;
+    // Generar ID único para el pedido con el nuevo formato
+    const orderId = generateOrderId();
     
     return await saveOrderToSheetsWithId(order, orderId);
   } catch (error) {

@@ -376,7 +376,8 @@ export const useAdminStore = create<AdminState>()(
       addOrder: (order) => {
         const newOrder: Order = {
           ...order,
-          id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+          // NO generar ID aquí - será generado por el backend
+          id: order.id || `TEMP-${Date.now()}`, // Solo temporalmente hasta que el backend responda
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };

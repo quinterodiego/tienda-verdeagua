@@ -69,12 +69,6 @@ const validatePhone = (phone: string) => {
   return /^[0-9]{10}$/.test(phone.replace(/\s/g, ''));
 };
 
-const generateOrderId = () => {
-  const timestamp = Date.now().toString();
-  const random = Math.random().toString(36).substring(2, 8);
-  return `ORD-${timestamp}-${random}`.toUpperCase();
-};
-
 export default function EnhancedCheckout() {
   const { items, total, clearCart } = useCartStore();
   const { data: session } = useSession();
@@ -234,9 +228,51 @@ export default function EnhancedCheckout() {
       // Marcar actividad de pago
       localStorage.setItem('lastPaymentActivity', Date.now().toString());
       
-      const orderId = generateOrderId();
+      // PASO 1: Primero crear el pedido en el backend para obtener el orderId real
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerInfo: {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            email: form.email,
+            phone: form.phone,
+            address: selectedDeliveryMethod === 'delivery' ? `${form.address}, ${form.city}, ${form.state}` : ''
+          },
+          items: items.map(item => ({
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            image: item.product.image
+          })),
+          total: total,
+          paymentMethod: 'mercadopago',
+          paymentStatus: 'pending',
+          status: 'pending',
+          shippingAddress: selectedDeliveryMethod === 'delivery' ? {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            address: form.address,
+            city: form.city,
+            state: form.state,
+            zipCode: form.zipCode,
+            phone: form.phone
+          } : {}
+        })
+      });
+
+      const orderData = await orderResponse.json();
       
-      // Crear preference de MercadoPago
+      if (!orderResponse.ok || !orderData.success) {
+        throw new Error('Error al crear el pedido: ' + (orderData.error || 'Error desconocido'));
+      }
+
+      const orderId = orderData.orderId; // Usar el ID generado por el backend
+      console.log('✅ Pedido creado con ID:', orderId);
+      
+      // PASO 2: Crear preference de MercadoPago con el orderId real
       const response = await fetch('/api/mercadopago/preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -370,14 +406,12 @@ export default function EnhancedCheckout() {
   // Manejar pago por transferencia
   const handleTransferPayment = async () => {
     try {
-      const orderId = generateOrderId();
-      
       // Crear pedido pendiente de pago
       const response = await fetch('/api/orders/pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId,
+          // No enviamos orderId - será generado por el backend
           items,
           total: finalTotal,
           customerInfo: {
@@ -404,7 +438,8 @@ export default function EnhancedCheckout() {
 
       if (!response.ok) throw new Error('Error al crear pedido');
 
-      await response.json();
+      const orderData = await response.json();
+      const orderId = orderData.orderId; // Usar el ID generado por el backend
       
       // Limpiar carrito después de crear el pedido exitosamente
       clearCart();
