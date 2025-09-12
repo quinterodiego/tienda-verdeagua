@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Cache-Control': shouldIncludeInactive 
           ? 'no-cache, no-store, must-revalidate' // Admin data - no cache
-          : 'public, s-maxage=300, stale-while-revalidate=600', // Public data - 5min cache
+          : 'public, s-maxage=60, stale-while-revalidate=120', // Public data - 1min cache, 2min stale
         'Content-Type': 'application/json',
       }
     });
