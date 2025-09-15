@@ -28,8 +28,9 @@ export async function generateStaticParams() {
 }
 
 // Generar metadata dinámica
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const product = await getProduct(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProduct(id);
   
   if (!product) {
     return {
@@ -42,8 +43,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 // Componente servidor
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await getProduct(params.id);
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = await getProduct(id);
   
   if (!product) {
     notFound();

@@ -66,7 +66,9 @@ export async function POST(request: NextRequest) {
       brand: body.brand || '',
       tags: body.tags || [],
       medidas: body.medidas || '', // Campo medidas
-      color: body.color || '' // Campo color
+      color: body.color || '', // Campo color (backwards compatibility)
+      colores: body.colores || [], // Array de colores seleccionados
+      motivos: body.motivos || [] // Array de motivos seleccionados
     };
 
     // Guardar producto en Google Sheets
@@ -104,6 +106,11 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     
+    console.log('🔄 Iniciando actualización de producto:', {
+      productId: body.id,
+      updates: body
+    });
+    
     if (!body.id) {
       return NextResponse.json({ error: 'ID del producto requerido' }, { status: 400 });
     }
@@ -124,7 +131,9 @@ export async function PUT(request: NextRequest) {
     if (body.brand !== undefined) updates.brand = body.brand;
     if (body.tags !== undefined) updates.tags = body.tags;
     if (body.medidas !== undefined) updates.medidas = body.medidas; // Campo medidas
-    if (body.color !== undefined) updates.color = body.color; // Campo color
+    if (body.color !== undefined) updates.color = body.color; // Campo color (backwards compatibility)
+    if (body.colores !== undefined) updates.colores = body.colores; // Array de colores seleccionados
+    if (body.motivos !== undefined) updates.motivos = body.motivos; // Array de motivos seleccionados
 
     // Actualizar en Google Sheets
     const success = await updateAdminProductInSheets(body.id, updates);

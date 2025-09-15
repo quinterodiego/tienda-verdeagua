@@ -30,12 +30,17 @@ import {
   Trash2Icon as Trash2,
   ShieldIcon as Shield
 } from '@/components/HeroIcons';
+import { Palette, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Order } from '@/lib/admin-store';
 import { AdminProduct } from '@/lib/admin-products-sheets'; // Importar la interfaz correcta
 import ProductModal from '@/components/admin/ProductModal';
 import OrderModal from '@/components/admin/OrderModal';
 import CategoryModal from '@/components/admin/CategoryModal';
+import ColorModal from '@/components/admin/ColorModal';
+import MotivoModal from '@/components/admin/MotivoModal';
+import { ColorsContent } from '@/components/admin/ColorsContent';
+import { MotivosContent } from '@/components/admin/MotivosContent';
 import UserRoleManager from '@/components/admin/UserRoleManager';
 import ContactTestPanel from '@/components/admin/ContactTestPanel';
 // import MercadoPagoTestPanel from '@/components/admin/MercadoPagoTestPanel'; // Oculto temporalmente
@@ -45,6 +50,7 @@ import OrderStatusEmailTestPanel from '@/components/admin/OrderStatusEmailTestPa
 import { useNotifications, NotificationsStore } from '@/lib/store';
 import { isAdminUserSync } from '@/lib/admin-client';
 import { User } from '@/types';
+import { AdminColor, AdminMotivo } from '@/types/colors-motivos';
 
 // Interfaz para usuarios de admin desde Google Sheets (extendida de User)
 interface AdminUser extends User {
@@ -308,6 +314,8 @@ export default function AdminPage() {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'products', label: 'Productos', icon: Package },
     { id: 'categories', label: 'Categorías', icon: Tag },
+    { id: 'colors', label: 'Colores', icon: Palette },
+    { id: 'motivos', label: 'Motivos', icon: Sparkles },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'users', label: 'Usuarios', icon: Users },
     // { id: 'test-payments', label: 'Pagos de Prueba', icon: CreditCard }, // Oculto temporalmente
@@ -349,6 +357,14 @@ export default function AdminPage() {
       case 'categories':
         return (
           <CategoriesContent />
+        );
+      case 'colors':
+        return (
+          <ColorsContent />
+        );
+      case 'motivos':
+        return (
+          <MotivosContent />
         );
       case 'orders':
         console.log('🔍 Renderizando OrdersContent con', sheetsOrders.length, 'pedidos');

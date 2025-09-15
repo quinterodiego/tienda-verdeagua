@@ -13,7 +13,9 @@ export interface Product {
   reviews?: number;
   status?: ProductStatus; // Estado del producto
   medidas?: string; // Medidas del producto personalizado
-  color?: string; // Color del producto personalizado
+  color?: string; // Color individual (backwards compatibility)
+  colores?: string[]; // Array de colores asignados al producto
+  motivos?: string[]; // Array de motivos asignados al producto
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,6 +32,8 @@ export interface Category {
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedColor?: string; // ID del color seleccionado
+  selectedMotivo?: string; // ID del motivo seleccionado
 }
 
 export interface Cart {

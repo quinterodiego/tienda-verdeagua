@@ -152,12 +152,14 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-4">
-                {items.map((item) => {
+                {items.map((item, index) => {
                   const stockInfo = stockMap.get(item.product.id);
                   const hasStockIssue = stockInfo && !stockInfo.sufficient;
+                  // Crear key única para el item basada en producto + selecciones
+                  const itemKey = `${item.product.id}-${item.selectedColor || 'no-color'}-${item.selectedMotivo || 'no-motivo'}-${index}`;
                   
                   return (
-                    <div key={item.product.id} className={`border-b pb-4 last:border-b-0 ${hasStockIssue ? 'bg-red-50 border-red-200 p-4 rounded-lg' : ''}`}>
+                    <div key={itemKey} className={`border-b pb-4 last:border-b-0 ${hasStockIssue ? 'bg-red-50 border-red-200 p-4 rounded-lg' : ''}`}>
                       {/* Desktop Layout */}
                       <div className="hidden md:flex items-center space-x-4">
                         <div className="relative w-20 h-20 flex-shrink-0">
@@ -176,7 +178,22 @@ export default function CartPage() {
                           <p className="text-gray-600 text-sm">
                             {item.product.category}
                           </p>
-                          <p className="text-lg font-bold text-gray-900">
+                          
+                          {/* Mostrar selecciones de color y motivo */}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {item.selectedColor && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Color: {item.selectedColor}
+                              </span>
+                            )}
+                            {item.selectedMotivo && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Motivo: {item.selectedMotivo}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className="text-lg font-bold text-gray-900 mt-1">
                             {formatCurrency(item.product.price)}
                           </p>
                           
@@ -191,7 +208,7 @@ export default function CartPage() {
 
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.selectedMotivo)}
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <Minus className="w-4 h-4" />
@@ -200,7 +217,7 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.selectedMotivo)}
                             className={`flex items-center justify-center w-8 h-8 rounded-full text-gray-600 transition-colors ${
                               hasStockIssue 
                                 ? 'bg-gray-300 cursor-not-allowed' 
@@ -218,7 +235,7 @@ export default function CartPage() {
                             {formatCurrency(item.product.price * item.quantity)}
                           </p>
                           <button
-                            onClick={() => removeItem(item.product.id)}
+                            onClick={() => removeItem(item.product.id, item.selectedColor, item.selectedMotivo)}
                             className="text-red-600 hover:text-red-700 mt-2 p-1"
                           >
                             <X className="w-5 h-5" />
@@ -245,13 +262,28 @@ export default function CartPage() {
                             <p className="text-gray-600 text-xs mt-1">
                               {item.product.category}
                             </p>
+                            
+                            {/* Mostrar selecciones de color y motivo - Mobile */}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.selectedColor && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Color: {item.selectedColor}
+                                </span>
+                              )}
+                              {item.selectedMotivo && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  Motivo: {item.selectedMotivo}
+                                </span>
+                              )}
+                            </div>
+                            
                             <p className="text-base font-bold text-gray-900 mt-1">
                               {formatCurrency(item.product.price)}
                             </p>
                           </div>
 
                           <button
-                            onClick={() => removeItem(item.product.id)}
+                            onClick={() => removeItem(item.product.id, item.selectedColor, item.selectedMotivo)}
                             className="text-red-600 hover:text-red-700 p-1 flex-shrink-0"
                           >
                             <X className="w-5 h-5" />
@@ -269,7 +301,7 @@ export default function CartPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.selectedMotivo)}
                               className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                               <Minus className="w-4 h-4" />
@@ -278,7 +310,7 @@ export default function CartPage() {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.selectedMotivo)}
                               className={`flex items-center justify-center w-8 h-8 rounded-full text-gray-600 transition-colors ${
                                 hasStockIssue 
                                   ? 'bg-gray-300 cursor-not-allowed' 

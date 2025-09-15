@@ -63,7 +63,8 @@ export interface AdminProduct {
   brand?: string;
   tags: string[];
   medidas?: string; // Nuevo campo para medidas
-  color?: string; // Nuevo campo para color
+  colores?: string[]; // Array de IDs de colores seleccionados (cambio de color a colores)
+  motivos?: string[]; // Array de IDs de motivos seleccionados (nuevo campo)
   createdAt: string;
   updatedAt: string;
 }

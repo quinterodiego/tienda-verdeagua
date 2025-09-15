@@ -13,7 +13,7 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:Q`, // Ampliado hasta columna Q para incluir Medidas y Color
+      range: `${SHEET_NAMES.PRODUCTS}!A2:S`, // Ampliado hasta columna S para incluir Medidas, Color, Colores y Motivos
     });
 
     const rows = response.data.values || [];
@@ -85,10 +85,20 @@ export async function getProductsFromSheets(includeInactive: boolean = false): P
           rating: parseFloat(row[12]) || undefined, // Columna M (índice 12) - rating si existe
           reviews: parseInt(row[13]) || undefined, // Columna N (índice 13) - reviews si existe
           medidas: row[15] || undefined, // Columna P (índice 15) - Medidas
-          color: row[16] || undefined, // Columna Q (índice 16) - Color
+          color: row[16] || undefined, // Columna Q (índice 16) - Color (backwards compatibility)
+          colores: row[17] ? row[17].split(',').map((c: string) => c.trim()).filter((c: string) => c) : undefined, // Columna R (índice 17) - Array de colores asignados
+          motivos: row[18] ? row[18].split(',').map((m: string) => m.trim()).filter((m: string) => m) : undefined, // Columna S (índice 18) - Array de motivos asignados
           createdAt: row[14] || '', // Columna O (índice 14)
           updatedAt: '', // No hay columna updatedAt en esta estructura
         };
+
+        // Log específico para el producto que estamos debuggeando
+        if (product.id === 'PROD-1755443587265') {
+          console.log(`🔍 Producto ${product.name} - Columna R (colores):`, row[17]);
+          console.log(`🔍 Producto ${product.name} - Columna S (motivos):`, row[18]);
+          console.log(`🔍 Producto ${product.name} - colores parseados:`, product.colores);
+          console.log(`🔍 Producto ${product.name} - motivos parseados:`, product.motivos);
+        }
 
         return product;
       } catch (rowError) {
