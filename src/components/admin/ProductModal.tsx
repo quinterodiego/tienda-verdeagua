@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Upload, Plus, Trash2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { AdminProduct } from '@/lib/admin-store';
 import { Category } from '@/types';
+import { Color, Motivo } from '@/types/colors-motivos';
 import ImageUploader from './ImageUploader';
 
 interface ProductModalProps {
@@ -16,7 +17,11 @@ interface ProductModalProps {
 
 export default function ProductModal({ isOpen, onClose, onSave, product, mode }: ProductModalProps) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [colors, setColors] = useState<Color[]>([]);
+  const [motivos, setMotivos] = useState<Motivo[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingColors, setLoadingColors] = useState(false);
+  const [loadingMotivos, setLoadingMotivos] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -31,7 +36,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
     brand: '',
     tags: '',
     medidas: '', // Nuevo campo para medidas
-    color: '' // Nuevo campo para color
+    colores: [] as string[], // Cambiado a array para selección múltiple
+    motivos: [] as string[] // Nuevo campo para motivos con selección múltiple
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -92,8 +98,9 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           sku: product.sku || '',
           brand: product.brand || '',
           tags: product.tags?.join(', ') || '',
-          medidas: (product as any).medidas || '', // Nuevo campo para medidas
-          color: (product as any).color || '' // Nuevo campo para color
+          medidas: (product as AdminProduct & { medidas?: string }).medidas || '', // Nuevo campo para medidas
+          colores: (product as AdminProduct & { colores?: string[] }).colores || [], // Array de colores seleccionados
+          motivos: (product as AdminProduct & { motivos?: string[] }).motivos || [] // Array de motivos seleccionados
         });
       } else {
         console.log('🆕 ProductModal: Creando producto nuevo');
@@ -112,17 +119,24 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           brand: '',
           tags: '',
           medidas: '', // Nuevo campo para medidas
-          color: '' // Nuevo campo para color
+          colores: [], // Array de colores seleccionados
+          motivos: [] // Array de motivos seleccionados
         });
       }
       setErrors({});
     }
   }, [isOpen, mode, product]);
 
-  // Cargar categorías cuando se abre el modal
+  // Cargar datos cuando se abre el modal
   useEffect(() => {
-    if (isOpen && categories.length === 0) {
-      loadCategories();
+    if (isOpen) {
+      // Siempre cargar categorías si no están cargadas
+      if (categories.length === 0) {
+        loadCategories();
+      }
+      // Siempre recargar colores y motivos para obtener los más recientes
+      loadColors();
+      loadMotivos();
     }
   }, [isOpen]);
 
@@ -140,6 +154,40 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
       console.error('Error al cargar categorías:', error);
     } finally {
       setLoadingCategories(false);
+    }
+  };
+
+  const loadColors = async () => {
+    setLoadingColors(true);
+    try {
+      const response = await fetch('/api/colors');
+      if (response.ok) {
+        const data = await response.json();
+        setColors((data.colors || []).filter((color: Color) => color.disponible));
+      } else {
+        console.error('Error al cargar colores');
+      }
+    } catch (error) {
+      console.error('Error al cargar colores:', error);
+    } finally {
+      setLoadingColors(false);
+    }
+  };
+
+  const loadMotivos = async () => {
+    setLoadingMotivos(true);
+    try {
+      const response = await fetch('/api/motivos');
+      if (response.ok) {
+        const data = await response.json();
+        setMotivos((data.motivos || []).filter((motivo: Motivo) => motivo.disponible));
+      } else {
+        console.error('Error al cargar motivos');
+      }
+    } catch (error) {
+      console.error('Error al cargar motivos:', error);
+    } finally {
+      setLoadingMotivos(false);
     }
   };
 
@@ -173,7 +221,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
       subcategory: formData.subcategory || undefined,
       brand: formData.brand || undefined,
       medidas: formData.medidas || undefined, // Incluir medidas
-      color: formData.color || undefined, // Incluir color
+      colores: formData.colores, // Array de colores seleccionados
+      motivos: formData.motivos, // Array de motivos seleccionados
       images: formData.images.filter(img => img.trim()),
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
     };
@@ -269,7 +318,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
           </div>
 
           {/* Campos para productos personalizados */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Medidas
@@ -284,18 +333,86 @@ export default function ProductModal({ isOpen, onClose, onSave, product, mode }:
               <p className="text-xs text-gray-500 mt-1">Opcional</p>
             </div>
 
+            {/* Selección múltiple de Colores */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Color
+                Colores
               </label>
-              <input
-                type="text"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="text-gray-600 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#68c3b7] focus:border-transparent"
-                placeholder="Ej: Azul marino, Rojo, Negro mate"
-              />
-              <p className="text-xs text-gray-500 mt-1">Opcional</p>
+              <div className="border border-gray-300 rounded-lg p-2 max-h-28 overflow-y-auto bg-gray-50/30">
+                {loadingColors ? (
+                  <p className="text-sm text-gray-500">Cargando colores...</p>
+                ) : colors.length === 0 ? (
+                  <p className="text-sm text-gray-500">No hay colores disponibles</p>
+                ) : (
+                  <div className="space-y-1">
+                    {colors.map((color) => (
+                      <label key={color.id} className="flex items-center space-x-2 cursor-pointer hover:bg-white p-1 rounded-md border border-transparent hover:border-gray-200 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={formData.colores.includes(color.nombre)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({
+                                ...formData,
+                                colores: [...formData.colores, color.nombre]
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                colores: formData.colores.filter(nombre => nombre !== color.nombre)
+                              });
+                            }
+                          }}
+                          className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                        />
+                        <span className="text-sm font-medium text-gray-700 select-none">{color.nombre}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Selecciona uno o más colores</p>
+            </div>
+
+            {/* Selección múltiple de Motivos */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Motivos
+              </label>
+              <div className="border border-gray-300 rounded-lg p-2 max-h-28 overflow-y-auto bg-gray-50/30">
+                {loadingMotivos ? (
+                  <p className="text-sm text-gray-500">Cargando motivos...</p>
+                ) : motivos.length === 0 ? (
+                  <p className="text-sm text-gray-500">No hay motivos disponibles</p>
+                ) : (
+                  <div className="space-y-1">
+                    {motivos.map((motivo) => (
+                      <label key={motivo.id} className="flex items-center space-x-2 cursor-pointer hover:bg-white p-1 rounded-md border border-transparent hover:border-gray-200 transition-all">
+                        <input
+                          type="checkbox"
+                          checked={formData.motivos.includes(motivo.nombre)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({
+                                ...formData,
+                                motivos: [...formData.motivos, motivo.nombre]
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                motivos: formData.motivos.filter(nombre => nombre !== motivo.nombre)
+                              });
+                            }
+                          }}
+                          className="text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                        />
+                        <span className="text-sm font-medium text-gray-700 select-none">{motivo.nombre}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Selecciona uno o más motivos</p>
             </div>
           </div>
 

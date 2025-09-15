@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/currency';
 import { StarIcon, ShoppingCartIcon, ArrowLeftIcon, PlusIcon, MinusIcon, ShareIcon } from '@/components/HeroIcons';
 import Image from 'next/image';
 import { Product } from '@/types';
+import { Color, Motivo } from '@/types/colors-motivos';
 
 // Lazy load components
 const Notification = lazy(() => import('@/components/Notification'));
@@ -29,6 +30,14 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const [isLoading, setIsLoading] = useState(!initialProduct);
   const [error, setError] = useState<string | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  
+  // Estados para colores y motivos
+  const [availableColors, setAvailableColors] = useState<Color[]>([]);
+  const [availableMotivos, setAvailableMotivos] = useState<Motivo[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedMotivo, setSelectedMotivo] = useState<string>('');
+  const [loadingColors, setLoadingColors] = useState(false);
+  const [loadingMotivos, setLoadingMotivos] = useState(false);
 
   // Solo cargar desde API si no hay producto inicial
   useEffect(() => {
@@ -75,6 +84,38 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
     }
   }, [params.id, initialProduct]);
 
+  // Cargar colores y motivos específicos del producto
+  useEffect(() => {
+    const loadProductColorsAndMotivos = async () => {
+      try {
+        setLoadingColors(true);
+        setLoadingMotivos(true);
+        
+        // Usar la nueva API optimizada que filtra por producto
+        const response = await fetch(`/api/products/${product.id}/colors-motivos`);
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableColors(data.colors || []);
+          setAvailableMotivos(data.motivos || []);
+        } else {
+          setAvailableColors([]);
+          setAvailableMotivos([]);
+        }
+      } catch (error) {
+        console.error('Error loading product colors/motivos:', error);
+        setAvailableColors([]);
+        setAvailableMotivos([]);
+      } finally {
+        setLoadingColors(false);
+        setLoadingMotivos(false);
+      }
+    };
+
+    if (product && product.id) {
+      loadProductColorsAndMotivos();
+    }
+  }, [product]);
+
   if (isLoading) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-gray-50 animate-pulse" />}>
@@ -101,16 +142,22 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }
 
   const handleAddToCart = useCallback(async () => {
+    // Validar que se haya seleccionado un color si hay colores disponibles
+    if (availableColors.length > 0 && !selectedColor) {
+      alert('Por favor selecciona un color');
+      return;
+    }
+
     setIsAddingToCart(true);
     try {
       // Simular un pequeño delay para mostrar el loading
       await new Promise(resolve => setTimeout(resolve, 500));
-      addItem(product, quantity);
+      addItem(product, quantity, selectedColor, selectedMotivo);
       setShowNotification(true);
     } finally {
       setIsAddingToCart(false);
     }
-  }, [addItem, product, quantity]);
+  }, [addItem, product, quantity, selectedColor, selectedMotivo, availableColors]);
 
   const incrementQuantity = useCallback(() => {
     if (quantity < product.stock) {
@@ -369,6 +416,103 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 {product.stock > 0 ? `${product.stock} unidades` : 'Agotado'}
               </span>
             </div>
+
+            {/* Selección de Colores y Motivos */}
+            {product.stock > 0 && (availableColors.length > 0 || availableMotivos.length > 0 || loadingColors || loadingMotivos) && (
+              <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.75s' }}>
+                {/* Selección de Color */}
+                {availableColors.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      Selecciona un color: <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50/30">
+                      {availableColors.map((color) => (
+                        <label 
+                          key={color.id} 
+                          className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer transition-all ${
+                            selectedColor === color.id 
+                              ? 'bg-emerald-100 border-emerald-500 border-2' 
+                              : 'bg-white border border-gray-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="color"
+                            value={color.id}
+                            checked={selectedColor === color.id}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{color.nombre}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading states */}
+                {(loadingColors || loadingMotivos) && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Cargando opciones disponibles...
+                    </p>
+                  </div>
+                )}
+
+                {/* Selección de Motivo */}
+                {availableMotivos.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      Selecciona un motivo: <span className="text-gray-400">(Opcional)</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50/30">
+                      <label 
+                        className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer transition-all ${
+                          selectedMotivo === '' 
+                            ? 'bg-emerald-100 border-emerald-500 border-2' 
+                            : 'bg-white border border-gray-200 hover:border-emerald-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="motivo"
+                          value=""
+                          checked={selectedMotivo === ''}
+                          onChange={(e) => setSelectedMotivo(e.target.value)}
+                          className="text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Sin motivo</span>
+                      </label>
+                      {availableMotivos.map((motivo) => (
+                        <label 
+                          key={motivo.id} 
+                          className={`flex items-center space-x-2 p-2 rounded-md cursor-pointer transition-all ${
+                            selectedMotivo === motivo.id 
+                              ? 'bg-emerald-100 border-emerald-500 border-2' 
+                              : 'bg-white border border-gray-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="motivo"
+                            value={motivo.id}
+                            checked={selectedMotivo === motivo.id}
+                            onChange={(e) => setSelectedMotivo(e.target.value)}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-sm font-medium text-gray-700">{motivo.nombre}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Selector de cantidad y botón de compra */}
             {product.stock > 0 && (

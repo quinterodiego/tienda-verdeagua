@@ -27,7 +27,9 @@ export interface AdminProduct {
   brand?: string;
   tags: string[];
   medidas?: string; // Nuevo campo para medidas
-  color?: string; // Nuevo campo para color
+  color?: string; // Nuevo campo para color (backwards compatibility)
+  colores?: string[]; // Array de colores seleccionados
+  motivos?: string[]; // Array de motivos seleccionados
   createdAt: string;
   updatedAt: string;
 }
@@ -39,7 +41,7 @@ export async function getAdminProductsFromSheets(): Promise<AdminProduct[]> {
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A2:Q`, // Ampliado hasta Q para incluir medidas y color
+      range: `${SHEET_NAMES.PRODUCTS}!A2:S`, // Ampliado hasta S para incluir medidas, color, colores y motivos
     });
 
     const rows = response.data.values || [];
@@ -76,7 +78,9 @@ export async function getAdminProductsFromSheets(): Promise<AdminProduct[]> {
           brand: row[11] || '',
           tags: row[12] ? row[12].split(',').map((tag: string) => tag.trim()) : [],
           medidas: row[15] || undefined, // Columna P (índice 15) - Medidas
-          color: row[16] || undefined, // Columna Q (índice 16) - Color
+          color: row[16] || undefined, // Columna Q (índice 16) - Color (backwards compatibility)
+          colores: row[17] ? row[17].split(',').map((c: string) => c.trim()).filter((c: string) => c) : undefined, // Columna R (índice 17) - Array de colores
+          motivos: row[18] ? row[18].split(',').map((m: string) => m.trim()).filter((m: string) => m) : undefined, // Columna S (índice 18) - Array de motivos
           createdAt: row[13] || new Date().toISOString(),
           updatedAt: row[14] || new Date().toISOString(),
         };
@@ -124,12 +128,14 @@ export async function addAdminProductToSheets(product: Omit<AdminProduct, 'id' |
       now, // createdAt
       now, // updatedAt
       product.medidas || '', // Medidas (columna P)
-      product.color || '' // Color (columna Q)
+      product.color || '', // Color (columna Q - backwards compatibility)
+      product.colores ? product.colores.join(', ') : '', // Array de colores (columna R)
+      product.motivos ? product.motivos.join(', ') : '' // Array de motivos (columna S)
     ]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A:Q`, // Ampliado hasta Q
+      range: `${SHEET_NAMES.PRODUCTS}!A:S`, // Ampliado hasta S
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values,
@@ -154,11 +160,10 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
     // Primero obtener todos los productos para encontrar la fila
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAMES.PRODUCTS}!A:Q`, // Ampliado hasta Q
+      range: `${SHEET_NAMES.PRODUCTS}!A:S`, // Ampliado hasta S
     });
 
     const rows = response.data.values || [];
-    const headerRow = rows[0];
     const dataRows = rows.slice(1);
     
     console.log(`📊 Total de filas de productos: ${dataRows.length}`);
@@ -205,7 +210,9 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       createdAt: currentRow[13] || new Date().toISOString(),
       updatedAt: currentRow[14] || new Date().toISOString(),
       medidas: currentRow[15] || undefined, // Columna P (índice 15) - Medidas
-      color: currentRow[16] || undefined, // Columna Q (índice 16) - Color
+      color: currentRow[16] || undefined, // Columna Q (índice 16) - Color (backwards compatibility)
+      colores: currentRow[17] ? currentRow[17].split(',').map((c: string) => c.trim()).filter((c: string) => c) : undefined, // Columna R (índice 17) - Array de colores
+      motivos: currentRow[18] ? currentRow[18].split(',').map((m: string) => m.trim()).filter((m: string) => m) : undefined, // Columna S (índice 18) - Array de motivos
     };
 
     // Aplicar actualizaciones
@@ -234,11 +241,18 @@ export async function updateAdminProductInSheets(productId: string, updates: Par
       updatedProduct.createdAt,
       updatedProduct.updatedAt,
       updatedProduct.medidas || '', // Medidas (columna P)
-      updatedProduct.color || '' // Color (columna Q)
+      updatedProduct.color || '', // Color (columna Q - backwards compatibility)
+      updatedProduct.colores ? updatedProduct.colores.join(', ') : '', // Array de colores (columna R)
+      updatedProduct.motivos ? updatedProduct.motivos.join(', ') : '' // Array de motivos (columna S)
     ];
 
+    console.log('🎨 Colores a guardar:', updatedProduct.colores);
+    console.log('🎭 Motivos a guardar:', updatedProduct.motivos);
+    console.log('📝 Columna R (colores):', updatedProduct.colores ? updatedProduct.colores.join(', ') : '');
+    console.log('📝 Columna S (motivos):', updatedProduct.motivos ? updatedProduct.motivos.join(', ') : '');
+
     // Actualizar la fila (rowIndex + 2 porque Google Sheets es 1-indexed y saltamos headers)
-    const range = `${SHEET_NAMES.PRODUCTS}!A${productRowIndex + 2}:Q${productRowIndex + 2}`;
+    const range = `${SHEET_NAMES.PRODUCTS}!A${productRowIndex + 2}:S${productRowIndex + 2}`;
     console.log(`🎯 Actualizando en rango: ${range}`);
     console.log('📊 Fila actualizada:', updatedRow.slice(0, 5)); // Mostrar primeros 5 campos
     
